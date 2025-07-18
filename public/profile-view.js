@@ -128,8 +128,17 @@ class ProfileView {
         
         if (player.media?.profilePhoto) {
             const profilePhoto = document.getElementById('profile-photo');
-            profilePhoto.src = player.media.profilePhoto;
-            profilePhoto.style.display = 'block';
+            const photoUrl = player.media.profilePhoto;
+            
+            // Check if it's a base64 image or a file path
+            if (photoUrl.startsWith('data:')) {
+                // It's a base64 image, use as-is
+                profilePhoto.src = photoUrl;
+                profilePhoto.style.display = 'block';
+            } else {
+                // Old file path format - hide photo since file doesn't exist
+                profilePhoto.style.display = 'none';
+            }
         } else {
             document.getElementById('profile-photo').style.display = 'none';
         }

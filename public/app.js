@@ -343,8 +343,15 @@ class PlayerProfileApp {
         
         // Show current photo if exists
         if (player.media?.profilePhoto) {
-            document.getElementById('current-photo').src = player.media.profilePhoto;
-            document.getElementById('current-photo-preview').style.display = 'flex';
+            const photoUrl = player.media.profilePhoto;
+            // Only show if it's a base64 image (new format)
+            if (photoUrl.startsWith('data:')) {
+                document.getElementById('current-photo').src = photoUrl;
+                document.getElementById('current-photo-preview').style.display = 'flex';
+            } else {
+                // Old file path format - hide preview since file doesn't exist
+                document.getElementById('current-photo-preview').style.display = 'none';
+            }
         } else {
             document.getElementById('current-photo-preview').style.display = 'none';
         }
@@ -733,10 +740,22 @@ class PlayerProfileApp {
         
         // Handle profile photo - check both media.profilePhoto and potential upload path
         let profilePhotoHtml = '';
-        if (player.media?.profilePhoto) {
-            profilePhotoHtml = `<img src="${player.media.profilePhoto}" alt="${player.personalInfo?.fullName || 'Player'}" class="profile-photo">`;
-        } else if (player.profilePhotoUrl) {
-            profilePhotoHtml = `<img src="${player.profilePhotoUrl}" alt="${player.personalInfo?.fullName || 'Player'}" class="profile-photo">`;
+        const photoUrl = player.media?.profilePhoto || player.profilePhotoUrl;
+        
+        if (photoUrl) {
+            // Check if it's a base64 image or a file path
+            if (photoUrl.startsWith('data:')) {
+                // It's a base64 image, use as-is
+                profilePhotoHtml = `<img src="${photoUrl}" alt="${player.personalInfo?.fullName || 'Player'}" class="profile-photo">`;
+            } else if (photoUrl.startsWith('/uploads/')) {
+                // It's an old file path - show placeholder since files don't exist on Railway
+                const initials = player.personalInfo?.fullName ? 
+                    player.personalInfo.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'PP';
+                profilePhotoHtml = `<div class="profile-photo-placeholder" title="Photo no longer available - please upload a new one">${initials}</div>`;
+            } else {
+                // Unknown format, try to use it
+                profilePhotoHtml = `<img src="${photoUrl}" alt="${player.personalInfo?.fullName || 'Player'}" class="profile-photo">`;
+            }
         } else {
             // Default placeholder with initials
             const initials = player.personalInfo?.fullName ? 
