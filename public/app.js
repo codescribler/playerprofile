@@ -304,29 +304,32 @@ class PlayerProfileApp {
         document.getElementById('playerShowcase').value = player.showcase?.description || '';
         
         // Technical Skills
-        document.getElementById('ballControl').value = player.abilities?.technical?.ballControl?.rating || 5;
-        document.getElementById('passing').value = player.abilities?.technical?.passing?.rating || 5;
-        document.getElementById('shooting').value = player.abilities?.technical?.shooting?.rating || 5;
-        document.getElementById('dribbling').value = player.abilities?.technical?.dribbling?.rating || 5;
-        document.getElementById('firstTouch').value = player.abilities?.technical?.firstTouch?.rating || 5;
-        document.getElementById('crossing').value = player.abilities?.technical?.crossing?.rating || 5;
-        document.getElementById('tackling').value = player.abilities?.technical?.tackling?.rating || 5;
-        document.getElementById('heading').value = player.abilities?.technical?.heading?.rating || 5;
+        this.setFormValue('ballControl', player.abilities?.technical?.ballControl?.rating || 5);
+        this.setFormValue('passing', player.abilities?.technical?.passing?.rating || 5);
+        this.setFormValue('shooting', player.abilities?.technical?.shooting?.rating || 5);
+        this.setFormValue('dribbling', player.abilities?.technical?.dribbling?.rating || 5);
+        this.setFormValue('firstTouch', player.abilities?.technical?.firstTouch?.rating || 5);
+        this.setFormValue('crossing', player.abilities?.technical?.crossing?.rating || 5);
+        this.setFormValue('tackling', player.abilities?.technical?.tackling?.rating || 5);
+        this.setFormValue('heading', player.abilities?.technical?.heading?.rating || 5);
         
         // Physical Skills
-        document.getElementById('pace').value = player.abilities?.physical?.pace?.rating || 5;
-        document.getElementById('strength').value = player.abilities?.physical?.strength?.rating || 5;
-        document.getElementById('stamina').value = player.abilities?.physical?.stamina?.rating || 5;
-        document.getElementById('agility').value = player.abilities?.physical?.agility?.rating || 5;
-        document.getElementById('balance').value = player.abilities?.physical?.balance?.rating || 5;
-        document.getElementById('jumping').value = player.abilities?.physical?.jumping?.rating || 5;
+        this.setFormValue('pace', player.abilities?.physical?.pace?.rating || 5);
+        this.setFormValue('strength', player.abilities?.physical?.strength?.rating || 5);
+        this.setFormValue('stamina', player.abilities?.physical?.stamina?.rating || 5);
+        this.setFormValue('agility', player.abilities?.physical?.agility?.rating || 5);
+        this.setFormValue('balance', player.abilities?.physical?.balance?.rating || 5);
+        this.setFormValue('jumping', player.abilities?.physical?.jumping?.rating || 5);
         
         // Mental Skills
-        document.getElementById('decisionMaking').value = player.abilities?.mental?.decisionMaking?.rating || 5;
-        document.getElementById('positioning').value = player.abilities?.mental?.positioning?.rating || 5;
-        document.getElementById('concentration').value = player.abilities?.mental?.concentration?.rating || 5;
-        document.getElementById('leadership').value = player.abilities?.mental?.leadership?.rating || 5;
-        document.getElementById('communication').value = player.abilities?.mental?.communication?.rating || 5;
+        this.setFormValue('decisionMaking', player.abilities?.mental?.decisionMaking?.rating || 5);
+        this.setFormValue('positioning', player.abilities?.mental?.positioning?.rating || 5);
+        this.setFormValue('concentration', player.abilities?.mental?.concentration?.rating || 5);
+        this.setFormValue('leadership', player.abilities?.mental?.leadership?.rating || 5);
+        this.setFormValue('communication', player.abilities?.mental?.communication?.rating || 5);
+
+        // Ensure all new range inputs have their display values updated
+        this.updateAllRangeDisplays();
         
         document.getElementById('playingStyleSummary').value = player.playingStyle?.summary || '';
         document.getElementById('strengths').value = player.playingStyle?.strengths?.join('\n') || '';
@@ -348,6 +351,25 @@ class PlayerProfileApp {
         
         // Reset photo removed flag
         this.photoRemoved = false;
+    }
+
+    updateAllRangeDisplays() {
+        const rangeInputs = document.querySelectorAll('input[type="range"]');
+        rangeInputs.forEach(range => {
+            const valueSpan = range.nextElementSibling;
+            if (valueSpan && valueSpan.classList.contains('range-value')) {
+                valueSpan.textContent = range.value;
+            }
+        });
+    }
+
+    setFormValue(elementId, value) {
+        const element = document.getElementById(elementId);
+        if (element) {
+            element.value = value;
+        } else {
+            console.warn(`Form element with ID '${elementId}' not found`);
+        }
     }
 
     clearForm() {
@@ -552,23 +574,23 @@ class PlayerProfileApp {
                         description: ''
                     },
                     dribbling: {
-                        rating: parseInt(document.getElementById('dribbling').value),
+                        rating: parseInt(document.getElementById('dribbling').value) || 5,
                         description: ''
                     },
                     firstTouch: {
-                        rating: parseInt(document.getElementById('firstTouch').value),
+                        rating: parseInt(document.getElementById('firstTouch').value) || 5,
                         description: ''
                     },
                     crossing: {
-                        rating: parseInt(document.getElementById('crossing').value),
+                        rating: parseInt(document.getElementById('crossing').value) || 5,
                         description: ''
                     },
                     tackling: {
-                        rating: parseInt(document.getElementById('tackling').value),
+                        rating: parseInt(document.getElementById('tackling').value) || 5,
                         description: ''
                     },
                     heading: {
-                        rating: parseInt(document.getElementById('heading').value),
+                        rating: parseInt(document.getElementById('heading').value) || 5,
                         description: ''
                     }
                 },
@@ -586,37 +608,37 @@ class PlayerProfileApp {
                         description: ''
                     },
                     agility: {
-                        rating: parseInt(document.getElementById('agility').value),
+                        rating: parseInt(document.getElementById('agility').value) || 5,
                         description: ''
                     },
                     balance: {
-                        rating: parseInt(document.getElementById('balance').value),
+                        rating: parseInt(document.getElementById('balance').value) || 5,
                         description: ''
                     },
                     jumping: {
-                        rating: parseInt(document.getElementById('jumping').value),
+                        rating: parseInt(document.getElementById('jumping').value) || 5,
                         description: ''
                     }
                 },
                 mental: {
                     decisionMaking: {
-                        rating: parseInt(document.getElementById('decisionMaking').value),
+                        rating: parseInt(document.getElementById('decisionMaking').value) || 5,
                         description: ''
                     },
                     positioning: {
-                        rating: parseInt(document.getElementById('positioning').value),
+                        rating: parseInt(document.getElementById('positioning').value) || 5,
                         description: ''
                     },
                     concentration: {
-                        rating: parseInt(document.getElementById('concentration').value),
+                        rating: parseInt(document.getElementById('concentration').value) || 5,
                         description: ''
                     },
                     leadership: {
-                        rating: parseInt(document.getElementById('leadership').value),
+                        rating: parseInt(document.getElementById('leadership').value) || 5,
                         description: ''
                     },
                     communication: {
-                        rating: parseInt(document.getElementById('communication').value),
+                        rating: parseInt(document.getElementById('communication').value) || 5,
                         description: ''
                     }
                 }
