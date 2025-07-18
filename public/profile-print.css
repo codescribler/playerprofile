@@ -140,7 +140,8 @@ body {
     font-weight: 600;
     font-size: 11pt;
     color: #2c3e50;
-    min-width: 80px;
+    min-width: 120px;
+    text-align: left;
 }
 
 .rating-display {
