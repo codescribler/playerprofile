@@ -135,8 +135,43 @@ class ProfileView {
                 // It's a base64 image, use as-is
                 profilePhoto.src = photoUrl;
                 profilePhoto.style.display = 'block';
+            } else if (photoUrl.startsWith('/uploads/')) {
+                // Old file path format - replace with placeholder
+                const initials = player.personalInfo?.fullName ? 
+                    player.personalInfo.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'PP';
+                
+                profilePhoto.style.display = 'none';
+                const photoContainer = profilePhoto.parentElement;
+                
+                // Remove existing placeholder if any
+                const existingPlaceholder = photoContainer.querySelector('.profile-photo-placeholder');
+                if (existingPlaceholder) {
+                    existingPlaceholder.remove();
+                }
+                
+                // Create placeholder
+                const placeholder = document.createElement('div');
+                placeholder.className = 'profile-photo-placeholder';
+                placeholder.textContent = initials;
+                placeholder.title = 'Photo no longer available - please upload a new one';
+                placeholder.style.cssText = `
+                    width: 150px;
+                    height: 150px;
+                    border-radius: 50%;
+                    background-color: #3498db;
+                    color: white;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 3rem;
+                    font-weight: bold;
+                    margin: 0 auto 1rem;
+                    border: 3px solid #f0f0f0;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                `;
+                
+                photoContainer.appendChild(placeholder);
             } else {
-                // Old file path format - hide photo since file doesn't exist
                 profilePhoto.style.display = 'none';
             }
         } else {
