@@ -688,7 +688,7 @@ class PlayerProfileApp {
             <p><strong>Age:</strong> ${age}</p>
             <p><strong>Height:</strong> ${height}</p>
             <p><strong>Weight:</strong> ${weight}</p>
-            <p><strong>Strong Foot:</strong> ${player.personalInfo?.preferredFoot || 'N/A'} <strong>Weak Foot:</strong> ${player.personalInfo?.weakFootStrength || 50}% as strong</p>
+            <p><strong>Preferred Foot:</strong> ${this.formatFootPreference(player.personalInfo?.preferredFoot, player.personalInfo?.weakFootStrength)}</p>
             <p><strong>Team:</strong> ${player.playingInfo?.currentTeam?.clubName || 'N/A'}</p>
             <p><strong>School:</strong> ${player.academicInfo?.currentSchool || 'N/A'}</p>
             ${publishedUrlSection}
@@ -726,6 +726,16 @@ class PlayerProfileApp {
             age--;
         }
         return age;
+    }
+
+    formatFootPreference(preferredFoot, weakFootStrength) {
+        if (!preferredFoot) return 'N/A';
+        
+        const preferred = preferredFoot.charAt(0).toUpperCase() + preferredFoot.slice(1);
+        const weak = preferredFoot.toLowerCase() === 'left' ? 'Right' : 'Left';
+        const strength = weakFootStrength || 50;
+        
+        return `${preferred} foot | ${weak} foot: ${strength}% strength`;
     }
 
     async deletePlayer(playerId) {

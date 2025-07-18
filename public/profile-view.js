@@ -93,7 +93,13 @@ class ProfileView {
         // Format preferred foot with weak foot strength
         const preferredFoot = this.capitalizeFirst(player.personalInfo?.preferredFoot) || 'N/A';
         const weakFootStrength = player.personalInfo?.weakFootStrength || 50;
-        document.getElementById('preferred-foot').textContent = `Strong: ${preferredFoot} | Weak: ${weakFootStrength}% as strong`;
+        
+        if (preferredFoot === 'N/A') {
+            document.getElementById('preferred-foot').textContent = 'N/A';
+        } else {
+            const weakFoot = preferredFoot === 'Left' ? 'Right' : 'Left';
+            document.getElementById('preferred-foot').textContent = `Preferred: ${preferredFoot} foot | ${weakFoot} foot: ${weakFootStrength}% strength`;
+        }
         
         document.getElementById('years-playing').textContent = player.playingInfo?.yearsPlaying || 'N/A';
         
