@@ -303,12 +303,30 @@ class PlayerProfileApp {
         
         document.getElementById('playerShowcase').value = player.showcase?.description || '';
         
+        // Technical Skills
         document.getElementById('ballControl').value = player.abilities?.technical?.ballControl?.rating || 5;
         document.getElementById('passing').value = player.abilities?.technical?.passing?.rating || 5;
         document.getElementById('shooting').value = player.abilities?.technical?.shooting?.rating || 5;
+        document.getElementById('dribbling').value = player.abilities?.technical?.dribbling?.rating || 5;
+        document.getElementById('firstTouch').value = player.abilities?.technical?.firstTouch?.rating || 5;
+        document.getElementById('crossing').value = player.abilities?.technical?.crossing?.rating || 5;
+        document.getElementById('tackling').value = player.abilities?.technical?.tackling?.rating || 5;
+        document.getElementById('heading').value = player.abilities?.technical?.heading?.rating || 5;
+        
+        // Physical Skills
         document.getElementById('pace').value = player.abilities?.physical?.pace?.rating || 5;
         document.getElementById('strength').value = player.abilities?.physical?.strength?.rating || 5;
         document.getElementById('stamina').value = player.abilities?.physical?.stamina?.rating || 5;
+        document.getElementById('agility').value = player.abilities?.physical?.agility?.rating || 5;
+        document.getElementById('balance').value = player.abilities?.physical?.balance?.rating || 5;
+        document.getElementById('jumping').value = player.abilities?.physical?.jumping?.rating || 5;
+        
+        // Mental Skills
+        document.getElementById('decisionMaking').value = player.abilities?.mental?.decisionMaking?.rating || 5;
+        document.getElementById('positioning').value = player.abilities?.mental?.positioning?.rating || 5;
+        document.getElementById('concentration').value = player.abilities?.mental?.concentration?.rating || 5;
+        document.getElementById('leadership').value = player.abilities?.mental?.leadership?.rating || 5;
+        document.getElementById('communication').value = player.abilities?.mental?.communication?.rating || 5;
         
         document.getElementById('playingStyleSummary').value = player.playingStyle?.summary || '';
         document.getElementById('strengths').value = player.playingStyle?.strengths?.join('\n') || '';
@@ -532,6 +550,26 @@ class PlayerProfileApp {
                     shooting: {
                         rating: parseInt(document.getElementById('shooting').value),
                         description: ''
+                    },
+                    dribbling: {
+                        rating: parseInt(document.getElementById('dribbling').value),
+                        description: ''
+                    },
+                    firstTouch: {
+                        rating: parseInt(document.getElementById('firstTouch').value),
+                        description: ''
+                    },
+                    crossing: {
+                        rating: parseInt(document.getElementById('crossing').value),
+                        description: ''
+                    },
+                    tackling: {
+                        rating: parseInt(document.getElementById('tackling').value),
+                        description: ''
+                    },
+                    heading: {
+                        rating: parseInt(document.getElementById('heading').value),
+                        description: ''
                     }
                 },
                 physical: {
@@ -545,6 +583,40 @@ class PlayerProfileApp {
                     },
                     stamina: {
                         rating: parseInt(document.getElementById('stamina').value),
+                        description: ''
+                    },
+                    agility: {
+                        rating: parseInt(document.getElementById('agility').value),
+                        description: ''
+                    },
+                    balance: {
+                        rating: parseInt(document.getElementById('balance').value),
+                        description: ''
+                    },
+                    jumping: {
+                        rating: parseInt(document.getElementById('jumping').value),
+                        description: ''
+                    }
+                },
+                mental: {
+                    decisionMaking: {
+                        rating: parseInt(document.getElementById('decisionMaking').value),
+                        description: ''
+                    },
+                    positioning: {
+                        rating: parseInt(document.getElementById('positioning').value),
+                        description: ''
+                    },
+                    concentration: {
+                        rating: parseInt(document.getElementById('concentration').value),
+                        description: ''
+                    },
+                    leadership: {
+                        rating: parseInt(document.getElementById('leadership').value),
+                        description: ''
+                    },
+                    communication: {
+                        rating: parseInt(document.getElementById('communication').value),
                         description: ''
                     }
                 }
