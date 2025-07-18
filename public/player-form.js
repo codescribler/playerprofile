@@ -268,7 +268,20 @@ class PlayerForm {
         const formData = this.collectFormData();
         
         try {
-            const url = this.currentPlayer ? `/api/players/${this.currentPlayer.playerId}` : '/api/players';
+            // Get player ID from current player data or URL params
+            const urlParams = new URLSearchParams(window.location.search);
+            const urlPlayerId = urlParams.get('id');
+            const playerId = this.currentPlayer ? (this.currentPlayer.playerId || this.currentPlayer.id) : null;
+            const finalPlayerId = playerId || urlPlayerId;
+            
+            console.log('Player form debug:', {
+                currentPlayer: this.currentPlayer,
+                playerId: playerId,
+                urlPlayerId: urlPlayerId,
+                finalPlayerId: finalPlayerId
+            });
+            
+            const url = this.currentPlayer ? `/api/players/${finalPlayerId}` : '/api/players';
             const method = this.currentPlayer ? 'PUT' : 'POST';
             
             const response = await fetch(url, {
