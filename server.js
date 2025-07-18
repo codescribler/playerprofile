@@ -254,16 +254,26 @@ app.put('/api/players/:id', authenticateToken, (req, res) => {
     updatedBy: req.user.username
   };
   
+  console.log('Updating player:', req.params.id);
+  console.log('Player data size:', JSON.stringify(playerData).length);
+  console.log('Has profile photo:', !!playerData.media?.profilePhoto);
+  if (playerData.media?.profilePhoto) {
+    console.log('Photo URL length:', playerData.media.profilePhoto.length);
+    console.log('Photo URL starts with data:', playerData.media.profilePhoto.startsWith('data:'));
+  }
+  
   db.run(
     'UPDATE players SET data = ? WHERE id = ? AND (user_id = ? OR ? = "admin")',
     [JSON.stringify(playerData), req.params.id, req.user.id, req.user.role],
     function(err) {
       if (err) {
-        return res.status(500).json({ error: 'Error updating player' });
+        console.error('Database error updating player:', err);
+        return res.status(500).json({ error: 'Error updating player: ' + err.message });
       }
       if (this.changes === 0) {
         return res.status(404).json({ error: 'Player not found or access denied' });
       }
+      console.log('Player updated successfully');
       res.json({ message: 'Player profile updated' });
     }
   );
