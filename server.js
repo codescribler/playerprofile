@@ -221,7 +221,13 @@ app.get('/api/players', authenticateToken, (req, res) => {
       return res.status(500).json({ error: 'Error fetching players' });
     }
     
-    const players = rows.map(row => JSON.parse(row.data));
+    const players = rows.map(row => {
+      const player = JSON.parse(row.data);
+      // Include the player ID in the response
+      player.id = row.id;
+      player.playerId = row.id;
+      return player;
+    });
     res.json(players);
   });
 });
@@ -239,6 +245,9 @@ app.get('/api/players/:id', authenticateToken, (req, res) => {
       }
       
       const player = JSON.parse(row.data);
+      // Include the player ID in the response
+      player.id = row.id;
+      player.playerId = row.id;
       
       if (req.user.role === 'player' && row.user_id !== req.user.id) {
         return res.status(403).json({ error: 'Access denied' });
@@ -574,7 +583,13 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
       return res.status(500).json({ error: 'Error searching players' });
     }
     
-    const players = rows.map(row => JSON.parse(row.data));
+    const players = rows.map(row => {
+      const player = JSON.parse(row.data);
+      // Include the player ID in the response
+      player.id = row.id;
+      player.playerId = row.id;
+      return player;
+    });
     res.json(players);
   });
 });
