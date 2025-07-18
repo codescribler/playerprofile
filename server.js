@@ -28,6 +28,14 @@ app.get('/app', (req, res) => {
 // Serve static files (but exclude index.html from root)
 app.use(express.static('public', { index: false }));
 
+const fs = require('fs');
+
+// Ensure uploads directory exists
+const uploadsDir = 'uploads';
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, 'uploads/')
@@ -447,12 +455,31 @@ app.post('/api/messages/:id/read', authenticateToken, (req, res) => {
 });
 
 app.post('/api/players/:id/media/upload', authenticateToken, upload.single('file'), (req, res) => {
+  console.log('Upload request received for player:', req.params.id);
+  console.log('File received:', req.file ? req.file.filename : 'No file');
+  
   if (!req.file) {
+    console.log('No file uploaded');
     return res.status(400).json({ error: 'No file uploaded' });
   }
   
-  const fileUrl = `/uploads/${req.file.filename}`;
-  res.json({ url: fileUrl, filename: req.file.filename });
+  try {
+    // Read the file and convert to base64 for persistent storage
+    const filePath = path.join(__dirname, 'uploads', req.file.filename);
+    const fileBuffer = fs.readFileSync(filePath);
+    const base64Image = `data:${req.file.mimetype};base64,${fileBuffer.toString('base64')}`;
+    
+    console.log('File converted to base64, size:', base64Image.length);
+    
+    // Clean up the temporary file
+    fs.unlinkSync(filePath);
+    console.log('Temporary file deleted:', filePath);
+    
+    res.json({ url: base64Image, filename: req.file.filename });
+  } catch (error) {
+    console.error('Error processing uploaded file:', error);
+    res.status(500).json({ error: 'Error processing uploaded file' });
+  }
 });
 
 app.get('/api/players/search', authenticateToken, (req, res) => {
