@@ -465,6 +465,31 @@ app.post('/api/messages/:id/read', authenticateToken, (req, res) => {
   );
 });
 
+// Get unread message counts for all players (authenticated)
+app.get('/api/players/unread-counts', authenticateToken, (req, res) => {
+  db.all(
+    `SELECT p.id as player_id, COUNT(m.id) as unread_count 
+     FROM players p 
+     LEFT JOIN messages m ON p.id = m.player_id AND m.read = FALSE 
+     WHERE p.user_id = ? OR ? = "admin"
+     GROUP BY p.id`,
+    [req.user.id, req.user.role],
+    (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error fetching unread counts' });
+      }
+      
+      // Convert to object for easier lookup
+      const counts = {};
+      rows.forEach(row => {
+        counts[row.player_id] = row.unread_count;
+      });
+      
+      res.json(counts);
+    }
+  );
+});
+
 app.post('/api/players/:id/media/upload', authenticateToken, (req, res) => {
   console.log('Upload request received for player:', req.params.id);
   console.log('Request headers:', req.headers);

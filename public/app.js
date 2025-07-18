@@ -789,18 +789,33 @@ class PlayerProfileApp {
     async loadPlayers() {
         try {
             console.log('Loading players with token:', this.token ? 'Token present' : 'No token');
-            const response = await fetch('/api/players', {
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                }
-            });
+            
+            // Load both players and unread message counts
+            const [playersResponse, unreadCountsResponse] = await Promise.all([
+                fetch('/api/players', {
+                    headers: {
+                        'Authorization': `Bearer ${this.token}`
+                    }
+                }),
+                fetch('/api/players/unread-counts', {
+                    headers: {
+                        'Authorization': `Bearer ${this.token}`
+                    }
+                })
+            ]);
 
-            console.log('Load players response:', response.status);
-            if (response.ok) {
-                const players = await response.json();
-                this.displayPlayers(players);
+            console.log('Load players response:', playersResponse.status);
+            if (playersResponse.ok) {
+                const players = await playersResponse.json();
+                let unreadCounts = {};
+                
+                if (unreadCountsResponse.ok) {
+                    unreadCounts = await unreadCountsResponse.json();
+                }
+                
+                this.displayPlayers(players, unreadCounts);
             } else {
-                if (response.status === 403) {
+                if (playersResponse.status === 403) {
                     console.log('Token expired or invalid, logging out');
                     this.logout();
                     this.showMessage('Session expired. Please login again.', 'error');
@@ -814,17 +829,17 @@ class PlayerProfileApp {
         }
     }
 
-    displayPlayers(players) {
+    displayPlayers(players, unreadCounts = {}) {
         const container = document.getElementById('players-list');
         container.innerHTML = '';
 
         players.forEach(player => {
-            const card = this.createPlayerCard(player);
+            const card = this.createPlayerCard(player, unreadCounts[player.playerId] || 0);
             container.appendChild(card);
         });
     }
 
-    createPlayerCard(player) {
+    createPlayerCard(player, unreadCount = 0) {
         const card = document.createElement('div');
         card.className = 'player-card';
         
@@ -889,7 +904,11 @@ class PlayerProfileApp {
                 <button class="copy-url-btn" onclick="app.copyUrl('url-${player.playerId}')">Copy URL</button>
             </div>` : '';
         
+        // Message badge HTML
+        const messageBadgeHtml = unreadCount > 0 ? `<div class="message-badge">${unreadCount}</div>` : '';
+        
         card.innerHTML = `
+            ${messageBadgeHtml}
             ${profilePhotoHtml}
             <h3>${player.personalInfo?.fullName || 'Unknown'}</h3>
             <p><strong>Positions:</strong> ${positionsDisplay}</p>
