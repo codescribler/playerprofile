@@ -460,16 +460,24 @@ class PlayerProfileApp {
             
             if (response.ok) {
                 const data = await response.json();
+                console.log('Photo uploaded successfully, size:', data.url.length);
                 // Update the player's profile photo URL
                 await this.updatePlayerPhotoUrl(playerId, data.url);
+            } else {
+                const errorData = await response.json();
+                console.error('Upload failed:', errorData.error);
+                this.showMessage(`Upload failed: ${errorData.error}`, 'error');
             }
         } catch (error) {
             console.error('Failed to upload photo:', error);
+            this.showMessage('Failed to upload photo. Please try again.', 'error');
         }
     }
 
     async updatePlayerPhotoUrl(playerId, photoUrl) {
         try {
+            console.log('Updating player photo URL, length:', photoUrl.length);
+            
             // Get the current player data
             const getResponse = await fetch(`/api/players/${playerId}`, {
                 headers: {
@@ -486,8 +494,10 @@ class PlayerProfileApp {
                 }
                 playerData.media.profilePhoto = photoUrl;
                 
+                console.log('About to update player with photo URL');
+                
                 // Save the updated player data
-                await fetch(`/api/players/${playerId}`, {
+                const updateResponse = await fetch(`/api/players/${playerId}`, {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -495,9 +505,19 @@ class PlayerProfileApp {
                     },
                     body: JSON.stringify(playerData)
                 });
+                
+                if (updateResponse.ok) {
+                    console.log('Player photo updated successfully');
+                    this.showMessage('Photo uploaded successfully!', 'success');
+                } else {
+                    const errorData = await updateResponse.json();
+                    console.error('Update failed:', errorData.error);
+                    this.showMessage(`Failed to save photo: ${errorData.error}`, 'error');
+                }
             }
         } catch (error) {
             console.error('Failed to update player photo URL:', error);
+            this.showMessage('Failed to update player photo. Please try again.', 'error');
         }
     }
 

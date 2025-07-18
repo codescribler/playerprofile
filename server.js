@@ -477,9 +477,18 @@ app.post('/api/players/:id/media/upload', authenticateToken, upload.single('file
     // Read the file and convert to base64 for persistent storage
     const filePath = path.join(__dirname, 'uploads', req.file.filename);
     const fileBuffer = fs.readFileSync(filePath);
+    
+    // Check file size - limit to 1MB (1MB = ~1.37MB in base64)
+    const maxSize = 1024 * 1024; // 1MB
+    if (fileBuffer.length > maxSize) {
+      fs.unlinkSync(filePath); // Clean up temp file
+      return res.status(400).json({ error: 'Image too large. Please use an image smaller than 1MB.' });
+    }
+    
     const base64Image = `data:${req.file.mimetype};base64,${fileBuffer.toString('base64')}`;
     
     console.log('File converted to base64, size:', base64Image.length);
+    console.log('Original file size:', fileBuffer.length);
     
     // Clean up the temporary file
     fs.unlinkSync(filePath);
