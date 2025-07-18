@@ -3,11 +3,14 @@ const { Pool } = require('pg');
 const path = require('path');
 
 // Determine which database to use based on environment
-const isProduction = process.env.NODE_ENV === 'production' || process.env.DATABASE_URL;
+console.log('Environment check:');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('DATABASE_URL exists:', !!process.env.DATABASE_URL);
+console.log('DATABASE_URL preview:', process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 20) + '...' : 'not set');
 
 let db;
 
-if (isProduction && process.env.DATABASE_URL) {
+if (process.env.DATABASE_URL) {
   // Use PostgreSQL for production (Railway)
   console.log('Using PostgreSQL database');
   const pool = new Pool({
