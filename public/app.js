@@ -499,21 +499,39 @@ class PlayerProfileApp {
                 // Convert to base64 with compression (0.8 quality for JPEG)
                 const base64 = canvas.toDataURL('image/jpeg', 0.8);
                 
-                // Check if compressed image is still too large (500KB limit for Base64)
-                const maxBase64Size = 500 * 1024; // 500KB
+                // Check if compressed image is still too large (200KB limit for Base64)
+                const maxBase64Size = 200 * 1024; // 200KB
+                let finalBase64 = base64;
+                
                 if (base64.length > maxBase64Size) {
+                    console.log('Image too large, trying lower quality. Current size:', base64.length);
                     // Try with lower quality
-                    const base64Lower = canvas.toDataURL('image/jpeg', 0.6);
-                    if (base64Lower.length > maxBase64Size) {
+                    finalBase64 = canvas.toDataURL('image/jpeg', 0.6);
+                    
+                    if (finalBase64.length > maxBase64Size) {
+                        console.log('Still too large, trying even lower quality. Current size:', finalBase64.length);
                         // Try with even lower quality
-                        const base64Lowest = canvas.toDataURL('image/jpeg', 0.4);
-                        resolve(base64Lowest);
-                    } else {
-                        resolve(base64Lower);
+                        finalBase64 = canvas.toDataURL('image/jpeg', 0.4);
+                        
+                        if (finalBase64.length > maxBase64Size) {
+                            console.log('Still too large, trying lowest quality. Current size:', finalBase64.length);
+                            // Try with lowest quality
+                            finalBase64 = canvas.toDataURL('image/jpeg', 0.2);
+                            
+                            if (finalBase64.length > maxBase64Size) {
+                                console.log('Still too large, resizing further. Current size:', finalBase64.length);
+                                // Resize to smaller dimensions
+                                canvas.width = width * 0.7;
+                                canvas.height = height * 0.7;
+                                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                                finalBase64 = canvas.toDataURL('image/jpeg', 0.4);
+                            }
+                        }
                     }
-                } else {
-                    resolve(base64);
                 }
+                
+                console.log('Final compressed image size:', finalBase64.length, 'bytes');
+                resolve(finalBase64);
             };
             
             img.onerror = reject;
