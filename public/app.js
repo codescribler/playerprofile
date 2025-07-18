@@ -446,33 +446,34 @@ class PlayerProfileApp {
     }
 
     async uploadProfilePhoto(playerId, file) {
-        const formData = new FormData();
-        formData.append('file', file);
+        // Check file size before upload (2MB limit)
+        const maxSize = 2 * 1024 * 1024; // 2MB
+        if (file.size > maxSize) {
+            this.showMessage('Image too large. Please use an image smaller than 2MB.', 'error');
+            return;
+        }
         
         try {
-            const response = await fetch(`/api/players/${playerId}/media/upload`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${this.token}`
-                },
-                body: formData
-            });
+            // Convert file to base64 directly in the browser
+            const base64 = await this.fileToBase64(file);
             
-            if (response.ok) {
-                const data = await response.json();
-                console.log('Photo uploaded successfully, size:', data.url.length);
-                // Update the player's profile photo URL
-                await this.updatePlayerPhotoUrl(playerId, data.url);
-            } else {
-                const errorData = await response.json();
-                console.error('Upload failed:', errorData.error);
-                this.showMessage(`Upload failed: ${errorData.error}`, 'error');
-                return; // Don't continue if upload failed
-            }
+            console.log('Photo converted to base64, size:', base64.length);
+            
+            // Update the player's profile photo URL directly
+            await this.updatePlayerPhotoUrl(playerId, base64);
         } catch (error) {
             console.error('Failed to upload photo:', error);
             this.showMessage('Failed to upload photo. Please try again.', 'error');
         }
+    }
+    
+    fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = error => reject(error);
+            reader.readAsDataURL(file);
+        });
     }
 
     async updatePlayerPhotoUrl(playerId, photoUrl) {
