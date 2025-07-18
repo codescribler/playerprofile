@@ -208,17 +208,16 @@ class PlayerProfileApp {
     }
 
     showPlayerForm(player = null) {
-        this.currentPlayer = player;
-        const title = document.getElementById('form-title');
-        title.textContent = player ? 'Edit Player Profile' : 'Create Player Profile';
-        
+        // Navigate to the dedicated form page
         if (player) {
-            this.populateForm(player);
+            // Store player data in sessionStorage for editing
+            sessionStorage.setItem('editPlayerData', JSON.stringify(player));
+            window.location.href = `player-form.html?mode=edit&id=${player.playerId}`;
         } else {
-            this.clearForm();
+            // Clear any existing draft and go to create mode
+            sessionStorage.removeItem('editPlayerData');
+            window.location.href = 'player-form.html?mode=create';
         }
-        
-        this.showModal('player-form');
     }
 
     addSecondaryPosition(position = '', suitability = 75, notes = '') {
