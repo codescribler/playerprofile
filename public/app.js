@@ -294,8 +294,8 @@ class PlayerProfileApp {
         }
         
         document.getElementById('yearsPlaying').value = player.playingInfo?.yearsPlaying || '';
-        document.getElementById('currentTeam').value = player.playingInfo?.currentTeam?.clubName || '';
-        document.getElementById('league').value = player.playingInfo?.currentTeam?.league || '';
+        document.getElementById('currentTeam').value = player.playingInfo?.currentTeam?.clubName || player.playingInfo?.currentTeam || '';
+        document.getElementById('league').value = player.playingInfo?.currentTeam?.league || player.playingInfo?.league || '';
         
         document.getElementById('currentSchool').value = player.academicInfo?.currentSchool || '';
         document.getElementById('gradeYear').value = player.academicInfo?.gradeYear || '';
@@ -915,7 +915,7 @@ class PlayerProfileApp {
             <p><strong>Height:</strong> ${height}</p>
             <p><strong>Weight:</strong> ${weight}</p>
             <p><strong>Preferred Foot:</strong> ${this.formatFootPreference(player.personalInfo?.preferredFoot, player.personalInfo?.weakFootStrength)}</p>
-            <p><strong>Team:</strong> ${player.playingInfo?.currentTeam?.clubName || 'N/A'}</p>
+            <p><strong>Team:</strong> ${player.playingInfo?.currentTeam?.clubName || player.playingInfo?.currentTeam || 'N/A'}</p>
             <p><strong>School:</strong> ${player.academicInfo?.currentSchool || 'N/A'}</p>
             ${publishedUrlSection}
             <div class="actions">

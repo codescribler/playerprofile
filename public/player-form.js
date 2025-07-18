@@ -116,8 +116,8 @@ class PlayerForm {
         document.getElementById('primaryPositionSuitability').value = player.playingInfo?.primaryPositionSuitability || 100;
         document.getElementById('primaryPositionNotes').value = player.playingInfo?.primaryPositionNotes || '';
         document.getElementById('yearsPlaying').value = player.playingInfo?.yearsPlaying || '';
-        document.getElementById('currentTeam').value = player.playingInfo?.currentTeam || '';
-        document.getElementById('league').value = player.playingInfo?.league || '';
+        document.getElementById('currentTeam').value = player.playingInfo?.currentTeam?.clubName || player.playingInfo?.currentTeam || '';
+        document.getElementById('league').value = player.playingInfo?.currentTeam?.league || player.playingInfo?.league || '';
 
         // Academic Information
         document.getElementById('currentSchool').value = player.academicInfo?.currentSchool || '';

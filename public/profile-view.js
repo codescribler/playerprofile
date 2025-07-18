@@ -109,8 +109,8 @@ class ProfileView {
         document.getElementById('guardian-email').textContent = player.contactInfo?.guardian?.email || 'N/A';
         document.getElementById('guardian-phone').textContent = player.contactInfo?.guardian?.phone || 'N/A';
         
-        document.getElementById('current-team').textContent = player.playingInfo?.currentTeam?.clubName || 'N/A';
-        document.getElementById('league').textContent = player.playingInfo?.currentTeam?.league || 'N/A';
+        document.getElementById('current-team').textContent = player.playingInfo?.currentTeam?.clubName || player.playingInfo?.currentTeam || 'N/A';
+        document.getElementById('league').textContent = player.playingInfo?.currentTeam?.league || player.playingInfo?.league || 'N/A';
         document.getElementById('school').textContent = player.academicInfo?.currentSchool || 'N/A';
         document.getElementById('grade').textContent = player.academicInfo?.gradeYear || 'N/A';
         
