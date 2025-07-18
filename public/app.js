@@ -446,25 +446,79 @@ class PlayerProfileApp {
     }
 
     async uploadProfilePhoto(playerId, file) {
-        // Check file size before upload (2MB limit)
-        const maxSize = 2 * 1024 * 1024; // 2MB
+        // Check file size before upload (5MB limit for original file)
+        const maxSize = 5 * 1024 * 1024; // 5MB
         if (file.size > maxSize) {
-            this.showMessage('Image too large. Please use an image smaller than 2MB.', 'error');
+            this.showMessage('Image too large. Please use an image smaller than 5MB.', 'error');
             return;
         }
         
         try {
-            // Convert file to base64 directly in the browser
-            const base64 = await this.fileToBase64(file);
+            // Compress and convert file to base64
+            const compressedBase64 = await this.compressAndConvertImage(file);
             
-            console.log('Photo converted to base64, size:', base64.length);
+            console.log('Photo compressed and converted to base64, size:', compressedBase64.length);
             
             // Update the player's profile photo URL directly
-            await this.updatePlayerPhotoUrl(playerId, base64);
+            await this.updatePlayerPhotoUrl(playerId, compressedBase64);
         } catch (error) {
             console.error('Failed to upload photo:', error);
             this.showMessage('Failed to upload photo. Please try again.', 'error');
         }
+    }
+    
+    async compressAndConvertImage(file) {
+        return new Promise((resolve, reject) => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            img.onload = () => {
+                // Calculate new dimensions (max 800x800 for profile photos)
+                const maxSize = 800;
+                let { width, height } = img;
+                
+                if (width > height) {
+                    if (width > maxSize) {
+                        height = (height * maxSize) / width;
+                        width = maxSize;
+                    }
+                } else {
+                    if (height > maxSize) {
+                        width = (width * maxSize) / height;
+                        height = maxSize;
+                    }
+                }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                // Draw and compress the image
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Convert to base64 with compression (0.8 quality for JPEG)
+                const base64 = canvas.toDataURL('image/jpeg', 0.8);
+                
+                // Check if compressed image is still too large (500KB limit for Base64)
+                const maxBase64Size = 500 * 1024; // 500KB
+                if (base64.length > maxBase64Size) {
+                    // Try with lower quality
+                    const base64Lower = canvas.toDataURL('image/jpeg', 0.6);
+                    if (base64Lower.length > maxBase64Size) {
+                        // Try with even lower quality
+                        const base64Lowest = canvas.toDataURL('image/jpeg', 0.4);
+                        resolve(base64Lowest);
+                    } else {
+                        resolve(base64Lower);
+                    }
+                } else {
+                    resolve(base64);
+                }
+            };
+            
+            img.onerror = reject;
+            img.src = URL.createObjectURL(file);
+        });
     }
     
     fileToBase64(file) {
