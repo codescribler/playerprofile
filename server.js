@@ -13,8 +13,20 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-producti
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
 app.use('/uploads', express.static('uploads'));
+
+// Serve homepage as default
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'home.html'));
+});
+
+// Serve app page
+app.get('/app', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Serve static files (but exclude index.html from root)
+app.use(express.static('public', { index: false }));
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {

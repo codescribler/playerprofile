@@ -479,13 +479,13 @@ class PlayerProfileApp {
                 fullName: document.getElementById('fullName').value,
                 dateOfBirth: document.getElementById('dateOfBirth').value,
                 height: {
-                    centimeters: parseInt(document.getElementById('heightCm').value) || 0,
-                    feet: Math.floor((parseInt(document.getElementById('heightCm').value) || 0) / 30.48),
-                    inches: Math.round(((parseInt(document.getElementById('heightCm').value) || 0) % 30.48) / 2.54)
+                    centimeters: Math.round((parseFloat(document.getElementById('heightCm').value) || 0) * 10) / 10,
+                    feet: Math.floor((parseFloat(document.getElementById('heightCm').value) || 0) / 30.48),
+                    inches: Math.round(((parseFloat(document.getElementById('heightCm').value) || 0) % 30.48) / 2.54)
                 },
                 weight: {
-                    kilograms: parseInt(document.getElementById('weightKg').value) || 0,
-                    pounds: Math.round((parseInt(document.getElementById('weightKg').value) || 0) * 2.20462)
+                    kilograms: Math.round((parseFloat(document.getElementById('weightKg').value) || 0) * 10) / 10,
+                    pounds: Math.round((parseFloat(document.getElementById('weightKg').value) || 0) * 2.20462 * 10) / 10
                 },
                 preferredFoot: document.getElementById('preferredFoot').value,
                 weakFootStrength: parseInt(document.getElementById('weakFootStrength').value) || 50,
@@ -588,7 +588,7 @@ class PlayerProfileApp {
     }
 
     convertHeightToCm(feet, inches) {
-        return Math.round((feet * 30.48) + (inches * 2.54));
+        return Math.round(((feet * 30.48) + (inches * 2.54)) * 10) / 10;
     }
 
     async loadPlayers() {
