@@ -281,6 +281,12 @@ class PlayerForm {
                 finalPlayerId: finalPlayerId
             });
             
+            // Validate that we have a valid player ID for updates
+            if (this.currentPlayer && (!finalPlayerId || finalPlayerId === 'undefined')) {
+                alert('Error: Unable to determine player ID for update. Please try again.');
+                return;
+            }
+            
             const url = this.currentPlayer ? `/api/players/${finalPlayerId}` : '/api/players';
             const method = this.currentPlayer ? 'PUT' : 'POST';
             

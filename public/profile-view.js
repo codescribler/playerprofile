@@ -452,7 +452,12 @@ class ProfileView {
 
     editProfile() {
         // Navigate to the new form page for editing
-        sessionStorage.setItem('editPlayerData', JSON.stringify(this.playerData));
+        const playerDataWithId = {
+            ...this.playerData,
+            playerId: this.playerId,
+            id: this.playerId
+        };
+        sessionStorage.setItem('editPlayerData', JSON.stringify(playerDataWithId));
         window.location.href = `player-form.html?mode=edit&id=${this.playerId}`;
     }
 

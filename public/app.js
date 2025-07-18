@@ -211,8 +211,13 @@ class PlayerProfileApp {
         // Navigate to the dedicated form page
         if (player) {
             // Store player data in sessionStorage for editing
-            sessionStorage.setItem('editPlayerData', JSON.stringify(player));
-            window.location.href = `player-form.html?mode=edit&id=${player.playerId}`;
+            const playerDataWithId = {
+                ...player,
+                playerId: player.playerId || player.id,
+                id: player.playerId || player.id
+            };
+            sessionStorage.setItem('editPlayerData', JSON.stringify(playerDataWithId));
+            window.location.href = `player-form.html?mode=edit&id=${player.playerId || player.id}`;
         } else {
             // Clear any existing draft and go to create mode
             sessionStorage.removeItem('editPlayerData');
