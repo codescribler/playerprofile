@@ -21,37 +21,46 @@ if (process.env.DATABASE_URL) {
   // Create a wrapper to make PostgreSQL work with SQLite-like API
   db = {
     get: (sql, params, callback) => {
-      const pgSql = sql.replace(/\?/g, (match, offset) => {
-        const index = sql.substring(0, offset).split('?').length;
-        return `$${index}`;
-      });
+      let paramIndex = 0;
+      const pgSql = sql.replace(/\?/g, () => `$${++paramIndex}`);
+      
+      console.log('PostgreSQL GET query:', pgSql, 'params:', params);
       
       pool.query(pgSql, params, (err, result) => {
-        if (err) return callback(err);
+        if (err) {
+          console.error('PostgreSQL GET error:', err);
+          return callback(err);
+        }
         callback(null, result.rows[0]);
       });
     },
     
     all: (sql, params, callback) => {
-      const pgSql = sql.replace(/\?/g, (match, offset) => {
-        const index = sql.substring(0, offset).split('?').length;
-        return `$${index}`;
-      });
+      let paramIndex = 0;
+      const pgSql = sql.replace(/\?/g, () => `$${++paramIndex}`);
+      
+      console.log('PostgreSQL ALL query:', pgSql, 'params:', params);
       
       pool.query(pgSql, params, (err, result) => {
-        if (err) return callback(err);
+        if (err) {
+          console.error('PostgreSQL ALL error:', err);
+          return callback(err);
+        }
         callback(null, result.rows);
       });
     },
     
     run: (sql, params, callback) => {
-      const pgSql = sql.replace(/\?/g, (match, offset) => {
-        const index = sql.substring(0, offset).split('?').length;
-        return `$${index}`;
-      });
+      let paramIndex = 0;
+      const pgSql = sql.replace(/\?/g, () => `$${++paramIndex}`);
+      
+      console.log('PostgreSQL RUN query:', pgSql, 'params:', params);
       
       pool.query(pgSql, params, (err, result) => {
-        if (err) return callback(err);
+        if (err) {
+          console.error('PostgreSQL RUN error:', err);
+          return callback(err);
+        }
         callback.call({ changes: result.rowCount }, null);
       });
     },
