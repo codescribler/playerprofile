@@ -188,29 +188,29 @@ class ProfileView {
         const mentalSkills = abilities.mental || {};
 
         // Technical Skills
-        this.setAbilityRating('ball-control', technicalSkills.ballControl?.rating || 5);
-        this.setAbilityRating('passing', technicalSkills.passing?.rating || 5);
-        this.setAbilityRating('shooting', technicalSkills.shooting?.rating || 5);
-        this.setAbilityRating('dribbling', technicalSkills.dribbling?.rating || 5);
-        this.setAbilityRating('first-touch', technicalSkills.firstTouch?.rating || 5);
-        this.setAbilityRating('crossing', technicalSkills.crossing?.rating || 5);
-        this.setAbilityRating('tackling', technicalSkills.tackling?.rating || 5);
-        this.setAbilityRating('heading', technicalSkills.heading?.rating || 5);
+        this.setAbilityRating('ball-control', technicalSkills.ballControl || 5);
+        this.setAbilityRating('passing', technicalSkills.passing || 5);
+        this.setAbilityRating('shooting', technicalSkills.shooting || 5);
+        this.setAbilityRating('dribbling', technicalSkills.dribbling || 5);
+        this.setAbilityRating('first-touch', technicalSkills.firstTouch || 5);
+        this.setAbilityRating('crossing', technicalSkills.crossing || 5);
+        this.setAbilityRating('tackling', technicalSkills.tackling || 5);
+        this.setAbilityRating('heading', technicalSkills.heading || 5);
 
         // Physical Skills
-        this.setAbilityRating('pace', physicalSkills.pace?.rating || 5);
-        this.setAbilityRating('strength', physicalSkills.strength?.rating || 5);
-        this.setAbilityRating('stamina', physicalSkills.stamina?.rating || 5);
-        this.setAbilityRating('agility', physicalSkills.agility?.rating || 5);
-        this.setAbilityRating('balance', physicalSkills.balance?.rating || 5);
-        this.setAbilityRating('jumping', physicalSkills.jumping?.rating || 5);
+        this.setAbilityRating('pace', physicalSkills.pace || 5);
+        this.setAbilityRating('strength', physicalSkills.strength || 5);
+        this.setAbilityRating('stamina', physicalSkills.stamina || 5);
+        this.setAbilityRating('agility', physicalSkills.agility || 5);
+        this.setAbilityRating('balance', physicalSkills.balance || 5);
+        this.setAbilityRating('jumping', physicalSkills.jumping || 5);
 
         // Mental Skills
-        this.setAbilityRating('decision-making', mentalSkills.decisionMaking?.rating || 5);
-        this.setAbilityRating('positioning', mentalSkills.positioning?.rating || 5);
-        this.setAbilityRating('concentration', mentalSkills.concentration?.rating || 5);
-        this.setAbilityRating('leadership', mentalSkills.leadership?.rating || 5);
-        this.setAbilityRating('communication', mentalSkills.communication?.rating || 5);
+        this.setAbilityRating('decision-making', mentalSkills.decisionMaking || 5);
+        this.setAbilityRating('positioning', mentalSkills.positioning || 5);
+        this.setAbilityRating('concentration', mentalSkills.concentration || 5);
+        this.setAbilityRating('leadership', mentalSkills.leadership || 5);
+        this.setAbilityRating('communication', mentalSkills.communication || 5);
     }
 
     setAbilityRating(abilityName, rating) {
@@ -451,8 +451,9 @@ class ProfileView {
     }
 
     editProfile() {
-        // Navigate back to main page and open edit form
-        window.location.href = `/?edit=${this.playerId}`;
+        // Navigate to the new form page for editing
+        sessionStorage.setItem('editPlayerData', JSON.stringify(this.playerData));
+        window.location.href = `player-form.html?mode=edit&id=${this.playerId}`;
     }
 
     async publishProfile() {
