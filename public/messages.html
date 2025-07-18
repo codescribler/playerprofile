@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Player Messages</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/png" href="images/playerprofilemanagerlogo.png">
+    <style>
+        .messages-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .messages-header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .messages-header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        .messages-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .message-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #3498db;
+        }
+        .message-card.unread {
+            border-left-color: #e74c3c;
+            background-color: #fef9f9;
+        }
+        .message-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        .sender-info {
+            flex: 1;
+        }
+        .sender-name {
+            font-weight: bold;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+        .sender-contact {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-top: 2px;
+        }
+        .message-date {
+            color: #7f8c8d;
+            font-size: 0.85rem;
+            text-align: right;
+        }
+        .message-content {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 10px;
+            line-height: 1.5;
+        }
+        .message-actions {
+            margin-top: 10px;
+            text-align: right;
+        }
+        .mark-read-btn {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .mark-read-btn:hover {
+            background-color: #219a52;
+        }
+        .mark-read-btn:disabled {
+            background-color: #95a5a6;
+            cursor: not-allowed;
+        }
+        .no-messages {
+            text-align: center;
+            color: #7f8c8d;
+            font-style: italic;
+            margin-top: 50px;
+        }
+        .loading {
+            text-align: center;
+            margin-top: 50px;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .stat-label {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+        .close-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #95a5a6;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .close-btn:hover {
+            background-color: #7f8c8d;
+        }
+        @media (max-width: 768px) {
+            .messages-container {
+                padding: 10px;
+            }
+            .message-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .message-date {
+                text-align: left;
+                margin-top: 5px;
+            }
+            .stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button onclick="window.close()" class="close-btn">Close</button>
+    
+    <div class="messages-container">
+        <div class="messages-header">
+            <h1>Messages for <span id="player-name">Player</span></h1>
+        </div>
+        
+        <div id="stats-container" class="stats" style="display: none;">
+            <div class="stat-item">
+                <div class="stat-number" id="total-messages">0</div>
+                <div class="stat-label">Total Messages</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="unread-messages">0</div>
+                <div class="stat-label">Unread Messages</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number" id="read-messages">0</div>
+                <div class="stat-label">Read Messages</div>
+            </div>
+        </div>
+        
+        <div id="loading" class="loading">Loading messages...</div>
+        <div id="no-messages" class="no-messages" style="display: none;">
+            <p>No messages yet.</p>
+            <p>When people contact this player through the public profile, messages will appear here.</p>
+        </div>
+        
+        <div id="messages-list" class="messages-list"></div>
+    </div>
+
+    <script src="messages.js"></script>
+</body>
+</html>
