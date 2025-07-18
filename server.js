@@ -266,7 +266,7 @@ app.put('/api/players/:id', authenticateToken, (req, res) => {
   }
   
   db.run(
-    'UPDATE players SET data = ? WHERE id = ? AND (user_id = ? OR ? = "admin")',
+    'UPDATE players SET data = ? WHERE id = ? AND (user_id = ? OR ? = \'admin\')',
     [JSON.stringify(playerData), req.params.id, req.user.id, req.user.role],
     function(err) {
       if (err) {
@@ -284,7 +284,7 @@ app.put('/api/players/:id', authenticateToken, (req, res) => {
 
 app.delete('/api/players/:id', authenticateToken, (req, res) => {
   db.run(
-    'DELETE FROM players WHERE id = ? AND (user_id = ? OR ? = "admin")',
+    'DELETE FROM players WHERE id = ? AND (user_id = ? OR ? = \'admin\')'
     [req.params.id, req.user.id, req.user.role],
     function(err) {
       if (err) {
@@ -304,7 +304,7 @@ app.post('/api/players/:id/publish', authenticateToken, (req, res) => {
   console.log('Publish request:', req.params.id, 'Published:', published, 'User:', req.user.username);
   
   db.get(
-    'SELECT * FROM players WHERE id = ? AND (user_id = ? OR ? = "admin")',
+    'SELECT * FROM players WHERE id = ? AND (user_id = ? OR ? = \'admin\')',
     [req.params.id, req.user.id, req.user.role],
     (err, row) => {
       if (err) {
@@ -429,7 +429,7 @@ app.post('/api/public/players/:id/message', (req, res) => {
 app.get('/api/players/:id/messages', authenticateToken, (req, res) => {
   // Check if user owns this player or is admin
   db.get(
-    'SELECT * FROM players WHERE id = ? AND (user_id = ? OR ? = "admin")',
+    'SELECT * FROM players WHERE id = ? AND (user_id = ? OR ? = \'admin\')',
     [req.params.id, req.user.id, req.user.role],
     (err, row) => {
       if (err) {
@@ -473,7 +473,7 @@ app.get('/api/players/unread-counts', authenticateToken, (req, res) => {
     `SELECT p.id as player_id, COUNT(m.id) as unread_count 
      FROM players p 
      LEFT JOIN messages m ON p.id = m.player_id AND m.read = FALSE 
-     WHERE p.user_id = ? OR ? = "admin"
+     WHERE p.user_id = ? OR ? = \'admin\'
      GROUP BY p.id`,
     [req.user.id, req.user.role],
     (err, rows) => {
