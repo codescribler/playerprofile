@@ -677,7 +677,7 @@ class PlayerProfileApp {
         const publishedUrlSection = player.metadata?.published ? 
             `<div class="published-url">
                 <label>Published Profile URL:</label>
-                <input type="text" readonly value="${window.location.origin}/public-profile.html?id=${player.playerId}" id="url-${player.playerId}">
+                <input type="text" readonly value="${window.location.origin}/profile-view.html?id=${player.playerId}" id="url-${player.playerId}">
                 <button class="copy-url-btn" onclick="app.copyUrl('url-${player.playerId}')">Copy URL</button>
             </div>` : '';
         
