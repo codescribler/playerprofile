@@ -6,6 +6,8 @@ const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+// Trigger deployment to use PostgreSQL database
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
