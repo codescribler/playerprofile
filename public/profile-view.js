@@ -130,9 +130,6 @@ class ProfileView {
             const profilePhoto = document.getElementById('profile-photo');
             const photoUrl = player.media.profilePhoto;
             
-            console.log('Profile photo URL:', photoUrl ? photoUrl.substring(0, 50) + '...' : 'null');
-            console.log('Photo URL type:', typeof photoUrl);
-            console.log('Starts with data:', photoUrl.startsWith('data:'));
             
             // Check if it's a base64 image or a file path
             if (photoUrl.startsWith('data:')) {

@@ -467,6 +467,7 @@ class PlayerProfileApp {
                 const errorData = await response.json();
                 console.error('Upload failed:', errorData.error);
                 this.showMessage(`Upload failed: ${errorData.error}`, 'error');
+                return; // Don't continue if upload failed
             }
         } catch (error) {
             console.error('Failed to upload photo:', error);
@@ -762,12 +763,6 @@ class PlayerProfileApp {
         let profilePhotoHtml = '';
         const photoUrl = player.media?.profilePhoto || player.profilePhotoUrl;
         
-        console.log('Player card photo URL:', photoUrl ? photoUrl.substring(0, 50) + '...' : 'null');
-        console.log('Photo URL type:', typeof photoUrl);
-        if (photoUrl) {
-            console.log('Starts with data:', photoUrl.startsWith('data:'));
-            console.log('Starts with /uploads:', photoUrl.startsWith('/uploads/'));
-        }
         
         if (photoUrl) {
             // Check if it's a base64 image or a file path

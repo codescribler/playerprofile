@@ -464,25 +464,39 @@ app.post('/api/messages/:id/read', authenticateToken, (req, res) => {
   );
 });
 
-app.post('/api/players/:id/media/upload', authenticateToken, upload.single('file'), (req, res) => {
+app.post('/api/players/:id/media/upload', authenticateToken, (req, res) => {
   console.log('Upload request received for player:', req.params.id);
-  console.log('File received:', req.file ? req.file.filename : 'No file');
+  console.log('Request headers:', req.headers);
+  console.log('Content-Type:', req.headers['content-type']);
   
-  if (!req.file) {
-    console.log('No file uploaded');
-    return res.status(400).json({ error: 'No file uploaded' });
-  }
+  upload.single('file')(req, res, (err) => {
+    if (err) {
+      console.error('Multer error:', err);
+      if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ error: 'File size too large. Max 10MB allowed.' });
+        }
+      }
+      return res.status(400).json({ error: err.message });
+    }
+    
+    console.log('File received:', req.file ? req.file.filename : 'No file');
+    
+    if (!req.file) {
+      console.log('No file uploaded');
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
   
   try {
     // Read the file and convert to base64 for persistent storage
     const filePath = path.join(__dirname, 'uploads', req.file.filename);
     const fileBuffer = fs.readFileSync(filePath);
     
-    // Check file size - limit to 1MB (1MB = ~1.37MB in base64)
-    const maxSize = 1024 * 1024; // 1MB
+    // Check file size - limit to 2MB (2MB = ~2.7MB in base64)
+    const maxSize = 2 * 1024 * 1024; // 2MB
     if (fileBuffer.length > maxSize) {
       fs.unlinkSync(filePath); // Clean up temp file
-      return res.status(400).json({ error: 'Image too large. Please use an image smaller than 1MB.' });
+      return res.status(400).json({ error: 'Image too large. Please use an image smaller than 2MB.' });
     }
     
     const base64Image = `data:${req.file.mimetype};base64,${fileBuffer.toString('base64')}`;
@@ -499,6 +513,7 @@ app.post('/api/players/:id/media/upload', authenticateToken, upload.single('file
     console.error('Error processing uploaded file:', error);
     res.status(500).json({ error: 'Error processing uploaded file' });
   }
+  });
 });
 
 app.get('/api/players/search', authenticateToken, (req, res) => {
