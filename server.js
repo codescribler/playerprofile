@@ -65,7 +65,7 @@ const upload = multer({
   }
 });
 
-const db = require('./database');
+const db = require('./database-config');
 
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
