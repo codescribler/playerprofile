@@ -164,17 +164,21 @@ class ModernProfileView {
             return;
         }
 
-        container.innerHTML = Object.entries(attributes).map(([key, value]) => `
+        container.innerHTML = Object.entries(attributes).map(([key, value]) => {
+            // Handle both new format (value.rating) and legacy format (value as number)
+            const rating = value.rating || value || 5;
+            return `
             <div class="attribute-item">
                 <span class="attribute-label">${this.formatAttributeName(key)}</span>
                 <div class="attribute-value">
-                    <span class="attribute-rating rating-${value.rating || 5}">${value.rating || 5}</span>
+                    <span class="attribute-rating rating-${rating}">${rating}</span>
                     <div class="attribute-bar">
-                        <div class="attribute-bar-fill" style="width: ${(value.rating || 5) * 5}%; background: ${this.getRatingColor(value.rating || 5)}"></div>
+                        <div class="attribute-bar-fill" style="width: ${rating * 5}%; background: ${this.getRatingColor(rating)}"></div>
                     </div>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     }
 
     displayPositions(player) {
@@ -346,8 +350,10 @@ class ModernProfileView {
         ['technical', 'physical', 'mental'].forEach(category => {
             if (abilities[category]) {
                 Object.values(abilities[category]).forEach(attr => {
-                    if (attr.rating) {
-                        total += attr.rating;
+                    // Handle both new format (attr.rating) and legacy format (attr as number)
+                    let rating = attr.rating || attr;
+                    if (typeof rating === 'number' && rating > 0) {
+                        total += rating;
                         count++;
                     }
                 });
@@ -363,10 +369,12 @@ class ModernProfileView {
         ['technical', 'physical', 'mental'].forEach(category => {
             if (abilities?.[category]) {
                 Object.entries(abilities[category]).forEach(([key, value]) => {
-                    if (value.rating) {
+                    // Handle both new format (value.rating) and legacy format (value as number)
+                    let rating = value.rating || value;
+                    if (typeof rating === 'number' && rating > 0) {
                         allAttributes.push({
                             name: key,
-                            rating: value.rating,
+                            rating: rating,
                             category: category
                         });
                     }
