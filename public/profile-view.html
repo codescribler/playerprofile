@@ -418,7 +418,7 @@
         
         /* Make tabs more prominent */
         .fm-tabs {
-            background: var(--fm-surface-light);
+            background: transparent;
             padding: var(--spacing-xs);
             border-radius: 8px;
             margin-bottom: 0;
@@ -426,8 +426,9 @@
         
         /* Tab container background */
         .tabs-container {
-            background: white;
+            background: #2c3e50;
             padding: var(--spacing-md) 0;
+            position: relative;
         }
         
         /* Sticky header wrapper */
@@ -503,11 +504,14 @@
             padding: var(--spacing-md) var(--spacing-lg);
             border-radius: 6px;
             transition: all var(--transition-fast);
+            color: #ffffff;
+            background: transparent;
         }
         
         .fm-tab:hover {
-            background: var(--fm-surface);
+            background: rgba(255, 255, 255, 0.1);
             transform: translateY(-1px);
+            color: #ffffff;
         }
         
         .fm-tab.active {
