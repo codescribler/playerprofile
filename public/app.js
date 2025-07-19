@@ -849,6 +849,12 @@ class PlayerProfileApp {
         card.className = 'player-card';
         
         const age = this.calculateAge(player.personalInfo?.dateOfBirth);
+        
+        // Debug height and weight data structure
+        console.log('Player:', player.personalInfo?.fullName);
+        console.log('Height data:', player.personalInfo?.height);
+        console.log('Weight data:', player.personalInfo?.weight);
+        
         // Handle height - check if it's a number or can be parsed as a number
         const heightValue = player.personalInfo?.height?.centimeters;
         const height = (heightValue !== undefined && heightValue !== null && heightValue !== '' && !isNaN(parseFloat(heightValue))) 
