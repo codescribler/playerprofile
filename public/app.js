@@ -852,17 +852,30 @@ class PlayerProfileApp {
         
         // Debug height and weight data structure
         console.log('Player:', player.personalInfo?.fullName);
+        console.log('Full personalInfo:', player.personalInfo);
         console.log('Height data:', player.personalInfo?.height);
         console.log('Weight data:', player.personalInfo?.weight);
         
-        // Handle height - check if it's a number or can be parsed as a number
-        const heightValue = player.personalInfo?.height?.centimeters;
+        // Check if height/weight might be stored directly on personalInfo
+        console.log('Direct heightCm:', player.personalInfo?.heightCm);
+        console.log('Direct weightKg:', player.personalInfo?.weightKg);
+        
+        // Handle height - check multiple possible data structures
+        let heightValue = player.personalInfo?.height?.centimeters;
+        // Fallback to direct properties if nested structure doesn't exist
+        if (!heightValue && player.personalInfo?.heightCm !== undefined) {
+            heightValue = player.personalInfo.heightCm;
+        }
         const height = (heightValue !== undefined && heightValue !== null && heightValue !== '' && !isNaN(parseFloat(heightValue))) 
             ? `${parseFloat(heightValue)} cm` 
             : 'N/A';
         
-        // Handle weight - check if it's a number or can be parsed as a number
-        const weightValue = player.personalInfo?.weight?.kilograms;
+        // Handle weight - check multiple possible data structures
+        let weightValue = player.personalInfo?.weight?.kilograms;
+        // Fallback to direct properties if nested structure doesn't exist
+        if (!weightValue && player.personalInfo?.weightKg !== undefined) {
+            weightValue = player.personalInfo.weightKg;
+        }
         const weight = (weightValue !== undefined && weightValue !== null && weightValue !== '' && !isNaN(parseFloat(weightValue))) 
             ? `${parseFloat(weightValue)} kg` 
             : 'N/A';

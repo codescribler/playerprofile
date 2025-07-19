@@ -80,6 +80,29 @@ function repairPlayerData(player) {
     };
   }
   
+  // Migrate old height/weight format to new format
+  if (player.personalInfo) {
+    // Check if we have old format (direct properties) but not new format
+    if (player.personalInfo.heightCm !== undefined && !player.personalInfo.height) {
+      console.log('Migrating height data for player:', player.personalInfo?.fullName);
+      const heightCm = parseFloat(player.personalInfo.heightCm) || 0;
+      player.personalInfo.height = {
+        centimeters: heightCm,
+        feet: Math.floor(heightCm / 30.48),
+        inches: Math.round((heightCm % 30.48) / 2.54)
+      };
+    }
+    
+    if (player.personalInfo.weightKg !== undefined && !player.personalInfo.weight) {
+      console.log('Migrating weight data for player:', player.personalInfo?.fullName);
+      const weightKg = parseFloat(player.personalInfo.weightKg) || 0;
+      player.personalInfo.weight = {
+        kilograms: weightKg,
+        pounds: Math.round(weightKg * 2.20462 * 10) / 10
+      };
+    }
+  }
+  
   return player;
 }
 
