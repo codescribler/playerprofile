@@ -1094,8 +1094,8 @@ class PlayerProfileApp {
     }
 
     viewPublicProfile(playerId) {
-        const publicUrl = `/profile-view.html?id=${playerId}`;
-        window.open(publicUrl, '_blank', 'width=800,height=1000,scrollbars=yes');
+        const publicUrl = `/profile-view-modern.html?id=${playerId}`;
+        window.open(publicUrl, '_blank', 'width=1200,height=800,scrollbars=yes');
     }
 
     showMessages(playerId) {
@@ -1122,12 +1122,12 @@ class PlayerProfileApp {
     }
 
     printProfile(playerId) {
-        const profileUrl = `/profile-view.html?id=${playerId}`;
-        window.open(profileUrl, '_blank', 'width=800,height=1000,scrollbars=yes');
+        const profileUrl = `/profile-view-modern.html?id=${playerId}`;
+        window.open(profileUrl, '_blank', 'width=1200,height=800,scrollbars=yes');
     }
 
     viewPlayerProfile(playerId) {
-        const profileUrl = `/profile-view.html?id=${playerId}`;
+        const profileUrl = `/profile-view-modern.html?id=${playerId}`;
         window.location.href = profileUrl;
     }
 

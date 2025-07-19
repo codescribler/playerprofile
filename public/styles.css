@@ -5,9 +5,235 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #f5f5f5;
-    color: #333;
+    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--fm-background, #f5f5f5);
+    color: var(--fm-text-primary, #333);
+}
+
+/* Override for FM styles when both are loaded */
+body:has(.fm-container) {
+    background-color: var(--fm-background);
+    color: var(--fm-text-primary);
+}
+
+/* Modern player card styles */
+.player-card {
+    background: var(--fm-surface, #fff);
+    border: 1px solid var(--fm-border, #ddd);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.player-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border-color: var(--fm-accent, #007acc);
+}
+
+.player-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--fm-accent, #007acc), var(--fm-success, #52b788));
+}
+
+.player-card .profile-photo,
+.player-card .profile-photo-placeholder {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--fm-accent, #007acc);
+    margin-bottom: 1rem;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.player-card .profile-photo-placeholder {
+    background: var(--fm-surface-light, #f8f9fa);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: var(--fm-text-muted, #666);
+    font-size: 1.5rem;
+}
+
+.player-card h3 {
+    color: var(--fm-text-primary, #333);
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 0.75rem;
+    text-align: center;
+}
+
+.player-card p {
+    color: var(--fm-text-secondary, #666);
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.player-card p strong {
+    color: var(--fm-text-primary, #333);
+    font-weight: 500;
+    min-width: 80px;
+}
+
+.player-card .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--fm-border, #eee);
+}
+
+.player-card .actions button {
+    padding: 0.5rem 0.75rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    flex: 1;
+    min-width: 70px;
+}
+
+.player-card .actions .edit-btn {
+    background: var(--fm-accent, #007acc);
+    color: white;
+}
+
+.player-card .actions .edit-btn:hover {
+    background: #0096c7;
+    transform: translateY(-1px);
+}
+
+.player-card .actions .delete-btn {
+    background: var(--fm-danger, #dc3545);
+    color: white;
+}
+
+.player-card .actions .delete-btn:hover {
+    background: #c82333;
+    transform: translateY(-1px);
+}
+
+.player-card .actions .publish-btn {
+    background: var(--fm-success, #28a745);
+    color: white;
+}
+
+.player-card .actions .publish-btn:hover {
+    background: #218838;
+    transform: translateY(-1px);
+}
+
+.player-card .actions .withdraw-btn {
+    background: var(--fm-warning, #ffc107);
+    color: #212529;
+}
+
+.player-card .actions .withdraw-btn:hover {
+    background: #e0a800;
+    transform: translateY(-1px);
+}
+
+.player-card .actions .public-btn,
+.player-card .actions .print-btn,
+.player-card .actions .messages-btn {
+    background: var(--fm-surface-light, #6c757d);
+    color: white;
+    border: 1px solid var(--fm-border, #adb5bd);
+}
+
+.player-card .actions .public-btn:hover,
+.player-card .actions .print-btn:hover,
+.player-card .actions .messages-btn:hover {
+    background: var(--fm-secondary, #5a6268);
+    transform: translateY(-1px);
+}
+
+.player-card .message-badge {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: var(--fm-danger, #dc3545);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+.player-card .published-url {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: var(--fm-background, #f8f9fa);
+    border-radius: 6px;
+    border: 1px solid var(--fm-border, #dee2e6);
+}
+
+.player-card .published-url label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--fm-text-secondary, #6c757d);
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.player-card .published-url input {
+    width: calc(100% - 80px);
+    padding: 0.375rem 0.5rem;
+    border: 1px solid var(--fm-border, #ced4da);
+    border-radius: 4px;
+    background: white;
+    font-size: 0.75rem;
+    color: var(--fm-text-secondary, #495057);
+}
+
+.player-card .published-url .copy-url-btn {
+    width: 70px;
+    margin-left: 0.5rem;
+    background: var(--fm-accent, #007acc);
+    color: white;
+    border: none;
+    padding: 0.375rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    cursor: pointer;
+}
+
+.player-card .published-url .copy-url-btn:hover {
+    background: #0096c7;
 }
 
 header {
