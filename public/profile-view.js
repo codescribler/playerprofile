@@ -96,9 +96,9 @@ class ModernProfileView {
         document.getElementById('player-weight').textContent = this.getWeight(player.personalInfo);
         document.getElementById('player-foot').textContent = player.personalInfo?.preferredFoot || 'Unknown';
 
-        // Calculate and display overall rating
-        const overallRating = this.calculateOverallRating(player.abilities);
-        document.getElementById('overall-rating').textContent = overallRating;
+        // Calculate and display top attribute
+        const topAttribute = this.getTopAttribute(player.abilities);
+        document.getElementById('overall-rating').textContent = topAttribute;
     }
 
     displayOverview(player) {
@@ -341,26 +341,52 @@ class ModernProfileView {
         return '--';
     }
 
-    calculateOverallRating(abilities) {
-        if (!abilities) return '--';
+    getTopAttribute(abilities) {
+        if (!abilities) return 'PLAYER';
         
-        let total = 0;
-        let count = 0;
+        let topAttribute = null;
+        let topRating = 0;
         
         ['technical', 'physical', 'mental'].forEach(category => {
             if (abilities[category]) {
-                Object.values(abilities[category]).forEach(attr => {
-                    // Handle both new format (attr.rating) and legacy format (attr as number)
-                    let rating = attr.rating || attr;
-                    if (typeof rating === 'number' && rating > 0) {
-                        total += rating;
-                        count++;
+                Object.entries(abilities[category]).forEach(([key, value]) => {
+                    // Handle both new format (value.rating) and legacy format (value as number)
+                    let rating = value.rating || value;
+                    if (typeof rating === 'number' && rating > topRating) {
+                        topRating = rating;
+                        topAttribute = key;
                     }
                 });
             }
         });
         
-        return count > 0 ? Math.round(total / count) : '--';
+        return topAttribute ? this.formatAttributeForBadge(topAttribute) : 'PLAYER';
+    }
+
+    formatAttributeForBadge(attributeName) {
+        const attributeMap = {
+            'ballControl': 'TECHNICAL',
+            'passing': 'PASSING', 
+            'shooting': 'SHOOTING',
+            'dribbling': 'DRIBBLING',
+            'firstTouch': 'TOUCH',
+            'crossing': 'CROSSING',
+            'tackling': 'TACKLING',
+            'heading': 'HEADING',
+            'pace': 'PACE',
+            'strength': 'STRENGTH',
+            'stamina': 'STAMINA',
+            'agility': 'AGILITY',
+            'balance': 'BALANCE',
+            'jumping': 'JUMPING',
+            'decisionMaking': 'VISION',
+            'positioning': 'POSITIONING',
+            'concentration': 'FOCUS',
+            'leadership': 'LEADER',
+            'communication': 'VOCAL'
+        };
+        
+        return attributeMap[attributeName] || attributeName.toUpperCase();
     }
 
     getTopAttributes(abilities, count = 6) {
