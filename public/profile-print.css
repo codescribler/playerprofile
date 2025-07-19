@@ -707,6 +707,11 @@ body {
         display: none !important;
     }
     
+    /* Show print-only elements in print */
+    .print-only {
+        display: block !important;
+    }
+    
     /* Show contact QR emphasis in print */
     .contact-qr-emphasis {
         display: block !important;
@@ -717,9 +722,17 @@ body {
         background: #f8f9fa !important;
     }
     
+    .contact-qr-emphasis h4 {
+        font-size: 12pt !important;
+        font-weight: 700 !important;
+        color: #000 !important;
+        margin-bottom: 10px !important;
+    }
+    
     .contact-instruction {
-        font-size: 10pt !important;
-        color: #333 !important;
+        font-size: 11pt !important;
+        color: #000 !important;
+        font-weight: 600 !important;
         margin: 10px 0 !important;
     }
     

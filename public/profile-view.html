@@ -357,6 +357,13 @@
             line-height: 1.6;
         }
         
+        /* Hide print-only elements on screen */
+        @media screen {
+            .print-only {
+                display: none !important;
+            }
+        }
+        
         .contact-form {
             display: grid;
             gap: var(--spacing-md);
@@ -886,9 +893,10 @@
 
         <div class="tab-content" id="contact-tab" style="display: none;" data-mobile-title="Contact">
             <div class="contact-section">
-                <div class="contact-qr-emphasis">
-                    <h3 class="fm-card-title fm-mb-md">Contact This Player</h3>
-                    <p class="contact-instruction">To contact this player, please scan the QR code at the bottom of the printed page or use the form below on the web version.</p>
+                <h3 class="fm-card-title fm-mb-lg">Send Message to Player</h3>
+                <div class="contact-qr-emphasis print-only">
+                    <h4>To Contact This Player</h4>
+                    <p class="contact-instruction">Please scan the QR code at the bottom of this page to send a message.</p>
                 </div>
                 <form id="contact-form" class="contact-form">
                     <div class="contact-form-row">
