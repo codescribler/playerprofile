@@ -69,6 +69,7 @@ class ModernProfileView {
     setupSmoothScrollNav() {
         const tabs = document.querySelectorAll('.fm-tab');
         const sections = document.querySelectorAll('.scroll-section');
+        let isTabClick = false;
         
         // Handle tab clicks
         tabs.forEach(tab => {
@@ -76,6 +77,14 @@ class ModernProfileView {
                 const targetId = tab.dataset.section;
                 const targetSection = document.getElementById(targetId);
                 if (targetSection) {
+                    // Immediately update active tab
+                    tabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Set flag to prevent observer from changing active tab
+                    isTabClick = true;
+                    setTimeout(() => { isTabClick = false; }, 1000);
+                    
                     const stickyHeader = document.getElementById('sticky-header');
                     const headerHeight = stickyHeader ? stickyHeader.offsetHeight : 0;
                     const targetPosition = targetSection.offsetTop - headerHeight - 20;
@@ -90,11 +99,13 @@ class ModernProfileView {
         // Update active tab on scroll
         const observerOptions = {
             root: null,
-            rootMargin: '-20% 0px -70% 0px',
+            rootMargin: '-30% 0px -60% 0px',
             threshold: 0
         };
         
         const observer = new IntersectionObserver((entries) => {
+            if (isTabClick) return; // Don't update during tab click navigation
+            
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     const id = entry.target.id;
