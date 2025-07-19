@@ -7,10 +7,11 @@
 
 body {
     font-family: 'Inter', 'Arial', sans-serif;
-    font-size: 9pt;
+    font-size: 10pt;
     line-height: 1.4;
-    color: #1a1a1a;
+    color: #000;
     background-color: #fff !important;
+    font-weight: 500;
 }
 
 /* Container layout */
@@ -33,11 +34,16 @@ body {
 
 .header-content {
     display: flex;
-    justify-content: space-between;
     align-items: flex-start;
     gap: 20px;
     page-break-inside: avoid;
     page-break-after: avoid;
+}
+
+/* Profile photo on the left */
+.profile-photo {
+    flex-shrink: 0;
+    order: -1;
 }
 
 .player-identity {
@@ -46,11 +52,11 @@ body {
 }
 
 .player-identity h1 {
-    font-size: 22pt;
-    font-weight: 300;
-    margin-bottom: 3px;
+    font-size: 24pt;
+    font-weight: 700;
+    margin-bottom: 5px;
     letter-spacing: -1px;
-    color: #1a1a1a;
+    color: #000;
     line-height: 1;
 }
 
@@ -64,23 +70,24 @@ body {
 }
 
 .player-tagline {
-    font-size: 11pt;
-    font-weight: 600;
-    color: #3498db;
-    margin-bottom: 3px;
+    font-size: 12pt;
+    font-weight: 700;
+    color: #2980b9;
+    margin-bottom: 5px;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
 .player-basics {
-    font-size: 9pt;
-    color: #666;
+    font-size: 10pt;
+    color: #333;
     display: flex;
     gap: 10px;
     flex-wrap: wrap;
-    margin-top: 5px;
+    margin-top: 8px;
     page-break-inside: avoid;
     max-width: 100%;
+    font-weight: 500;
 }
 
 .player-basics span {
@@ -293,11 +300,12 @@ body {
 
 .strengths-column li,
 .weaknesses-column li {
-    font-size: 8pt;
+    font-size: 9pt;
     margin-bottom: 3px;
     padding-left: 10px;
     position: relative;
-    color: #555;
+    color: #333;
+    font-weight: 500;
 }
 
 .strengths-column li:before {
@@ -398,11 +406,11 @@ body {
 }
 
 .info-column h4 {
-    font-size: 8pt;
+    font-size: 9pt;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
-    color: #999;
+    color: #333;
     margin-bottom: 8px;
 }
 
@@ -487,14 +495,15 @@ body {
 }
 
 .print-header-logo img {
-    height: 40px;
-    max-width: 200px;
+    height: 60px;
+    max-width: 250px;
     object-fit: contain;
 }
 
 .print-date {
-    font-size: 8pt;
-    color: #999;
+    font-size: 9pt;
+    color: #333;
+    font-weight: 500;
 }
 
 /* Minimalist Footer Design */
@@ -521,8 +530,8 @@ body {
 }
 
 .footer-logo img {
-    height: 25px;
-    max-width: 150px;
+    height: 35px;
+    max-width: 180px;
     object-fit: contain;
 }
 
@@ -536,9 +545,10 @@ body {
 }
 
 .footer-info {
-    font-size: 8pt;
-    color: #666;
+    font-size: 9pt;
+    color: #333;
     line-height: 1.3;
+    font-weight: 500;
 }
 
 .footer-info p {
@@ -654,9 +664,10 @@ body {
         margin: 0;
         padding: 0;
         background: white !important;
-        font-size: 9pt;
+        font-size: 10pt;
         line-height: 1.4;
-        color: #1a1a1a !important;
+        color: #000 !important;
+        font-weight: 500;
     }
     
     .print-container {
@@ -671,10 +682,11 @@ body {
     
     /* Profile photo adjustments */
     .profile-photo {
-        width: 80px !important;
-        height: 100px !important;
-        border: 1px solid #e0e0e0 !important;
-        filter: grayscale(20%) !important;
+        width: 90px !important;
+        height: 110px !important;
+        border: 1px solid #333 !important;
+        filter: grayscale(10%) !important;
+        margin-right: 20px !important;
     }
     
     .profile-photo-placeholder {
@@ -771,6 +783,47 @@ body {
         padding: 0 !important;
         margin-bottom: 15px !important;
         page-break-after: avoid !important;
+    }
+    
+    /* Reorganize print header layout */
+    .profile-header-content {
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 20px !important;
+    }
+    
+    .profile-photo-container {
+        flex-shrink: 0 !important;
+        order: -1 !important;
+        margin-right: 20px !important;
+    }
+    
+    .profile-info {
+        flex: 1 !important;
+        margin-top: 0 !important;
+    }
+    
+    .profile-name {
+        margin-top: 0 !important;
+        margin-bottom: 10px !important;
+    }
+    
+    .overall-rating {
+        position: relative !important;
+        bottom: auto !important;
+        right: auto !important;
+        margin-top: 10px !important;
+        display: inline-flex !important;
+    }
+    
+    .profile-details {
+        font-size: 11pt !important;
+        color: #000 !important;
+        font-weight: 500 !important;
+    }
+    
+    .profile-detail {
+        color: #000 !important;
     }
     
     .showcase-header {
@@ -899,15 +952,16 @@ body {
     
     .fm-stat-label {
         font-size: 9pt !important;
-        color: #666 !important;
+        color: #000 !important;
         text-transform: uppercase !important;
         letter-spacing: 0.5px !important;
+        font-weight: 600 !important;
     }
     
     .fm-stat-value {
-        font-size: 9pt !important;
-        font-weight: 600 !important;
-        color: #333 !important;
+        font-size: 10pt !important;
+        font-weight: 700 !important;
+        color: #000 !important;
     }
     
     /* Cards and sections */
