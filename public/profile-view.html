@@ -282,6 +282,38 @@
             .profile-details {
                 justify-content: center;
             }
+            
+            /* Mobile-only: Hide tabs and show all content stacked */
+            .fm-tabs {
+                display: none;
+            }
+            
+            .tab-content {
+                display: block !important;
+                margin-bottom: var(--spacing-xl);
+            }
+            
+            /* Ensure proper spacing between sections on mobile */
+            #overview-tab,
+            #attributes-tab,
+            #positions-tab,
+            #history-tab,
+            #contact-tab {
+                display: block !important;
+                margin-bottom: var(--spacing-xl);
+            }
+            
+            /* Add section headers on mobile since tabs are hidden */
+            .tab-content::before {
+                content: attr(data-mobile-title);
+                display: block;
+                font-size: 1.5rem;
+                font-weight: 700;
+                color: var(--fm-text-primary);
+                margin-bottom: var(--spacing-lg);
+                padding-bottom: var(--spacing-sm);
+                border-bottom: 2px solid var(--fm-accent);
+            }
         }
     </style>
 </head>
@@ -347,7 +379,7 @@
             <div class="fm-tab" data-tab="contact">Contact</div>
         </div>
 
-        <div class="tab-content" id="overview-tab">
+        <div class="tab-content" id="overview-tab" data-mobile-title="Overview">
             <div class="fm-grid fm-grid-2">
                 <div class="fm-card">
                     <div class="fm-card-header">
@@ -421,7 +453,7 @@
             </div>
         </div>
 
-        <div class="tab-content" id="attributes-tab" style="display: none;">
+        <div class="tab-content" id="attributes-tab" style="display: none;" data-mobile-title="Attributes">
             <div class="fm-card">
                 <div class="fm-card-header">
                     <h3 class="fm-card-title">Technical Attributes</h3>
@@ -456,7 +488,7 @@
             </div>
         </div>
 
-        <div class="tab-content" id="positions-tab" style="display: none;">
+        <div class="tab-content" id="positions-tab" style="display: none;" data-mobile-title="Positions">
             <div class="fm-card">
                 <div class="fm-card-header">
                     <h3 class="fm-card-title">Position Map</h3>
@@ -480,7 +512,7 @@
             </div>
         </div>
 
-        <div class="tab-content" id="history-tab" style="display: none;">
+        <div class="tab-content" id="history-tab" style="display: none;" data-mobile-title="History">
             <div class="fm-card">
                 <div class="fm-card-header">
                     <h3 class="fm-card-title">Playing History</h3>
@@ -491,7 +523,7 @@
             </div>
         </div>
 
-        <div class="tab-content" id="contact-tab" style="display: none;">
+        <div class="tab-content" id="contact-tab" style="display: none;" data-mobile-title="Contact">
             <div class="contact-section">
                 <h3 class="fm-card-title fm-mb-lg">Send Message to Player</h3>
                 <form id="contact-form" class="contact-form">
