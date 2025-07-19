@@ -893,7 +893,7 @@ class PlayerProfileApp {
             if (typeof player.playingInfo.primaryPosition === 'string') {
                 positionsDisplay = player.playingInfo.primaryPosition;
             } else {
-                positionsDisplay = `${player.playingInfo.primaryPosition.position} (${player.playingInfo.primaryPosition.suitability}%)`;
+                positionsDisplay = player.playingInfo.primaryPosition.position;
             }
         } else {
             positionsDisplay = 'N/A';
@@ -904,7 +904,7 @@ class PlayerProfileApp {
                 if (typeof pos === 'string') {
                     return pos;
                 } else {
-                    return `${pos.position} (${pos.suitability}%)`;
+                    return pos.position;
                 }
             }).join(', ');
             positionsDisplay += ` | ${secondaryPositions}`;
@@ -929,7 +929,7 @@ class PlayerProfileApp {
             <p><strong>Age:</strong> ${age}</p>
             <p><strong>Height:</strong> ${height}</p>
             <p><strong>Weight:</strong> ${weight}</p>
-            <p><strong>Preferred Foot:</strong> ${this.formatFootPreference(player.personalInfo?.preferredFoot, player.personalInfo?.weakFootStrength)}</p>
+            <p><strong>Preferred Foot:</strong> ${player.personalInfo?.preferredFoot ? player.personalInfo.preferredFoot.charAt(0).toUpperCase() + player.personalInfo.preferredFoot.slice(1) : 'N/A'}</p>
             <p><strong>Team:</strong> ${
                 player.playingInfo?.currentTeam?.clubName || 
                 (typeof player.playingInfo?.currentTeam === 'string' ? player.playingInfo.currentTeam : 'N/A')
