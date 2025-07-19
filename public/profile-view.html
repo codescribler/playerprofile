@@ -21,6 +21,11 @@
         
         /* Print-specific tab content display */
         @media print {
+            /* Hide sticky header in print */
+            .sticky-header-wrapper {
+                display: none !important;
+            }
+            
             .tab-content {
                 display: block !important;
                 margin-bottom: var(--spacing-xl);
@@ -419,15 +424,44 @@
             margin-bottom: var(--spacing-lg);
         }
         
-        /* Sticky navigation container */
-        .sticky-nav-container {
+        /* Sticky header wrapper */
+        .sticky-header-wrapper {
             position: sticky;
             top: 0;
             z-index: 100;
             background: white;
-            padding-top: var(--spacing-md);
-            margin-top: calc(-1 * var(--spacing-md));
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Compact profile header when sticky */
+        .sticky-header-wrapper .profile-header {
+            margin-bottom: 0;
+            padding: var(--spacing-md) 0;
+            transition: padding 0.3s ease;
+        }
+        
+        .sticky-header-wrapper.scrolled .profile-header {
+            padding: var(--spacing-sm) 0;
+        }
+        
+        .sticky-header-wrapper.scrolled .profile-photo,
+        .sticky-header-wrapper.scrolled .profile-photo-placeholder {
+            width: 60px;
+            height: 60px;
+        }
+        
+        .sticky-header-wrapper.scrolled .profile-name {
+            font-size: 1.5rem;
+        }
+        
+        .sticky-header-wrapper.scrolled .profile-details {
+            font-size: 0.875rem;
+        }
+        
+        .sticky-header-wrapper.scrolled .overall-rating {
+            width: 50px;
+            height: 50px;
+            font-size: 1.2rem;
         }
         
         .fm-tab {
@@ -621,47 +655,46 @@
         </div>
     </div>
 
-    <div class="profile-header">
-        <div class="fm-container">
-            <div class="profile-header-content">
-                <div class="profile-photo-container">
-                    <div id="profile-photo-wrapper">
-                        <!-- Photo will be inserted here -->
+    <div class="sticky-header-wrapper" id="sticky-header">
+        <div class="profile-header">
+            <div class="fm-container">
+                <div class="profile-header-content">
+                    <div class="profile-photo-container">
+                        <div id="profile-photo-wrapper">
+                            <!-- Photo will be inserted here -->
+                        </div>
+                        <div class="overall-rating" id="overall-rating">--</div>
                     </div>
-                    <div class="overall-rating" id="overall-rating">--</div>
-                </div>
-                <div class="profile-info">
-                    <h1 class="profile-name" id="player-name">Loading...</h1>
-                    <div class="profile-details">
-                        <div class="profile-detail">
-                            <span id="player-age">--</span> years old
-                        </div>
-                        <div class="profile-detail">
-                            <span id="player-nationality">--</span>
-                        </div>
-                        <div class="profile-detail">
-                            <span id="player-position">--</span>
-                        </div>
-                        <div class="profile-detail">
-                            <span id="player-height">--</span> cm
-                        </div>
-                        <div class="profile-detail">
-                            <span id="player-weight">--</span> kg
-                        </div>
-                        <div class="profile-detail">
-                            <span id="player-foot">--</span> Footed
-                        </div>
-                        <div class="profile-detail" id="player-location-wrapper" style="display: none;">
-                            <span id="player-location">--</span>
+                    <div class="profile-info">
+                        <h1 class="profile-name" id="player-name">Loading...</h1>
+                        <div class="profile-details">
+                            <div class="profile-detail">
+                                <span id="player-age">--</span> years old
+                            </div>
+                            <div class="profile-detail">
+                                <span id="player-nationality">--</span>
+                            </div>
+                            <div class="profile-detail">
+                                <span id="player-position">--</span>
+                            </div>
+                            <div class="profile-detail">
+                                <span id="player-height">--</span> cm
+                            </div>
+                            <div class="profile-detail">
+                                <span id="player-weight">--</span> kg
+                            </div>
+                            <div class="profile-detail">
+                                <span id="player-foot">--</span> Footed
+                            </div>
+                            <div class="profile-detail" id="player-location-wrapper" style="display: none;">
+                                <span id="player-location">--</span>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <div class="fm-container">
-        <div class="sticky-nav-container">
+        <div class="fm-container">
             <div class="fm-tabs" id="profile-tabs">
                 <div class="fm-tab active" data-section="overview-section">Overview</div>
                 <div class="fm-tab" data-section="attributes-section">Attributes</div>
@@ -670,6 +703,9 @@
                 <div class="fm-tab" data-section="contact-section">Contact</div>
             </div>
         </div>
+    </div>
+
+    <div class="fm-container">
 
         <div class="scroll-section" id="overview-section" data-mobile-title="Overview" data-print-title="Player Overview">
             <h2 class="section-heading">Overview</h2>

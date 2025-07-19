@@ -17,6 +17,7 @@ class ModernProfileView {
         await this.checkOwnership();
         await this.loadPlayerData();
         this.setupEventListeners();
+        this.setupStickyHeaderScroll();
         
         // Generate QR code after a small delay to ensure library is loaded
         setTimeout(() => {
@@ -75,8 +76,9 @@ class ModernProfileView {
                 const targetId = tab.dataset.section;
                 const targetSection = document.getElementById(targetId);
                 if (targetSection) {
-                    const navHeight = document.querySelector('.sticky-nav-container').offsetHeight;
-                    const targetPosition = targetSection.offsetTop - navHeight - 20;
+                    const stickyHeader = document.getElementById('sticky-header');
+                    const headerHeight = stickyHeader ? stickyHeader.offsetHeight : 0;
+                    const targetPosition = targetSection.offsetTop - headerHeight - 20;
                     window.scrollTo({
                         top: targetPosition,
                         behavior: 'smooth'
@@ -108,6 +110,24 @@ class ModernProfileView {
         
         sections.forEach(section => {
             observer.observe(section);
+        });
+    }
+    
+    setupStickyHeaderScroll() {
+        const stickyHeader = document.getElementById('sticky-header');
+        let lastScroll = 0;
+        
+        window.addEventListener('scroll', () => {
+            const currentScroll = window.pageYOffset;
+            
+            // Add 'scrolled' class when scrolled down
+            if (currentScroll > 100) {
+                stickyHeader.classList.add('scrolled');
+            } else {
+                stickyHeader.classList.remove('scrolled');
+            }
+            
+            lastScroll = currentScroll;
         });
     }
     
