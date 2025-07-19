@@ -737,12 +737,20 @@ body {
         background: white !important;
         padding: 0 !important;
         margin-bottom: 15px !important;
+        page-break-after: avoid !important;
     }
     
     .showcase-header {
         border-bottom: 3px solid #1a1a1a !important;
         background: white !important;
         page-break-after: avoid !important;
+        margin-bottom: 10px !important;
+    }
+    
+    /* Ensure overview content starts right after header */
+    #overview-tab {
+        page-break-before: avoid !important;
+        margin-top: 0 !important;
     }
     
     .overall-rating {
@@ -768,28 +776,136 @@ body {
         color: #666 !important;
     }
     
+    /* Fix attribute ratings - no black backgrounds for print */
+    .attribute-rating,
+    .rating-value,
+    .ability-value {
+        background: transparent !important;
+        color: #333 !important;
+        border: 1px solid #333 !important;
+        font-weight: 700 !important;
+    }
+    
+    /* Remove all colored backgrounds from ratings */
+    .rating-20, .rating-19, .rating-18, .rating-17, .rating-16,
+    .rating-15, .rating-14, .rating-13, .rating-12, .rating-11,
+    .rating-10, .rating-9, .rating-8, .rating-7, .rating-6,
+    .rating-5, .rating-4, .rating-3, .rating-2, .rating-1 {
+        background: transparent !important;
+        color: #333 !important;
+    }
+    
+    /* Remove elite rating effects for print */
+    .attribute-rating.elite-rating,
+    .rating-10.elite-rating,
+    .rating-9.elite-rating {
+        background: transparent !important;
+        box-shadow: none !important;
+        animation: none !important;
+        transform: none !important;
+        border: 2px solid #333 !important;
+    }
+    
+    /* Hide attribute bars in print */
+    .attribute-bar {
+        display: none !important;
+    }
+    
+    /* Key attributes specific styling */
+    .key-attribute-item {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 6px 0 !important;
+        margin-bottom: 0 !important;
+        border-bottom: 1px solid #e0e0e0 !important;
+    }
+    
+    .key-attribute-item:last-child {
+        border-bottom: none !important;
+    }
+    
+    /* Ensure attribute items display properly */
+    .attribute-item {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        padding: 6px !important;
+        margin-bottom: 4px !important;
+        border: 1px solid #e0e0e0 !important;
+        background: white !important;
+    }
+    
+    .attribute-label {
+        font-size: 9pt !important;
+        color: #666 !important;
+    }
+    
+    .attribute-value {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+    }
+    
+    /* Show stats properly in print */
+    .fm-stat {
+        display: flex !important;
+        justify-content: space-between !important;
+        padding: 6px 0 !important;
+        border-bottom: 1px solid #e0e0e0 !important;
+    }
+    
+    .fm-stat-label {
+        font-size: 9pt !important;
+        color: #666 !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+    }
+    
+    .fm-stat-value {
+        font-size: 9pt !important;
+        font-weight: 600 !important;
+        color: #333 !important;
+    }
+    
     /* Cards and sections */
     .fm-card {
-        border: none !important;
+        border: 1px solid #e0e0e0 !important;
         margin-bottom: 12px !important;
         background: white !important;
         box-shadow: none !important;
-        padding: 0 !important;
+        padding: 10px !important;
     }
     
     .fm-card-header {
-        border-bottom: none !important;
+        border-bottom: 1px solid #e0e0e0 !important;
         background: white !important;
-        padding: 0 !important;
+        padding: 0 0 8px 0 !important;
         margin-bottom: 10px !important;
     }
     
+    /* Show card bodies */
+    .fm-card-body {
+        display: block !important;
+        padding: 0 !important;
+    }
+    
     /* Lists and stats */
-    .fm-list li,
-    .fm-stat {
-        border-bottom: 1px solid #eee !important;
+    .fm-list li {
         background: white !important;
         padding: 4px 0 !important;
+        list-style: none !important;
+        margin-bottom: 4px !important;
+    }
+    
+    /* Ensure grid layouts work in print */
+    .fm-grid {
+        display: grid !important;
+        gap: 15px !important;
+    }
+    
+    .fm-grid-2 {
+        grid-template-columns: 1fr 1fr !important;
     }
     
     /* Position map */
