@@ -1,7 +1,11 @@
 // Modern Profile View JavaScript
 class ModernProfileView {
     constructor() {
-        this.playerId = new URLSearchParams(window.location.search).get('id');
+        const urlParams = new URLSearchParams(window.location.search);
+        this.playerId = urlParams.get('id');
+        this.shouldPrint = urlParams.get('print') === 'true';
+        this.isOwner = false; // Will be determined after loading player data
+        
         if (!this.playerId) {
             this.showError('No player ID provided');
             return;
@@ -10,9 +14,41 @@ class ModernProfileView {
     }
 
     async init() {
+        await this.checkOwnership();
         await this.loadPlayerData();
         this.setupEventListeners();
-        this.generateQRCode();
+        
+        // Generate QR code after a small delay to ensure library is loaded
+        setTimeout(() => {
+            this.generateQRCode();
+        }, 100);
+        
+        // Auto-trigger print if print parameter is set
+        if (this.shouldPrint) {
+            setTimeout(() => {
+                window.print();
+            }, 1000); // Increased delay to ensure QR code is generated
+        }
+    }
+    
+    async checkOwnership() {
+        // Check if user is logged in and owns this profile
+        const token = localStorage.getItem('token');
+        if (token) {
+            try {
+                const response = await fetch(`/api/players/${this.playerId}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (response.ok) {
+                    this.isOwner = true;
+                }
+            } catch (error) {
+                // Not owner or not logged in
+                this.isOwner = false;
+            }
+        }
     }
 
     setupEventListeners() {
@@ -126,6 +162,14 @@ class ModernProfileView {
         // Strengths and weaknesses
         this.displayList('player-strengths', player.playingStyle?.strengths);
         this.displayList('player-weaknesses', player.playingStyle?.weaknesses);
+        
+        // Add location and representative teams info
+        this.displayAdditionalInfo(player);
+        
+        // Add contact info for print version if owner
+        if (this.isOwner) {
+            this.displayContactInfoForPrint(player);
+        }
     }
 
     displayKeyAttributes(abilities) {
@@ -584,42 +628,279 @@ class ModernProfileView {
         `;
     }
 
+    displayAdditionalInfo(player) {
+        // Check if we need to add the additional info card
+        const hasLocation = player.playingInfo?.basedLocation;
+        const hasRepTeams = player.playingInfo?.representativeTeams;
+        const hasAwards = player.playingInfo?.trophiesAwards?.length > 0;
+        
+        if (!hasLocation && !hasRepTeams && !hasAwards) {
+            return;
+        }
+        
+        // Find or create the additional info card
+        let additionalCard = document.getElementById('additional-info-card');
+        if (!additionalCard) {
+            // Create the card after the overview cards
+            const overviewTab = document.getElementById('overview-tab');
+            const cardHtml = `
+                <div id="additional-info-card" class="fm-card fm-mt-lg">
+                    <div class="fm-card-header">
+                        <h3 class="fm-card-title">Additional Information</h3>
+                    </div>
+                    <div class="fm-card-body" id="additional-info-content">
+                    </div>
+                </div>
+            `;
+            overviewTab.insertAdjacentHTML('beforeend', cardHtml);
+            additionalCard = document.getElementById('additional-info-card');
+        }
+        
+        const content = document.getElementById('additional-info-content');
+        let html = '';
+        
+        // Location - always show if available (public info)
+        if (hasLocation) {
+            html += `
+                <div class="fm-stat">
+                    <span class="fm-stat-label">Based In</span>
+                    <span class="fm-stat-value">${player.playingInfo.basedLocation}</span>
+                </div>
+            `;
+        }
+        
+        // Representative Teams
+        if (hasRepTeams) {
+            const district = player.playingInfo.representativeTeams?.district;
+            const county = player.playingInfo.representativeTeams?.county;
+            
+            if (district?.selected && district.selected !== '') {
+                const districtText = this.getRepTeamText(district.selected, district.season);
+                html += `
+                    <div class="fm-stat">
+                        <span class="fm-stat-label">District Team</span>
+                        <span class="fm-stat-value">${districtText}</span>
+                    </div>
+                `;
+            }
+            
+            if (county?.selected && county.selected !== '') {
+                const countyText = this.getRepTeamText(county.selected, county.season);
+                html += `
+                    <div class="fm-stat">
+                        <span class="fm-stat-label">County Team</span>
+                        <span class="fm-stat-value">${countyText}</span>
+                    </div>
+                `;
+            }
+        }
+        
+        // Trophies and Awards
+        if (hasAwards) {
+            const awardsHtml = player.playingInfo.trophiesAwards.map(award => {
+                const season = award.season ? ` (${award.season})` : '';
+                return `<li>${award.title}${season}</li>`;
+            }).join('');
+            
+            html += `
+                <div class="fm-stat" style="align-items: flex-start;">
+                    <span class="fm-stat-label" style="min-width: 120px;">Trophies & Awards</span>
+                    <ul class="fm-list" style="margin: 0; padding-left: 20px;">
+                        ${awardsHtml}
+                    </ul>
+                </div>
+            `;
+        }
+        
+        content.innerHTML = html;
+    }
+    
+    getRepTeamText(selected, season) {
+        let text = '';
+        switch (selected) {
+            case 'yes':
+                text = '✓ Selected';
+                break;
+            case 'no':
+                text = '✗ Not Selected';
+                break;
+            case 'trials':
+                text = '• Trials Attended';
+                break;
+            default:
+                return '--';
+        }
+        
+        if (season && (selected === 'yes' || selected === 'trials')) {
+            text += ` (${season})`;
+        }
+        
+        return text;
+    }
+
+    displayContactInfoForPrint(player) {
+        // Check if any contact info exists
+        const hasPlayerContact = player.contactInfo?.player?.phone || player.contactInfo?.player?.email;
+        const hasGuardianContact = player.contactInfo?.guardian?.name || 
+                                  player.contactInfo?.guardian?.phone || 
+                                  player.contactInfo?.guardian?.email;
+        
+        // Only show if we have some contact data
+        if (!hasPlayerContact && !hasGuardianContact) {
+            return;
+        }
+        
+        // Only show contact info in print version for profile owner
+        const contactCard = document.createElement('div');
+        contactCard.className = 'fm-card fm-mt-lg print-only-contact';
+        contactCard.style.cssText = 'display: none;'; // Hidden on screen, shown in print
+        
+        let contactHtml = `
+            <div class="fm-card-header">
+                <h3 class="fm-card-title">Contact Information (Private - Owner View)</h3>
+            </div>
+            <div class="fm-card-body">
+                <div class="fm-grid fm-grid-2">
+        `;
+        
+        // Player contact section
+        if (hasPlayerContact) {
+            contactHtml += `
+                <div>
+                    <h4 style="margin-bottom: var(--spacing-md);">Player Contact</h4>
+            `;
+            if (player.contactInfo?.player?.phone) {
+                contactHtml += `
+                    <div class="fm-stat">
+                        <span class="fm-stat-label">Phone</span>
+                        <span class="fm-stat-value">${player.contactInfo.player.phone}</span>
+                    </div>
+                `;
+            }
+            if (player.contactInfo?.player?.email) {
+                contactHtml += `
+                    <div class="fm-stat">
+                        <span class="fm-stat-label">Email</span>
+                        <span class="fm-stat-value">${player.contactInfo.player.email}</span>
+                    </div>
+                `;
+            }
+            contactHtml += `</div>`;
+        }
+        
+        // Guardian contact section
+        if (hasGuardianContact) {
+            contactHtml += `
+                <div>
+                    <h4 style="margin-bottom: var(--spacing-md);">Guardian Contact</h4>
+            `;
+            if (player.contactInfo?.guardian?.name) {
+                contactHtml += `
+                    <div class="fm-stat">
+                        <span class="fm-stat-label">Name</span>
+                        <span class="fm-stat-value">${player.contactInfo.guardian.name}</span>
+                    </div>
+                `;
+            }
+            if (player.contactInfo?.guardian?.phone) {
+                contactHtml += `
+                    <div class="fm-stat">
+                        <span class="fm-stat-label">Phone</span>
+                        <span class="fm-stat-value">${player.contactInfo.guardian.phone}</span>
+                    </div>
+                `;
+            }
+            if (player.contactInfo?.guardian?.email) {
+                contactHtml += `
+                    <div class="fm-stat">
+                        <span class="fm-stat-label">Email</span>
+                        <span class="fm-stat-value">${player.contactInfo.guardian.email}</span>
+                    </div>
+                `;
+            }
+            contactHtml += `</div>`;
+        }
+        
+        contactHtml += `
+                </div>
+            </div>
+        `;
+        
+        contactCard.innerHTML = contactHtml;
+        
+        // Add to overview tab
+        document.getElementById('overview-tab').appendChild(contactCard);
+    }
+
     generateQRCode() {
         // Generate QR code for the current public profile URL
         const publicProfileUrl = `${window.location.origin}/profile-view.html?id=${this.playerId}`;
         const canvas = document.getElementById('qr-code-canvas');
         
-        if (canvas && typeof QRCode !== 'undefined') {
-            QRCode.toCanvas(canvas, publicProfileUrl, {
-                width: 80,
-                height: 80,
-                color: {
-                    dark: '#000000',
-                    light: '#FFFFFF'
-                },
-                margin: 1
-            }, function (error) {
-                if (error) {
-                    console.error('QR Code generation failed:', error);
-                    // Fallback: create a simple text element
-                    canvas.style.display = 'none';
-                    const fallback = document.createElement('div');
-                    fallback.style.cssText = 'font-size: 8pt; color: #000; text-align: center; word-break: break-all; padding: 5px; border: 1px solid #000; background: white; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;';
-                    fallback.textContent = 'View Online';
-                    canvas.parentNode.insertBefore(fallback, canvas);
-                }
-            });
-        } else {
-            // Fallback if QR code library is not available
-            console.warn('QR Code library not available');
-            const fallback = document.createElement('div');
-            fallback.style.cssText = 'font-size: 8pt; color: #000; text-align: center; word-break: break-all; padding: 5px; border: 1px solid #000; background: white; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;';
-            fallback.textContent = 'View Online';
-            if (canvas) {
-                canvas.style.display = 'none';
-                canvas.parentNode.insertBefore(fallback, canvas);
-            }
+        if (!canvas) {
+            console.error('QR code canvas element not found');
+            return;
         }
+        
+        // Use a different approach - inline QR code generation using QRCode library
+        if (typeof QRCode !== 'undefined') {
+            try {
+                // Clear any existing content
+                canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Generate QR code
+                QRCode.toCanvas(canvas, publicProfileUrl, {
+                    width: 100,
+                    height: 100,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    },
+                    margin: 1,
+                    scale: 4
+                }, function (error) {
+                    if (error) {
+                        console.error('QR Code generation error:', error);
+                        // Use alternative QR generation method
+                        ModernProfileView.prototype.createFallbackQR(canvas, publicProfileUrl);
+                    } else {
+                        console.log('QR Code generated successfully');
+                    }
+                });
+            } catch (e) {
+                console.error('QR Code library error:', e);
+                this.createFallbackQR(canvas, publicProfileUrl);
+            }
+        } else {
+            console.warn('QRCode library not loaded, using fallback');
+            this.createFallbackQR(canvas, publicProfileUrl);
+        }
+    }
+    
+    createFallbackQR(canvas, url) {
+        // Create a simple QR code using a free API service as fallback
+        const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(url)}`;
+        
+        // Create an image element
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = function() {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0, 100, 100);
+        };
+        img.onerror = function() {
+            // Final fallback - just show text
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, 100, 100);
+            ctx.fillStyle = 'black';
+            ctx.font = '10px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('Scan for', 50, 40);
+            ctx.fillText('Online Profile', 50, 55);
+        };
+        img.src = qrApiUrl;
     }
 }
 

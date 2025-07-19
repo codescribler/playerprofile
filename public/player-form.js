@@ -44,6 +44,39 @@ class PlayerForm {
         if (removePhotoBtn) {
             removePhotoBtn.addEventListener('click', () => this.removeProfilePhoto());
         }
+        
+        // Representative team selects
+        document.getElementById('districtTeam').addEventListener('change', (e) => {
+            const seasonInput = document.getElementById('districtTeamSeason');
+            if (e.target.value === 'yes' || e.target.value === 'trials') {
+                seasonInput.style.display = 'block';
+            } else {
+                seasonInput.style.display = 'none';
+                seasonInput.value = '';
+            }
+        });
+        
+        document.getElementById('countyTeam').addEventListener('change', (e) => {
+            const seasonInput = document.getElementById('countyTeamSeason');
+            if (e.target.value === 'yes' || e.target.value === 'trials') {
+                seasonInput.style.display = 'block';
+            } else {
+                seasonInput.style.display = 'none';
+                seasonInput.value = '';
+            }
+        });
+        
+        // Add award button
+        document.getElementById('add-award-btn').addEventListener('click', () => {
+            this.addAwardField();
+        });
+        
+        // Remove award handlers (delegation)
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('remove-award-btn')) {
+                e.target.closest('.award-item').remove();
+            }
+        });
     }
 
     setupPositionHandlers() {
@@ -148,6 +181,8 @@ class PlayerForm {
 
             if (response.ok) {
                 const player = await response.json();
+                // Store the full player object to preserve metadata
+                this.currentPlayer = player;
                 this.populateForm(player);
             } else {
                 this.showMessage('Failed to load player data', 'error');
@@ -181,6 +216,35 @@ class PlayerForm {
         document.getElementById('currentTeam').value = player.playingInfo?.currentTeam?.clubName || 
             (typeof player.playingInfo?.currentTeam === 'string' ? player.playingInfo.currentTeam : '') || '';
         document.getElementById('league').value = player.playingInfo?.currentTeam?.league || player.playingInfo?.league || '';
+        document.getElementById('basedLocation').value = player.playingInfo?.basedLocation || '';
+        
+        // Representative Teams
+        if (player.playingInfo?.representativeTeams) {
+            const districtTeam = player.playingInfo.representativeTeams.district;
+            if (districtTeam) {
+                document.getElementById('districtTeam').value = districtTeam.selected || '';
+                document.getElementById('districtTeamSeason').value = districtTeam.season || '';
+                if (districtTeam.selected === 'yes' || districtTeam.selected === 'trials') {
+                    document.getElementById('districtTeamSeason').style.display = 'block';
+                }
+            }
+            
+            const countyTeam = player.playingInfo.representativeTeams.county;
+            if (countyTeam) {
+                document.getElementById('countyTeam').value = countyTeam.selected || '';
+                document.getElementById('countyTeamSeason').value = countyTeam.season || '';
+                if (countyTeam.selected === 'yes' || countyTeam.selected === 'trials') {
+                    document.getElementById('countyTeamSeason').style.display = 'block';
+                }
+            }
+        }
+        
+        // Trophies and Awards
+        if (player.playingInfo?.trophiesAwards && Array.isArray(player.playingInfo.trophiesAwards)) {
+            player.playingInfo.trophiesAwards.forEach(award => {
+                this.addAwardField(award.title, award.season);
+            });
+        }
         
         // Academic Information
         document.getElementById('currentSchool').value = player.academicInfo?.currentSchool || '';
@@ -325,6 +389,32 @@ class PlayerForm {
             }
         });
     }
+    
+    addAwardField(title = '', season = '') {
+        const container = document.getElementById('awards-container');
+        const awardItem = document.createElement('div');
+        awardItem.className = 'award-item fm-card fm-mb-sm';
+        awardItem.style.cssText = 'background: var(--fm-background); padding: var(--spacing-md); position: relative;';
+        
+        awardItem.innerHTML = `
+            <button type="button" class="remove-award-btn fm-btn fm-btn-danger fm-btn-sm" style="position: absolute; top: 10px; right: 10px; padding: 4px 8px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <div class="fm-grid fm-grid-2" style="gap: var(--spacing-md);">
+                <div>
+                    <input type="text" class="award-title fm-input" placeholder="Trophy/Award Title" value="${title}">
+                </div>
+                <div>
+                    <input type="text" class="award-season fm-input" placeholder="Season/Year (e.g., 2024-25)" value="${season}">
+                </div>
+            </div>
+        `;
+        
+        container.insertBefore(awardItem, container.querySelector('small'));
+    }
 
     collectPositionData() {
         const positions = [];
@@ -371,6 +461,16 @@ class PlayerForm {
         
         const strengths = strengthsText ? strengthsText.split('\n').map(s => s.replace(/^-\s*/, '').trim()).filter(s => s.length > 0) : [];
         const weaknesses = weaknessesText ? weaknessesText.split('\n').map(w => w.replace(/^-\s*/, '').trim()).filter(w => w.length > 0) : [];
+        
+        // Collect awards data
+        const awards = [];
+        document.querySelectorAll('.award-item').forEach(item => {
+            const title = item.querySelector('.award-title').value.trim();
+            const season = item.querySelector('.award-season').value.trim();
+            if (title) {
+                awards.push({ title, season });
+            }
+        });
 
         const formData = {
             personalInfo: {
@@ -406,7 +506,19 @@ class PlayerForm {
                 currentTeam: {
                     clubName: document.getElementById('currentTeam').value,
                     league: document.getElementById('league').value
-                }
+                },
+                basedLocation: document.getElementById('basedLocation').value,
+                representativeTeams: {
+                    district: {
+                        selected: document.getElementById('districtTeam').value,
+                        season: document.getElementById('districtTeamSeason').value
+                    },
+                    county: {
+                        selected: document.getElementById('countyTeam').value,
+                        season: document.getElementById('countyTeamSeason').value
+                    }
+                },
+                trophiesAwards: awards
             },
             academicInfo: {
                 currentSchool: document.getElementById('currentSchool').value,
@@ -448,6 +560,16 @@ class PlayerForm {
                 weaknesses: weaknesses
             }
         };
+
+        // Preserve metadata if editing existing player
+        if (this.currentPlayer && this.currentPlayer.metadata) {
+            formData.metadata = this.currentPlayer.metadata;
+        }
+        
+        // Preserve media (profile photo) if not explicitly removed
+        if (this.currentPlayer && this.currentPlayer.media && !this.photoRemoved) {
+            formData.media = this.currentPlayer.media;
+        }
 
         return formData;
     }

@@ -1047,21 +1047,13 @@ class PlayerProfileApp {
             profilePhotoHtml = `<div class="profile-photo-placeholder">${initials}</div>`;
         }
         
-        // Format positions display - updated for new position system
+        // Format positions display - show only primary position on dashboard cards
         let positionsDisplay = '';
         if (player.playingInfo?.positions?.length > 0) {
             // Sort by order and get primary position (order 1)
             const sortedPositions = player.playingInfo.positions.sort((a, b) => a.order - b.order);
             const primaryPosition = sortedPositions[0];
             positionsDisplay = this.formatPositionName(primaryPosition.position);
-            
-            // Add secondary positions if any
-            if (sortedPositions.length > 1) {
-                const secondaryPositions = sortedPositions.slice(1, 3).map(pos => 
-                    this.formatPositionName(pos.position)
-                ).join(', ');
-                positionsDisplay += ` / ${secondaryPositions}`;
-            }
         } else if (player.playingInfo?.primaryPosition) {
             // Fallback for legacy data
             if (typeof player.playingInfo.primaryPosition === 'string') {
@@ -1072,6 +1064,12 @@ class PlayerProfileApp {
         } else {
             positionsDisplay = 'N/A';
         }
+        
+        // Add location if available
+        const location = player.playingInfo?.basedLocation ? 
+            `<div class="fm-stat" style="margin-top: 8px; font-size: 0.85rem;">
+                <span style="color: var(--fm-text-muted);">📍 ${player.playingInfo.basedLocation}</span>
+            </div>` : '';
         
         // Create published URL section if published
         const publishedUrlSection = player.metadata?.published ? 
@@ -1118,6 +1116,7 @@ class PlayerProfileApp {
                             (typeof player.playingInfo?.currentTeam === 'string' ? player.playingInfo.currentTeam : 'N/A')
                         }</span>
                     </div>
+                    ${location}
                 </div>
                 
                 ${publishedUrlSection}
@@ -1309,8 +1308,18 @@ class PlayerProfileApp {
     }
 
     printProfile(playerId) {
-        const profileUrl = `/profile-view.html?id=${playerId}`;
-        window.open(profileUrl, '_blank', 'width=1200,height=800,scrollbars=yes');
+        // Open profile in new window with print parameter and trigger print immediately
+        const profileUrl = `/profile-view.html?id=${playerId}&print=true`;
+        const printWindow = window.open(profileUrl, '_blank', 'width=1200,height=800,scrollbars=yes');
+        
+        // Auto-trigger print after page loads
+        if (printWindow) {
+            printWindow.onload = function() {
+                setTimeout(() => {
+                    printWindow.print();
+                }, 500); // Small delay to ensure everything is rendered
+            };
+        }
     }
 
     viewPlayerProfile(playerId) {

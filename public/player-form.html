@@ -459,6 +459,55 @@
                                 <label for="league" class="fm-label">League/Division</label>
                                 <input type="text" id="league" class="fm-input" placeholder="Enter league or division name">
                             </div>
+                            <div class="fm-form-group">
+                                <label for="basedLocation" class="fm-label">Based In (County)</label>
+                                <input type="text" id="basedLocation" class="fm-input" placeholder="e.g., Hertfordshire, Essex, Surrey">
+                                <small class="fm-text-muted">For privacy, only enter county/region, not specific town</small>
+                            </div>
+                            
+                            <!-- Representative Teams -->
+                            <div class="fm-form-group">
+                                <label class="fm-label">Representative Teams</label>
+                                <div class="fm-card" style="background: var(--fm-surface-light); padding: var(--spacing-md);">
+                                    <div class="fm-grid fm-grid-2" style="gap: var(--spacing-lg);">
+                                        <div>
+                                            <label class="fm-label" style="font-size: 0.8rem;">District Team</label>
+                                            <select id="districtTeam" class="fm-select">
+                                                <option value="">Not Selected</option>
+                                                <option value="yes">Yes - Selected</option>
+                                                <option value="no">No - Not Selected</option>
+                                                <option value="trials">Trials Attended</option>
+                                            </select>
+                                            <input type="text" id="districtTeamSeason" class="fm-input fm-mt-sm" placeholder="Season (e.g., 2024-25)" style="display: none;">
+                                        </div>
+                                        <div>
+                                            <label class="fm-label" style="font-size: 0.8rem;">County Team</label>
+                                            <select id="countyTeam" class="fm-select">
+                                                <option value="">Not Selected</option>
+                                                <option value="yes">Yes - Selected</option>
+                                                <option value="no">No - Not Selected</option>
+                                                <option value="trials">Trials Attended</option>
+                                            </select>
+                                            <input type="text" id="countyTeamSeason" class="fm-input fm-mt-sm" placeholder="Season (e.g., 2024-25)" style="display: none;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Trophies and Awards -->
+                            <div class="fm-form-group">
+                                <label class="fm-label">Trophies & Awards</label>
+                                <div id="awards-container">
+                                    <small class="fm-text-muted fm-mb-md" style="display: block;">Add your achievements, including the season/year</small>
+                                </div>
+                                <button type="button" id="add-award-btn" class="fm-btn fm-btn-secondary fm-btn-sm fm-mt-md">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    Add Trophy/Award
+                                </button>
+                            </div>
                         </div>
                     </div>
 

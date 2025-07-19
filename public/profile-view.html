@@ -695,14 +695,26 @@
         </div>
         <div class="print-footer-qr">
             <div class="qr-code-container">
-                <canvas id="qr-code-canvas" width="80" height="80"></canvas>
-                <div class="qr-code-text">Scan to view online profile</div>
+                <canvas id="qr-code-canvas" width="100" height="100"></canvas>
+                <div class="qr-code-text">
+                    <strong>Scan for Live Updates</strong><br>
+                    <small>View the latest player information and stats<br>
+                    Send messages directly through the online form</small>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- QR Code generation library -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <script>
+        // Ensure QR code library is loaded
+        window.addEventListener('load', function() {
+            if (typeof QRCode === 'undefined') {
+                console.warn('Primary QR library failed to load, will use fallback');
+            }
+        });
+    </script>
     <script src="profile-view.js"></script>
 </body>
 </html>
