@@ -485,6 +485,34 @@ a:hover {
   gap: var(--spacing-md);
 }
 
+.fm-modal-large {
+  max-width: 900px;
+}
+
+.fm-modal .close {
+  position: absolute;
+  top: var(--spacing-lg);
+  right: var(--spacing-lg);
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--fm-text-muted);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all var(--transition-fast);
+  z-index: 10;
+}
+
+.fm-modal .close:hover {
+  color: var(--fm-text-primary);
+  background: var(--fm-surface-light);
+}
+
 /* Player Rating */
 .fm-rating {
   display: inline-flex;
@@ -543,6 +571,153 @@ a:hover {
 .fm-justify-between { justify-content: space-between; }
 .fm-justify-center { justify-content: center; }
 .fm-align-center { align-items: center; }
+
+.fm-w-full { width: 100%; }
+
+/* Grid System */
+.fm-grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+/* Modal Display Control */
+.fm-modal {
+  display: none;
+}
+
+.fm-modal.show {
+  display: flex;
+}
+
+/* Form Actions */
+.fm-form-actions {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.fm-form-actions .fm-btn {
+  flex: 1;
+  min-width: 120px;
+}
+
+/* Stats Grid for Cards */
+.fm-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--spacing-sm);
+  text-align: left;
+}
+
+/* Card Actions */
+.fm-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--spacing-xs);
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-md);
+  border-top: 1px solid var(--fm-border);
+}
+
+.fm-card-actions .fm-btn {
+  flex: 1;
+  min-width: 80px;
+  font-size: 0.75rem;
+}
+
+/* Profile Photo Styles */
+.profile-photo,
+.profile-photo-placeholder {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--fm-accent);
+  margin-bottom: var(--spacing-md);
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.profile-photo-placeholder {
+  background: var(--fm-surface-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: var(--fm-text-muted);
+  font-size: 1.5rem;
+}
+
+/* Message Badge */
+.message-badge {
+  position: absolute;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  background: var(--fm-danger);
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  animation: pulse 2s infinite;
+  z-index: 5;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+/* Published URL Section */
+.published-url {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background: var(--fm-background);
+  border-radius: 6px;
+  border: 1px solid var(--fm-border);
+}
+
+.published-url label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--fm-text-secondary);
+  margin-bottom: var(--spacing-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.published-url input {
+  width: calc(100% - 80px);
+  padding: 0.375rem 0.5rem;
+  border: 1px solid var(--fm-border);
+  border-radius: 4px;
+  background: var(--fm-surface);
+  font-size: 0.75rem;
+  color: var(--fm-text-secondary);
+}
+
+.copy-url-btn {
+  width: 70px;
+  margin-left: 0.5rem;
+  background: var(--fm-accent);
+  color: white;
+  border: none;
+  padding: 0.375rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.copy-url-btn:hover {
+  background: #0096c7;
+}
 .fm-gap-sm { gap: var(--spacing-sm); }
 .fm-gap-md { gap: var(--spacing-md); }
 .fm-gap-lg { gap: var(--spacing-lg); }

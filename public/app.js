@@ -32,13 +32,13 @@ class PlayerProfileApp {
         const closeButtons = document.querySelectorAll('.close');
         closeButtons.forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const modal = e.target.closest('.modal');
+                const modal = e.target.closest('.fm-modal') || e.target.closest('.modal');
                 this.hideModal(modal.id);
             });
         });
 
         window.addEventListener('click', (e) => {
-            if (e.target.classList.contains('modal')) {
+            if (e.target.classList.contains('fm-modal') || e.target.classList.contains('modal')) {
                 this.hideModal(e.target.id);
             }
         });
@@ -121,7 +121,12 @@ class PlayerProfileApp {
     }
 
     showModal(modalId) {
-        document.getElementById(modalId).style.display = 'block';
+        const modal = document.getElementById(modalId);
+        if (modal.classList.contains('fm-modal')) {
+            modal.style.display = 'flex';
+        } else {
+            modal.style.display = 'block';
+        }
     }
 
     hideModal(modalId) {
@@ -846,7 +851,7 @@ class PlayerProfileApp {
 
     createPlayerCard(player, unreadCount = 0) {
         const card = document.createElement('div');
-        card.className = 'player-card';
+        card.className = 'fm-card';
         
         const age = this.calculateAge(player.personalInfo?.dateOfBirth);
         
@@ -934,28 +939,63 @@ class PlayerProfileApp {
         
         card.innerHTML = `
             ${messageBadgeHtml}
-            ${profilePhotoHtml}
-            <h3>${player.personalInfo?.fullName || 'Unknown'}</h3>
-            <p><strong>Positions:</strong> ${positionsDisplay}</p>
-            <p><strong>Age:</strong> ${age}</p>
-            <p><strong>Height:</strong> ${height}</p>
-            <p><strong>Weight:</strong> ${weight}</p>
-            <p><strong>Preferred Foot:</strong> ${player.personalInfo?.preferredFoot ? player.personalInfo.preferredFoot.charAt(0).toUpperCase() + player.personalInfo.preferredFoot.slice(1) : 'N/A'}</p>
-            <p><strong>Team:</strong> ${
-                player.playingInfo?.currentTeam?.clubName || 
-                (typeof player.playingInfo?.currentTeam === 'string' ? player.playingInfo.currentTeam : 'N/A')
-            }</p>
-            <p><strong>School:</strong> ${player.academicInfo?.currentSchool || 'N/A'}</p>
-            ${publishedUrlSection}
-            <div class="actions">
-                <button class="print-btn" onclick="app.printProfile('${player.playerId}')">Print</button>
-                <button class="edit-btn" onclick="app.showPlayerForm(${JSON.stringify(player).replace(/"/g, '&quot;')})">Edit</button>
-                ${player.metadata?.published ? 
-                    `<button class="withdraw-btn" onclick="app.withdrawProfile('${player.playerId}')">Withdraw</button>
-                     <button class="public-btn" onclick="app.viewPublicProfile('${player.playerId}')">View Public</button>` : 
-                    `<button class="publish-btn" onclick="app.publishProfile('${player.playerId}')">Publish</button>`}
-                <button class="messages-btn" onclick="app.showMessages('${player.playerId}')">Messages</button>
-                <button class="delete-btn" onclick="app.deletePlayer('${player.playerId}')">Delete</button>
+            <div class="fm-card-body fm-text-center">
+                ${profilePhotoHtml}
+                <h3 class="fm-card-title fm-mb-md">${player.personalInfo?.fullName || 'Unknown'}</h3>
+                
+                <div class="fm-stats-grid fm-mb-lg">
+                    <div class="fm-stat">
+                        <span class="fm-stat-label">Position</span>
+                        <span class="fm-stat-value">${positionsDisplay}</span>
+                    </div>
+                    <div class="fm-stat">
+                        <span class="fm-stat-label">Age</span>
+                        <span class="fm-stat-value">${age}</span>
+                    </div>
+                    <div class="fm-stat">
+                        <span class="fm-stat-label">Height</span>
+                        <span class="fm-stat-value">${height}</span>
+                    </div>
+                    <div class="fm-stat">
+                        <span class="fm-stat-label">Weight</span>
+                        <span class="fm-stat-value">${weight}</span>
+                    </div>
+                    <div class="fm-stat">
+                        <span class="fm-stat-label">Foot</span>
+                        <span class="fm-stat-value">${player.personalInfo?.preferredFoot ? player.personalInfo.preferredFoot.charAt(0).toUpperCase() + player.personalInfo.preferredFoot.slice(1) : 'N/A'}</span>
+                    </div>
+                    <div class="fm-stat">
+                        <span class="fm-stat-label">Team</span>
+                        <span class="fm-stat-value">${
+                            player.playingInfo?.currentTeam?.clubName || 
+                            (typeof player.playingInfo?.currentTeam === 'string' ? player.playingInfo.currentTeam : 'N/A')
+                        }</span>
+                    </div>
+                </div>
+                
+                ${publishedUrlSection}
+                
+                <div class="fm-card-actions">
+                    <button class="fm-btn fm-btn-primary fm-btn-sm" onclick="app.printProfile('${player.playerId}')">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/>
+                        </svg>
+                        Print
+                    </button>
+                    <button class="fm-btn fm-btn-secondary fm-btn-sm" onclick="app.showPlayerForm(${JSON.stringify(player).replace(/"/g, '&quot;')})">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                            <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                        Edit
+                    </button>
+                    ${player.metadata?.published ? 
+                        `<button class="fm-btn fm-btn-warning fm-btn-sm" onclick="app.withdrawProfile('${player.playerId}')">Withdraw</button>
+                         <button class="fm-btn fm-btn-accent fm-btn-sm" onclick="app.viewPublicProfile('${player.playerId}')">View Public</button>` : 
+                        `<button class="fm-btn fm-btn-success fm-btn-sm" onclick="app.publishProfile('${player.playerId}')">Publish</button>`}
+                    <button class="fm-btn fm-btn-info fm-btn-sm" onclick="app.showMessages('${player.playerId}')">Messages</button>
+                    <button class="fm-btn fm-btn-danger fm-btn-sm" onclick="app.deletePlayer('${player.playerId}')">Delete</button>
+                </div>
             </div>
         `;
         
@@ -1094,7 +1134,7 @@ class PlayerProfileApp {
     }
 
     viewPublicProfile(playerId) {
-        const publicUrl = `/profile-view-modern.html?id=${playerId}`;
+        const publicUrl = `/profile-view.html?id=${playerId}`;
         window.open(publicUrl, '_blank', 'width=1200,height=800,scrollbars=yes');
     }
 
@@ -1122,12 +1162,12 @@ class PlayerProfileApp {
     }
 
     printProfile(playerId) {
-        const profileUrl = `/profile-view-modern.html?id=${playerId}`;
+        const profileUrl = `/profile-view.html?id=${playerId}`;
         window.open(profileUrl, '_blank', 'width=1200,height=800,scrollbars=yes');
     }
 
     viewPlayerProfile(playerId) {
-        const profileUrl = `/profile-view-modern.html?id=${playerId}`;
+        const profileUrl = `/profile-view.html?id=${playerId}`;
         window.location.href = profileUrl;
     }
 

@@ -5,107 +5,148 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Player Profile Management</title>
     <link rel="stylesheet" href="fm-style.css">
-    <link rel="stylesheet" href="styles.css">
     <link rel="icon" type="image/png" href="images/playerprofilemanagerlogo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div id="app">
-        <header>
-            <div class="header-left">
-                <img src="images/playerprofilelogofull.png" alt="Player Profile Manager" class="site-logo">
-                <h1>Player Profile Management</h1>
+        <nav class="fm-nav">
+            <div class="fm-container">
+                <div class="fm-nav-container">
+                    <div class="fm-nav-brand">
+                        <img src="images/playerprofilelogofull.png" alt="Player Profile Manager" style="height: 40px; margin-right: 1rem;">
+                        Player Profile Management
+                    </div>
+                    <div id="auth-section" class="fm-nav-actions">
+                        <button id="login-btn" class="fm-btn fm-btn-primary fm-btn-sm">Login</button>
+                        <button id="register-btn" class="fm-btn fm-btn-secondary fm-btn-sm">Register</button>
+                        <button id="logout-btn" class="fm-btn fm-btn-danger fm-btn-sm" style="display: none;">Logout</button>
+                    </div>
+                </div>
             </div>
-            <div id="auth-section">
-                <button id="login-btn">Login</button>
-                <button id="register-btn">Register</button>
-                <button id="logout-btn" style="display: none;">Logout</button>
-            </div>
-        </header>
+        </nav>
 
-        <div id="login-form" class="modal">
-            <div class="modal-content">
+        <div id="login-form" class="fm-modal">
+            <div class="fm-modal-content">
                 <span class="close">&times;</span>
-                <h2>Login</h2>
-                <form id="login-form-content">
-                    <input type="text" id="login-username" placeholder="Username" required>
-                    <input type="password" id="login-password" placeholder="Password" required>
-                    <button type="submit">Login</button>
+                <h2 class="fm-card-title fm-mb-lg">Login</h2>
+                <form id="login-form-content" class="fm-form">
+                    <div class="fm-form-group">
+                        <input type="text" id="login-username" class="fm-input" placeholder="Username" required>
+                    </div>
+                    <div class="fm-form-group">
+                        <input type="password" id="login-password" class="fm-input" placeholder="Password" required>
+                    </div>
+                    <button type="submit" class="fm-btn fm-btn-primary fm-btn-lg fm-w-full">Login</button>
                 </form>
             </div>
         </div>
 
-        <div id="register-form" class="modal">
-            <div class="modal-content">
+        <div id="register-form" class="fm-modal">
+            <div class="fm-modal-content">
                 <span class="close">&times;</span>
-                <h2>Register</h2>
-                <form id="register-form-content">
-                    <input type="text" id="register-username" placeholder="Username" required>
-                    <input type="email" id="register-email" placeholder="Email" required>
-                    <input type="password" id="register-password" placeholder="Password" required>
-                    <select id="register-role">
-                        <option value="player">Player</option>
-                        <option value="coach">Coach</option>
-                        <option value="scout">Scout</option>
-                        <option value="agent">Agent</option>
-                    </select>
-                    <button type="submit">Register</button>
+                <h2 class="fm-card-title fm-mb-lg">Register</h2>
+                <form id="register-form-content" class="fm-form">
+                    <div class="fm-form-group">
+                        <input type="text" id="register-username" class="fm-input" placeholder="Username" required>
+                    </div>
+                    <div class="fm-form-group">
+                        <input type="email" id="register-email" class="fm-input" placeholder="Email" required>
+                    </div>
+                    <div class="fm-form-group">
+                        <input type="password" id="register-password" class="fm-input" placeholder="Password" required>
+                    </div>
+                    <div class="fm-form-group">
+                        <select id="register-role" class="fm-select">
+                            <option value="player">Player</option>
+                            <option value="coach">Coach</option>
+                            <option value="scout">Scout</option>
+                            <option value="agent">Agent</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="fm-btn fm-btn-primary fm-btn-lg fm-w-full">Register</button>
                 </form>
             </div>
         </div>
 
-        <main id="main-content" style="display: none;">
-            <div class="controls">
-                <button id="create-player-btn">Create Player Profile</button>
-                <div class="search-controls">
-                    <input type="text" id="search-input" placeholder="Search players...">
-                    <button id="search-btn">Search</button>
+        <main id="main-content" class="fm-container fm-mt-lg" style="display: none;">
+            <div class="fm-card fm-mb-lg">
+                <div class="fm-card-body">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                        <button id="create-player-btn" class="fm-btn fm-btn-success fm-btn-lg">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.5rem;">
+                                <path d="M12 5v14M5 12h14"/>
+                            </svg>
+                            Create Player Profile
+                        </button>
+                        <div style="display: flex; gap: 0.5rem; align-items: center;">
+                            <input type="text" id="search-input" class="fm-input" placeholder="Search players..." style="min-width: 250px;">
+                            <button id="search-btn" class="fm-btn fm-btn-primary">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8"/>
+                                    <path d="m21 21-4.35-4.35"/>
+                                </svg>
+                                Search
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <div id="players-list">
+            <div id="players-list" class="fm-grid fm-grid-3">
                 <!-- Players will be dynamically loaded here -->
             </div>
 
-            <div id="player-form" class="modal">
-                <div class="modal-content large">
+            <div id="player-form" class="fm-modal">
+                <div class="fm-modal-content fm-modal-large">
                     <span class="close">&times;</span>
-                    <h2 id="form-title">Create Player Profile</h2>
-                    <form id="player-form-content">
-                        <div class="form-section">
-                            <h3>Personal Information</h3>
-                            <div class="form-group">
-                                <label for="fullName">Full Name *</label>
-                                <input type="text" id="fullName" placeholder="Enter player's full name" required>
+                    <h2 id="form-title" class="fm-card-title fm-mb-lg">Create Player Profile</h2>
+                    <form id="player-form-content" class="fm-form">
+                        <div class="fm-card fm-mb-lg">
+                            <div class="fm-card-header">
+                                <h3 class="fm-card-title">Personal Information</h3>
                             </div>
-                            <div class="form-group">
-                                <label for="dateOfBirth">Date of Birth *</label>
-                                <input type="date" id="dateOfBirth" required>
-                            </div>
-                            <div class="form-group">
-                                <label for="heightCm">Height (cm)</label>
-                                <input type="number" id="heightCm" placeholder="Height in centimeters (e.g., 175.5)" min="120" max="220" step="0.1">
-                            </div>
-                            <div class="form-group">
-                                <label for="weightKg">Weight (kg)</label>
-                                <input type="number" id="weightKg" placeholder="Weight in kilograms (e.g., 70.5)" min="30" max="150" step="0.1">
-                            </div>
-                            <div class="form-group">
-                                <label for="preferredFoot">Preferred Foot</label>
-                                <select id="preferredFoot">
-                                    <option value="">Select Preferred Foot</option>
-                                    <option value="right">Right</option>
-                                    <option value="left">Left</option>
-                                    <option value="both">Both</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="weakFootStrength">Weak Foot Strength (%)</label>
-                                <input type="number" id="weakFootStrength" placeholder="e.g., 70" min="0" max="100" value="50">
-                                <small>How good is the weak foot compared to the strong foot (0-100%)</small>
-                            </div>
-                            <div class="form-group">
-                                <label for="nationality">Nationality</label>
-                                <input type="text" id="nationality" placeholder="Enter nationality">
+                            <div class="fm-card-body">
+                                <div class="fm-form-group">
+                                    <label for="fullName" class="fm-label">Full Name *</label>
+                                    <input type="text" id="fullName" class="fm-input" placeholder="Enter player's full name" required>
+                                </div>
+                                <div class="fm-form-group">
+                                    <label for="dateOfBirth" class="fm-label">Date of Birth *</label>
+                                    <input type="date" id="dateOfBirth" class="fm-input" required>
+                                </div>
+                                <div class="fm-grid fm-grid-2">
+                                    <div class="fm-form-group">
+                                        <label for="heightCm" class="fm-label">Height (cm)</label>
+                                        <input type="number" id="heightCm" class="fm-input" placeholder="e.g., 175.5" min="120" max="220" step="0.1">
+                                    </div>
+                                    <div class="fm-form-group">
+                                        <label for="weightKg" class="fm-label">Weight (kg)</label>
+                                        <input type="number" id="weightKg" class="fm-input" placeholder="e.g., 70.5" min="30" max="150" step="0.1">
+                                    </div>
+                                </div>
+                                <div class="fm-grid fm-grid-2">
+                                    <div class="fm-form-group">
+                                        <label for="preferredFoot" class="fm-label">Preferred Foot</label>
+                                        <select id="preferredFoot" class="fm-select">
+                                            <option value="">Select Preferred Foot</option>
+                                            <option value="right">Right</option>
+                                            <option value="left">Left</option>
+                                            <option value="both">Both</option>
+                                        </select>
+                                    </div>
+                                    <div class="fm-form-group">
+                                        <label for="weakFootStrength" class="fm-label">Weak Foot Strength (%)</label>
+                                        <input type="number" id="weakFootStrength" class="fm-input" placeholder="e.g., 70" min="0" max="100" value="50">
+                                        <small class="fm-text-muted">How good is the weak foot compared to the strong foot</small>
+                                    </div>
+                                </div>
+                                <div class="fm-form-group">
+                                    <label for="nationality" class="fm-label">Nationality</label>
+                                    <input type="text" id="nationality" class="fm-input" placeholder="Enter nationality">
+                                </div>
                             </div>
                         </div>
 
@@ -333,9 +374,9 @@
                             </div>
                         </div>
 
-                        <div class="form-buttons">
-                            <button type="submit">Save Player Profile</button>
-                            <button type="button" id="cancel-btn">Cancel</button>
+                        <div class="fm-form-actions fm-mt-xl">
+                            <button type="submit" class="fm-btn fm-btn-success fm-btn-lg">Save Player Profile</button>
+                            <button type="button" id="cancel-btn" class="fm-btn fm-btn-secondary fm-btn-lg">Cancel</button>
                         </div>
                     </form>
                 </div>

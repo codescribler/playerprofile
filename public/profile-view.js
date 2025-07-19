@@ -1,605 +1,484 @@
-class ProfileView {
+// Modern Profile View JavaScript
+class ModernProfileView {
     constructor() {
-        this.playerId = this.getPlayerIdFromUrl();
-        this.token = localStorage.getItem('token');
-        this.playerData = null;
+        this.playerId = new URLSearchParams(window.location.search).get('id');
+        if (!this.playerId) {
+            this.showError('No player ID provided');
+            return;
+        }
         this.init();
     }
 
-    getPlayerIdFromUrl() {
-        const urlParams = new URLSearchParams(window.location.search);
-        return urlParams.get('id');
-    }
-
     async init() {
-        if (!this.playerId) {
-            alert('No player ID provided');
-            window.history.back();
-            return;
-        }
-
-        try {
-            await this.loadPlayerProfile();
-            this.setGenerationDate();
-            this.setupActionBar();
-        } catch (error) {
-            console.error('Error loading player profile:', error);
-            alert('Error loading player profile');
-        }
+        await this.loadPlayerData();
+        this.setupEventListeners();
     }
 
-    async loadPlayerProfile() {
-        // Try to load as authenticated user first
-        if (this.token) {
-            try {
-                const response = await fetch(`/api/players/${this.playerId}`, {
-                    headers: {
-                        'Authorization': `Bearer ${this.token}`
-                    }
-                });
+    setupEventListeners() {
+        // Tab switching
+        document.querySelectorAll('.fm-tab').forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                this.switchTab(e.target.dataset.tab);
+            });
+        });
 
-                if (response.ok) {
-                    this.playerData = await response.json();
-                    this.populateProfile(this.playerData);
-                    return;
-                }
-            } catch (error) {
-                console.log('Authenticated request failed, trying public access');
-            }
-        }
-
-        // Try to load as public profile
-        try {
-            const response = await fetch(`/api/public/players/${this.playerId}`);
-
-            if (response.ok) {
-                this.playerData = await response.json();
-                this.populateProfile(this.playerData);
-                return;
-            } else if (response.status === 404) {
-                alert('Profile not found or not published');
-                window.history.back();
-                return;
-            }
-        } catch (error) {
-            console.error('Public request failed:', error);
-        }
-
-        // If both attempts fail, redirect to login
-        alert('Please login to view this profile');
-        window.location.href = '/';
-    }
-
-    populateProfile(player) {
-        console.log('Player data:', player);
-        document.getElementById('player-name').textContent = player.personalInfo?.fullName || 'Unknown Player';
-        
-        // Handle primary position display in header
-        const primaryPos = player.playingInfo?.primaryPosition;
-        if (typeof primaryPos === 'string') {
-            document.getElementById('position').textContent = primaryPos;
-        } else if (primaryPos?.position) {
-            document.getElementById('position').textContent = primaryPos.position;
-        } else {
-            document.getElementById('position').textContent = 'N/A';
-        }
-        document.getElementById('age').textContent = this.calculateAge(player.personalInfo?.dateOfBirth) || 'N/A';
-        document.getElementById('height').textContent = this.formatHeight(player.personalInfo?.height) || 'N/A';
-        document.getElementById('weight').textContent = this.formatWeight(player.personalInfo?.weight) || 'N/A';
-        
-        document.getElementById('dob').textContent = this.formatDate(player.personalInfo?.dateOfBirth) || 'N/A';
-        document.getElementById('nationality').textContent = player.personalInfo?.nationality || 'N/A';
-        
-        // Format preferred foot with weak foot strength
-        const preferredFoot = this.capitalizeFirst(player.personalInfo?.preferredFoot) || 'N/A';
-        const weakFootStrength = player.personalInfo?.weakFootStrength || 50;
-        
-        if (preferredFoot === 'N/A') {
-            document.getElementById('preferred-foot').textContent = 'N/A';
-        } else {
-            const weakFoot = preferredFoot === 'Left' ? 'Right' : 'Left';
-            document.getElementById('preferred-foot').textContent = `Preferred: ${preferredFoot} foot | ${weakFoot} foot: ${weakFootStrength}% strength`;
-        }
-        
-        document.getElementById('years-playing').textContent = player.playingInfo?.yearsPlaying || 'N/A';
-        
-        document.getElementById('player-email').textContent = player.contactInfo?.player?.email || 'N/A';
-        document.getElementById('player-phone').textContent = player.contactInfo?.player?.phone || 'N/A';
-        document.getElementById('guardian-name').textContent = player.contactInfo?.guardian?.name || 'N/A';
-        document.getElementById('guardian-email').textContent = player.contactInfo?.guardian?.email || 'N/A';
-        document.getElementById('guardian-phone').textContent = player.contactInfo?.guardian?.phone || 'N/A';
-        
-        document.getElementById('current-team').textContent = player.playingInfo?.currentTeam?.clubName || player.playingInfo?.currentTeam || 'N/A';
-        document.getElementById('league').textContent = player.playingInfo?.currentTeam?.league || player.playingInfo?.league || 'N/A';
-        document.getElementById('school').textContent = player.academicInfo?.currentSchool || 'N/A';
-        document.getElementById('grade').textContent = player.academicInfo?.gradeYear || 'N/A';
-        
-        // Populate showcase description
-        document.getElementById('player-showcase').textContent = player.showcase?.description || 'This talented player brings exceptional skills and dedication to the field. A promising prospect with strong potential for development at higher levels.';
-        
-        // Populate primary position with details
-        this.populatePrimaryPosition(player.playingInfo?.primaryPosition);
-        
-        // Populate secondary positions with details
-        this.populateSecondaryPositions(player.playingInfo?.secondaryPositions);
-        
-        this.populateAbilities(player.abilities);
-        this.populatePlayingStyle(player.playingStyle);
-        
-        if (player.media?.profilePhoto) {
-            const profilePhoto = document.getElementById('profile-photo');
-            const photoUrl = player.media.profilePhoto;
-            
-            
-            // Check if it's a base64 image or a file path
-            if (photoUrl.startsWith('data:')) {
-                // It's a base64 image, use as-is
-                profilePhoto.src = photoUrl;
-                profilePhoto.style.display = 'block';
-            } else if (photoUrl.startsWith('/uploads/')) {
-                // Old file path format - replace with placeholder
-                const initials = player.personalInfo?.fullName ? 
-                    player.personalInfo.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'PP';
-                
-                profilePhoto.style.display = 'none';
-                const photoContainer = profilePhoto.parentElement;
-                
-                // Remove existing placeholder if any
-                const existingPlaceholder = photoContainer.querySelector('.profile-photo-placeholder');
-                if (existingPlaceholder) {
-                    existingPlaceholder.remove();
-                }
-                
-                // Create placeholder
-                const placeholder = document.createElement('div');
-                placeholder.className = 'profile-photo-placeholder';
-                placeholder.textContent = initials;
-                placeholder.title = 'Photo no longer available - please upload a new one';
-                placeholder.style.cssText = `
-                    width: 150px;
-                    height: 150px;
-                    border-radius: 50%;
-                    background-color: #3498db;
-                    color: white;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 3rem;
-                    font-weight: bold;
-                    margin: 0 auto 1rem;
-                    border: 3px solid #f0f0f0;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                `;
-                
-                photoContainer.appendChild(placeholder);
-            } else {
-                profilePhoto.style.display = 'none';
-            }
-        } else {
-            document.getElementById('profile-photo').style.display = 'none';
-        }
-    }
-
-    populateAbilities(abilities) {
-        if (!abilities) return;
-
-        const technicalSkills = abilities.technical || {};
-        const physicalSkills = abilities.physical || {};
-        const mentalSkills = abilities.mental || {};
-
-        // Technical Skills
-        this.setAbilityRating('ball-control', technicalSkills.ballControl || 5);
-        this.setAbilityRating('passing', technicalSkills.passing || 5);
-        this.setAbilityRating('shooting', technicalSkills.shooting || 5);
-        this.setAbilityRating('dribbling', technicalSkills.dribbling || 5);
-        this.setAbilityRating('first-touch', technicalSkills.firstTouch || 5);
-        this.setAbilityRating('crossing', technicalSkills.crossing || 5);
-        this.setAbilityRating('tackling', technicalSkills.tackling || 5);
-        this.setAbilityRating('heading', technicalSkills.heading || 5);
-
-        // Physical Skills
-        this.setAbilityRating('pace', physicalSkills.pace || 5);
-        this.setAbilityRating('strength', physicalSkills.strength || 5);
-        this.setAbilityRating('stamina', physicalSkills.stamina || 5);
-        this.setAbilityRating('agility', physicalSkills.agility || 5);
-        this.setAbilityRating('balance', physicalSkills.balance || 5);
-        this.setAbilityRating('jumping', physicalSkills.jumping || 5);
-
-        // Mental Skills
-        this.setAbilityRating('decision-making', mentalSkills.decisionMaking || 5);
-        this.setAbilityRating('positioning', mentalSkills.positioning || 5);
-        this.setAbilityRating('concentration', mentalSkills.concentration || 5);
-        this.setAbilityRating('leadership', mentalSkills.leadership || 5);
-        this.setAbilityRating('communication', mentalSkills.communication || 5);
-    }
-
-    setAbilityRating(abilityName, rating) {
-        const percentage = (rating / 10) * 100;
-        const ratingFill = document.getElementById(`${abilityName}-rating`);
-        const ratingValue = document.getElementById(`${abilityName}-value`);
-        
-        if (ratingFill) {
-            ratingFill.style.width = `${percentage}%`;
-        }
-        if (ratingValue) {
-            ratingValue.textContent = rating;
-        }
-    }
-
-    populatePrimaryPosition(primaryPosition) {
-        const container = document.getElementById('primary-position-detail');
-        container.innerHTML = '';
-        
-        if (!primaryPosition) {
-            container.innerHTML = '<p>N/A</p>';
-            return;
-        }
-        
-        if (typeof primaryPosition === 'string') {
-            // Old format - just a string
-            container.innerHTML = `<p><strong>${primaryPosition}</strong></p>`;
-        } else {
-            // New format with suitability and notes
-            const positionDiv = document.createElement('div');
-            positionDiv.className = 'primary-position-item';
-            positionDiv.innerHTML = `
-                <p><strong>${primaryPosition.position}</strong> - Suitability: ${primaryPosition.suitability}%</p>
-                ${primaryPosition.notes ? `<p class="position-notes">${primaryPosition.notes}</p>` : ''}
-            `;
-            container.appendChild(positionDiv);
-        }
-    }
-
-    populateSecondaryPositions(positions) {
-        const container = document.getElementById('secondary-positions-list');
-        container.innerHTML = '';
-        
-        if (!positions || positions.length === 0) {
-            container.innerHTML = '<p>No secondary positions listed</p>';
-            return;
-        }
-        
-        positions.forEach(pos => {
-            const positionDiv = document.createElement('div');
-            positionDiv.className = 'secondary-position-item';
-            
-            if (typeof pos === 'string') {
-                // Old format
-                positionDiv.innerHTML = `
-                    <p><strong>${pos}</strong></p>
-                `;
-            } else {
-                // New format with suitability and notes
-                positionDiv.innerHTML = `
-                    <p><strong>${pos.position}</strong> - Suitability: ${pos.suitability}%</p>
-                    ${pos.notes ? `<p class="position-notes">${pos.notes}</p>` : ''}
-                `;
-            }
-            
-            container.appendChild(positionDiv);
+        // Contact form
+        document.getElementById('contact-form').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.handleContactForm();
         });
     }
 
-    populatePlayingStyle(playingStyle) {
-        if (!playingStyle) return;
+    switchTab(tabName) {
+        // Update active tab
+        document.querySelectorAll('.fm-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.tab === tabName);
+        });
 
-        document.getElementById('playing-style-summary').textContent = playingStyle.summary || 'No summary available';
-        
-        const strengthsList = document.getElementById('strengths-list');
-        strengthsList.innerHTML = '';
-        if (playingStyle.strengths && playingStyle.strengths.length > 0) {
-            playingStyle.strengths.forEach(strength => {
-                const li = document.createElement('li');
-                li.textContent = strength;
-                strengthsList.appendChild(li);
-            });
-        } else {
-            strengthsList.innerHTML = '<li>No strengths listed</li>';
-        }
-        
-        const weaknessesList = document.getElementById('weaknesses-list');
-        weaknessesList.innerHTML = '';
-        if (playingStyle.weaknesses && playingStyle.weaknesses.length > 0) {
-            playingStyle.weaknesses.forEach(weakness => {
-                const li = document.createElement('li');
-                li.textContent = weakness;
-                weaknessesList.appendChild(li);
-            });
-        } else {
-            weaknessesList.innerHTML = '<li>No areas for improvement listed</li>';
+        // Show/hide tab content
+        document.querySelectorAll('.tab-content').forEach(content => {
+            content.style.display = 'none';
+        });
+        document.getElementById(`${tabName}-tab`).style.display = 'block';
+    }
+
+    async loadPlayerData() {
+        try {
+            const response = await fetch(`/api/public/players/${this.playerId}`);
+            if (!response.ok) {
+                throw new Error('Failed to load player data');
+            }
+            
+            const player = await response.json();
+            this.displayPlayerData(player);
+        } catch (error) {
+            console.error('Error loading player data:', error);
+            this.showError('Failed to load player profile');
         }
     }
 
+    displayPlayerData(player) {
+        // Set page title
+        document.title = `${player.personalInfo?.fullName || 'Player'} - Profile`;
 
-    calculateAge(dateOfBirth) {
-        if (!dateOfBirth) return 'N/A';
+        // Header information
+        this.displayHeader(player);
+
+        // Overview tab
+        this.displayOverview(player);
+
+        // Attributes tab
+        this.displayAttributes(player);
+
+        // Positions tab
+        this.displayPositions(player);
+
+        // History tab
+        this.displayHistory(player);
+    }
+
+    displayHeader(player) {
+        // Profile photo
+        const photoWrapper = document.getElementById('profile-photo-wrapper');
+        if (player.media?.profilePhoto) {
+            photoWrapper.innerHTML = `<img src="${player.media.profilePhoto}" alt="${player.personalInfo?.fullName}" class="profile-photo">`;
+        } else {
+            const initials = this.getInitials(player.personalInfo?.fullName);
+            photoWrapper.innerHTML = `<div class="profile-photo-placeholder">${initials}</div>`;
+        }
+
+        // Basic info
+        document.getElementById('player-name').textContent = player.personalInfo?.fullName || 'Unknown Player';
+        document.getElementById('player-age').textContent = this.calculateAge(player.personalInfo?.dateOfBirth);
+        document.getElementById('player-nationality').textContent = player.personalInfo?.nationality || 'Unknown';
+        document.getElementById('player-position').textContent = this.getPositionDisplay(player.playingInfo);
+        document.getElementById('player-height').textContent = this.getHeight(player.personalInfo);
+        document.getElementById('player-weight').textContent = this.getWeight(player.personalInfo);
+        document.getElementById('player-foot').textContent = player.personalInfo?.preferredFoot || 'Unknown';
+
+        // Calculate and display overall rating
+        const overallRating = this.calculateOverallRating(player.abilities);
+        document.getElementById('overall-rating').textContent = overallRating;
+    }
+
+    displayOverview(player) {
+        // Player information
+        document.getElementById('current-team').textContent = 
+            player.playingInfo?.currentTeam?.clubName || player.playingInfo?.currentTeam || 'Free Agent';
+        document.getElementById('current-league').textContent = 
+            player.playingInfo?.currentTeam?.league || player.playingInfo?.league || '--';
+        document.getElementById('years-playing').textContent = 
+            player.playingInfo?.yearsPlaying || '--';
+        document.getElementById('current-school').textContent = 
+            player.academicInfo?.currentSchool || '--';
+        document.getElementById('grade-year').textContent = 
+            player.academicInfo?.gradeYear || '--';
+
+        // Key attributes
+        this.displayKeyAttributes(player.abilities);
+
+        // Player showcase
+        if (player.showcase?.description) {
+            document.getElementById('player-showcase').textContent = player.showcase.description;
+        }
+
+        // Strengths and weaknesses
+        this.displayList('player-strengths', player.playingStyle?.strengths);
+        this.displayList('player-weaknesses', player.playingStyle?.weaknesses);
+    }
+
+    displayKeyAttributes(abilities) {
+        const keyAttributesContainer = document.getElementById('key-attributes');
+        const keyAttributes = this.getTopAttributes(abilities, 6);
         
+        keyAttributesContainer.innerHTML = keyAttributes.map(attr => `
+            <div class="fm-stat">
+                <span class="fm-stat-label">${this.formatAttributeName(attr.name)}</span>
+                <div class="fm-stat-value">
+                    <span class="attribute-rating rating-${attr.rating}">${attr.rating}</span>
+                    <div class="attribute-bar">
+                        <div class="attribute-bar-fill" style="width: ${attr.rating * 5}%; background: ${this.getRatingColor(attr.rating)}"></div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    displayAttributes(player) {
+        const abilities = player.abilities || {};
+        
+        // Technical attributes
+        this.displayAttributeCategory('technical-attributes', abilities.technical);
+        
+        // Physical attributes
+        this.displayAttributeCategory('physical-attributes', abilities.physical);
+        
+        // Mental attributes
+        this.displayAttributeCategory('mental-attributes', abilities.mental);
+    }
+
+    displayAttributeCategory(containerId, attributes) {
+        const container = document.getElementById(containerId);
+        if (!attributes) {
+            container.innerHTML = '<p>No attributes available</p>';
+            return;
+        }
+
+        container.innerHTML = Object.entries(attributes).map(([key, value]) => `
+            <div class="attribute-item">
+                <span class="attribute-label">${this.formatAttributeName(key)}</span>
+                <div class="attribute-value">
+                    <span class="attribute-rating rating-${value.rating || 5}">${value.rating || 5}</span>
+                    <div class="attribute-bar">
+                        <div class="attribute-bar-fill" style="width: ${(value.rating || 5) * 5}%; background: ${this.getRatingColor(value.rating || 5)}"></div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    displayPositions(player) {
+        const positionMap = document.getElementById('position-map');
+        const positionDetails = document.getElementById('position-details');
+        
+        // Clear existing content
+        positionMap.innerHTML = '';
+        positionDetails.innerHTML = '';
+
+        // Primary position
+        if (player.playingInfo?.primaryPosition) {
+            const primary = player.playingInfo.primaryPosition;
+            const primaryPos = typeof primary === 'string' ? primary : primary.position;
+            const primaryCoords = this.getPositionCoordinates(primaryPos);
+            
+            if (primaryCoords) {
+                positionMap.innerHTML += `
+                    <div class="position-marker" style="left: ${primaryCoords.x}%; top: ${primaryCoords.y}%;" title="${primaryPos}">
+                        ${this.getPositionAbbreviation(primaryPos)}
+                    </div>
+                `;
+            }
+
+            positionDetails.innerHTML += `
+                <div class="fm-stat">
+                    <span class="fm-stat-label">Primary Position</span>
+                    <span class="fm-stat-value">${primaryPos} ${typeof primary === 'object' && primary.suitability ? `(${primary.suitability}%)` : ''}</span>
+                </div>
+            `;
+        }
+
+        // Secondary positions
+        if (player.playingInfo?.secondaryPositions?.length > 0) {
+            player.playingInfo.secondaryPositions.forEach(pos => {
+                const position = typeof pos === 'string' ? pos : pos.position;
+                const coords = this.getPositionCoordinates(position);
+                
+                if (coords) {
+                    positionMap.innerHTML += `
+                        <div class="position-marker secondary" style="left: ${coords.x}%; top: ${coords.y}%;" title="${position}">
+                            ${this.getPositionAbbreviation(position)}
+                        </div>
+                    `;
+                }
+
+                positionDetails.innerHTML += `
+                    <div class="fm-stat">
+                        <span class="fm-stat-label">Secondary Position</span>
+                        <span class="fm-stat-value">${position} ${typeof pos === 'object' && pos.suitability ? `(${pos.suitability}%)` : ''}</span>
+                    </div>
+                `;
+            });
+        }
+    }
+
+    displayHistory(player) {
+        // This could be expanded to show previous teams, achievements, etc.
+        const historyContainer = document.getElementById('playing-history');
+        const yearsPlaying = player.playingInfo?.yearsPlaying || 0;
+        const currentTeam = player.playingInfo?.currentTeam?.clubName || player.playingInfo?.currentTeam || 'No team';
+        
+        historyContainer.innerHTML = `
+            <p>Has been playing football for ${yearsPlaying} years.</p>
+            <p>Currently playing for ${currentTeam}.</p>
+        `;
+    }
+
+    displayList(elementId, items) {
+        const element = document.getElementById(elementId);
+        if (items && items.length > 0) {
+            element.innerHTML = items.map(item => `<li>${item}</li>`).join('');
+        } else {
+            element.innerHTML = '<li>None listed</li>';
+        }
+    }
+
+    async handleContactForm() {
+        const formData = {
+            sender_name: document.getElementById('sender-name').value,
+            sender_email: document.getElementById('sender-email').value,
+            sender_phone: document.getElementById('sender-phone').value,
+            message: document.getElementById('message').value
+        };
+
+        try {
+            const response = await fetch(`/api/public/players/${this.playerId}/message`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                this.showMessage('Message sent successfully!', 'success');
+                document.getElementById('contact-form').reset();
+            } else {
+                throw new Error('Failed to send message');
+            }
+        } catch (error) {
+            console.error('Error sending message:', error);
+            this.showMessage('Failed to send message. Please try again.', 'error');
+        }
+    }
+
+    // Utility functions
+    calculateAge(dateOfBirth) {
+        if (!dateOfBirth) return '--';
         const today = new Date();
         const birthDate = new Date(dateOfBirth);
         let age = today.getFullYear() - birthDate.getFullYear();
         const monthDiff = today.getMonth() - birthDate.getMonth();
-        
         if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
             age--;
         }
-        
         return age;
     }
 
-    formatHeight(height) {
-        if (!height) return 'N/A';
-        
-        if (height.centimeters) {
-            return `${height.centimeters} cm`;
-        } else if ((height.feet || height.feet === 0) && (height.inches || height.inches === 0)) {
-            return `${height.feet}'${height.inches}"`;
-        }
-        
-        return 'N/A';
+    getInitials(fullName) {
+        if (!fullName) return 'PP';
+        return fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
     }
 
-    formatWeight(weight) {
-        if (!weight) return 'N/A';
+    getPositionDisplay(playingInfo) {
+        if (!playingInfo?.primaryPosition) return 'Unknown';
         
-        if (weight.kilograms) {
-            return `${weight.kilograms} kg`;
-        } else if (weight.pounds) {
-            return `${weight.pounds} lbs`;
-        }
+        const primary = playingInfo.primaryPosition;
+        const primaryPos = typeof primary === 'string' ? primary : primary.position;
         
-        return 'N/A';
-    }
-
-    formatDate(dateString) {
-        if (!dateString) return 'N/A';
+        let display = primaryPos;
         
-        const date = new Date(dateString);
-        if (isNaN(date.getTime())) return 'N/A';
-        
-        return date.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    }
-
-    capitalizeFirst(str) {
-        if (!str) return 'N/A';
-        return str.charAt(0).toUpperCase() + str.slice(1);
-    }
-
-    formatSecondaryPositions(positions) {
-        if (!positions || !Array.isArray(positions) || positions.length === 0) {
-            return 'N/A';
+        if (playingInfo.secondaryPositions?.length > 0) {
+            const secondaryPositions = playingInfo.secondaryPositions.map(pos => 
+                typeof pos === 'string' ? pos : pos.position
+            ).slice(0, 2).join(', ');
+            display += ` / ${secondaryPositions}`;
         }
         
-        // Handle both old and new formats
-        if (typeof positions[0] === 'string') {
-            // Old format - just strings
-            return positions.join(', ');
-        } else {
-            // New format - objects with position, suitability, and notes
-            return positions.map(pos => `${pos.position} (${pos.suitability}%)`).join(', ');
+        return display;
+    }
+
+    getHeight(personalInfo) {
+        if (personalInfo?.height?.centimeters) {
+            return personalInfo.height.centimeters;
         }
+        if (personalInfo?.heightCm) {
+            return personalInfo.heightCm;
+        }
+        return '--';
     }
 
-    setGenerationDate() {
-        const now = new Date();
-        const dateString = now.toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
-        document.getElementById('generation-date').textContent = dateString;
+    getWeight(personalInfo) {
+        if (personalInfo?.weight?.kilograms) {
+            return personalInfo.weight.kilograms;
+        }
+        if (personalInfo?.weightKg) {
+            return personalInfo.weightKg;
+        }
+        return '--';
     }
 
-    setupActionBar() {
-        if (!this.playerData) return;
-
-        // Update profile title
-        document.getElementById('profile-title').textContent = `${this.playerData.personalInfo?.fullName || 'Player'} Profile`;
-
-        // Check if user is authenticated and owns this profile
-        const isAuthenticated = !!this.token;
-        const isPublished = this.playerData.metadata?.published;
+    calculateOverallRating(abilities) {
+        if (!abilities) return '--';
         
-        if (isAuthenticated) {
-            // Authenticated user - show management buttons and all content
-            if (isPublished) {
-                document.getElementById('published-status').style.display = 'block';
-                document.getElementById('withdraw-profile-btn').style.display = 'block';
-                document.getElementById('publish-profile-btn').style.display = 'none';
-            } else {
-                document.getElementById('published-status').style.display = 'none';
-                document.getElementById('withdraw-profile-btn').style.display = 'none';
-                document.getElementById('publish-profile-btn').style.display = 'block';
-            }
-
-            // Show edit button for authenticated users
-            document.getElementById('edit-profile-btn').style.display = 'block';
-
-            // Show contact information and school info for authenticated users
-            document.getElementById('contact-info-section').style.display = 'block';
-            const schoolInfoElements = document.querySelectorAll('.school-info');
-            schoolInfoElements.forEach(el => el.style.display = 'block');
-
-            // Hide contact form for authenticated users
-            document.getElementById('contact-form-section').style.display = 'none';
-
-            // Setup button event handlers
-            document.getElementById('edit-profile-btn').addEventListener('click', () => this.editProfile());
-            document.getElementById('publish-profile-btn').addEventListener('click', () => this.publishProfile());
-            document.getElementById('withdraw-profile-btn').addEventListener('click', () => this.withdrawProfile());
-        } else {
-            // Public viewer - hide management buttons and sensitive info
-            document.getElementById('published-status').style.display = 'none';
-            document.getElementById('withdraw-profile-btn').style.display = 'none';
-            document.getElementById('publish-profile-btn').style.display = 'none';
-            document.getElementById('edit-profile-btn').style.display = 'none';
-
-            // Hide contact information and school info for public viewers
-            document.getElementById('contact-info-section').style.display = 'none';
-            const schoolInfoElements = document.querySelectorAll('.school-info');
-            schoolInfoElements.forEach(el => el.style.display = 'none');
-
-            // Show contact form for public viewers
-            document.getElementById('contact-form-section').style.display = 'block';
-            this.setupContactForm();
-        }
-    }
-
-    editProfile() {
-        // Navigate to the new form page for editing
-        const playerDataWithId = {
-            ...this.playerData,
-            playerId: this.playerId,
-            id: this.playerId
-        };
-        sessionStorage.setItem('editPlayerData', JSON.stringify(playerDataWithId));
-        window.location.href = `player-form.html?mode=edit&id=${this.playerId}`;
-    }
-
-    async publishProfile() {
-        if (!confirm('Are you sure you want to publish this profile publicly? This will make it viewable by anyone with the link.')) {
-            return;
-        }
-
-        try {
-            const response = await fetch(`/api/players/${this.playerId}/publish`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.token}`
-                },
-                body: JSON.stringify({ published: true })
-            });
-
-            if (response.ok) {
-                this.playerData.metadata.published = true;
-                this.setupActionBar();
-                this.showMessage('Profile published successfully!', 'success');
-            } else {
-                const data = await response.json();
-                this.showMessage(data.error || 'Failed to publish profile', 'error');
-            }
-        } catch (error) {
-            console.error('Error publishing profile:', error);
-            this.showMessage('Failed to publish profile', 'error');
-        }
-    }
-
-    async withdrawProfile() {
-        if (!confirm('Are you sure you want to withdraw this profile from public view?')) {
-            return;
-        }
-
-        try {
-            const response = await fetch(`/api/players/${this.playerId}/publish`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.token}`
-                },
-                body: JSON.stringify({ published: false })
-            });
-
-            if (response.ok) {
-                this.playerData.metadata.published = false;
-                this.setupActionBar();
-                this.showMessage('Profile withdrawn successfully!', 'success');
-            } else {
-                const data = await response.json();
-                this.showMessage(data.error || 'Failed to withdraw profile', 'error');
-            }
-        } catch (error) {
-            console.error('Error withdrawing profile:', error);
-            this.showMessage('Failed to withdraw profile', 'error');
-        }
-    }
-
-    setupContactForm() {
-        const form = document.getElementById('contact-form');
-        if (!form) return;
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = {
-                senderName: document.getElementById('sender-name').value,
-                senderEmail: document.getElementById('sender-email').value,
-                senderPhone: document.getElementById('sender-phone').value,
-                message: document.getElementById('message').value
-            };
-            
-            const submitBtn = form.querySelector('.submit-btn');
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'Sending...';
-            
-            try {
-                const response = await fetch(`/api/public/players/${this.playerId}/message`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(formData)
+        let total = 0;
+        let count = 0;
+        
+        ['technical', 'physical', 'mental'].forEach(category => {
+            if (abilities[category]) {
+                Object.values(abilities[category]).forEach(attr => {
+                    if (attr.rating) {
+                        total += attr.rating;
+                        count++;
+                    }
                 });
-                
-                if (response.ok) {
-                    this.showContactMessage('Message sent successfully!', 'success');
-                    form.reset();
-                } else {
-                    const data = await response.json();
-                    this.showContactMessage(data.error || 'Failed to send message', 'error');
-                }
-            } catch (error) {
-                this.showContactMessage('Failed to send message. Please try again.', 'error');
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Send Message';
             }
         });
+        
+        return count > 0 ? Math.round(total / count) : '--';
     }
 
-    showContactMessage(message, type) {
-        const container = document.getElementById('message-container');
-        if (container) {
-            container.innerHTML = `<div class="message ${type}">${message}</div>`;
-            
-            setTimeout(() => {
-                container.innerHTML = '';
-            }, 5000);
-        }
+    getTopAttributes(abilities, count = 6) {
+        const allAttributes = [];
+        
+        ['technical', 'physical', 'mental'].forEach(category => {
+            if (abilities?.[category]) {
+                Object.entries(abilities[category]).forEach(([key, value]) => {
+                    if (value.rating) {
+                        allAttributes.push({
+                            name: key,
+                            rating: value.rating,
+                            category: category
+                        });
+                    }
+                });
+            }
+        });
+        
+        return allAttributes
+            .sort((a, b) => b.rating - a.rating)
+            .slice(0, count);
+    }
+
+    formatAttributeName(name) {
+        return name
+            .replace(/([A-Z])/g, ' $1')
+            .replace(/^./, str => str.toUpperCase())
+            .trim();
+    }
+
+    getRatingColor(rating) {
+        if (rating >= 16) return '#22c55e';
+        if (rating >= 11) return '#3b82f6';
+        if (rating >= 6) return '#f59e0b';
+        return '#ef4444';
+    }
+
+    getPositionCoordinates(position) {
+        const positions = {
+            'Goalkeeper': { x: 50, y: 90 },
+            'Right Back': { x: 80, y: 75 },
+            'Center Back': { x: 50, y: 75 },
+            'Left Back': { x: 20, y: 75 },
+            'Right Wing Back': { x: 85, y: 60 },
+            'Left Wing Back': { x: 15, y: 60 },
+            'Defensive Midfielder': { x: 50, y: 60 },
+            'Central Midfielder': { x: 50, y: 50 },
+            'Right Midfielder': { x: 75, y: 50 },
+            'Left Midfielder': { x: 25, y: 50 },
+            'Attacking Midfielder': { x: 50, y: 35 },
+            'Right Winger': { x: 85, y: 30 },
+            'Left Winger': { x: 15, y: 30 },
+            'Right Wing': { x: 85, y: 30 },
+            'Left Wing': { x: 15, y: 30 },
+            'Striker': { x: 50, y: 20 },
+            'Center Forward': { x: 50, y: 20 }
+        };
+        
+        return positions[position] || null;
+    }
+
+    getPositionAbbreviation(position) {
+        const abbreviations = {
+            'Goalkeeper': 'GK',
+            'Right Back': 'RB',
+            'Center Back': 'CB',
+            'Left Back': 'LB',
+            'Right Wing Back': 'RWB',
+            'Left Wing Back': 'LWB',
+            'Defensive Midfielder': 'DM',
+            'Central Midfielder': 'CM',
+            'Right Midfielder': 'RM',
+            'Left Midfielder': 'LM',
+            'Attacking Midfielder': 'AM',
+            'Right Winger': 'RW',
+            'Left Winger': 'LW',
+            'Right Wing': 'RW',
+            'Left Wing': 'LW',
+            'Striker': 'ST',
+            'Center Forward': 'CF'
+        };
+        
+        return abbreviations[position] || position.slice(0, 3).toUpperCase();
     }
 
     showMessage(message, type) {
-        const existing = document.querySelector('.message');
-        if (existing) {
-            existing.remove();
-        }
-
-        const messageDiv = document.createElement('div');
-        messageDiv.className = `message ${type}`;
-        messageDiv.textContent = message;
-        messageDiv.style.cssText = `
+        // Create a toast notification
+        const toast = document.createElement('div');
+        toast.className = `fm-toast fm-toast-${type} fm-fade-in`;
+        toast.textContent = message;
+        toast.style.cssText = `
             position: fixed;
-            top: 20px;
+            bottom: 20px;
             right: 20px;
-            padding: 1rem;
-            border-radius: 4px;
-            z-index: 1000;
-            max-width: 300px;
-            ${type === 'success' ? 'background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb;' : 
-              'background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;'}
+            padding: 16px 24px;
+            background: ${type === 'success' ? 'var(--fm-success)' : 'var(--fm-danger)'};
+            color: white;
+            border-radius: 8px;
+            box-shadow: var(--shadow-lg);
+            z-index: 3000;
         `;
         
-        document.body.appendChild(messageDiv);
+        document.body.appendChild(toast);
         
         setTimeout(() => {
-            messageDiv.remove();
+            toast.remove();
         }, 5000);
+    }
+
+    showError(message) {
+        document.querySelector('.fm-container').innerHTML = `
+            <div class="fm-card fm-mt-xl">
+                <div class="fm-card-body fm-text-center">
+                    <h2>Error</h2>
+                    <p>${message}</p>
+                    <a href="/" class="fm-btn fm-btn-primary fm-mt-md">Go to Home</a>
+                </div>
+            </div>
+        `;
     }
 }
 
-const profileView = new ProfileView();
+// Initialize the profile view when the page loads
+document.addEventListener('DOMContentLoaded', () => {
+    new ModernProfileView();
+});
