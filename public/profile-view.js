@@ -840,12 +840,12 @@ class ModernProfileView {
             'Goalkeeper': { x: 50, y: 90 },
             
             // Defenders
-            'Right Back': { x: 80, y: 75 },
+            'Right Back': { x: 75, y: 75 },
             'Centre Back': { x: 50, y: 75 },
             'Center Back': { x: 50, y: 75 },
-            'Left Back': { x: 20, y: 75 },
-            'Right Wing Back': { x: 90, y: 65 },
-            'Left Wing Back': { x: 10, y: 65 },
+            'Left Back': { x: 25, y: 75 },
+            'Right Wing Back': { x: 82, y: 65 },
+            'Left Wing Back': { x: 18, y: 65 },
             
             // Multiple CBs positioning
             'Right Centre Back': { x: 65, y: 75 },
@@ -854,15 +854,15 @@ class ModernProfileView {
             // Midfielders
             'Defensive Midfielder': { x: 50, y: 60 },
             'Central Midfielder': { x: 50, y: 50 },
-            'Right Midfielder': { x: 75, y: 50 },
-            'Left Midfielder': { x: 25, y: 50 },
+            'Right Midfielder': { x: 70, y: 50 },
+            'Left Midfielder': { x: 30, y: 50 },
             'Attacking Midfielder': { x: 50, y: 35 },
             
             // Wingers
-            'Right Winger': { x: 90, y: 30 },
-            'Left Winger': { x: 10, y: 30 },
-            'Right Wing': { x: 90, y: 30 },
-            'Left Wing': { x: 10, y: 30 },
+            'Right Winger': { x: 82, y: 30 },
+            'Left Winger': { x: 18, y: 30 },
+            'Right Wing': { x: 82, y: 30 },
+            'Left Wing': { x: 18, y: 30 },
             
             // Forwards
             'Striker': { x: 50, y: 15 },
