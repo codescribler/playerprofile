@@ -12,6 +12,7 @@ class ModernProfileView {
     async init() {
         await this.loadPlayerData();
         this.setupEventListeners();
+        this.generateQRCode();
     }
 
     setupEventListeners() {
@@ -581,6 +582,44 @@ class ModernProfileView {
                 </div>
             </div>
         `;
+    }
+
+    generateQRCode() {
+        // Generate QR code for the current public profile URL
+        const publicProfileUrl = `${window.location.origin}/profile-view.html?id=${this.playerId}`;
+        const canvas = document.getElementById('qr-code-canvas');
+        
+        if (canvas && typeof QRCode !== 'undefined') {
+            QRCode.toCanvas(canvas, publicProfileUrl, {
+                width: 80,
+                height: 80,
+                color: {
+                    dark: '#000000',
+                    light: '#FFFFFF'
+                },
+                margin: 1
+            }, function (error) {
+                if (error) {
+                    console.error('QR Code generation failed:', error);
+                    // Fallback: create a simple text element
+                    canvas.style.display = 'none';
+                    const fallback = document.createElement('div');
+                    fallback.style.cssText = 'font-size: 8pt; color: #000; text-align: center; word-break: break-all; padding: 5px; border: 1px solid #000; background: white; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;';
+                    fallback.textContent = 'View Online';
+                    canvas.parentNode.insertBefore(fallback, canvas);
+                }
+            });
+        } else {
+            // Fallback if QR code library is not available
+            console.warn('QR Code library not available');
+            const fallback = document.createElement('div');
+            fallback.style.cssText = 'font-size: 8pt; color: #000; text-align: center; word-break: break-all; padding: 5px; border: 1px solid #000; background: white; width: 80px; height: 80px; display: flex; align-items: center; justify-content: center;';
+            fallback.textContent = 'View Online';
+            if (canvas) {
+                canvas.style.display = 'none';
+                canvas.parentNode.insertBefore(fallback, canvas);
+            }
+        }
     }
 }
 

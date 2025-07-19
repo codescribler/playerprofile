@@ -19,6 +19,27 @@
             overflow: hidden;
         }
         
+        /* Print-specific tab content display */
+        @media print {
+            .tab-content {
+                display: block !important;
+                margin-bottom: var(--spacing-xl);
+            }
+            
+            /* Add section headers for print since tabs are hidden */
+            .tab-content::before {
+                content: attr(data-print-title);
+                display: block;
+                font-size: 16pt;
+                font-weight: bold;
+                color: #000 !important;
+                margin-bottom: var(--spacing-lg);
+                padding-bottom: var(--spacing-sm);
+                border-bottom: 2px solid #000;
+                background: white !important;
+            }
+        }
+        
         .profile-header::before {
             content: '';
             position: absolute;
@@ -386,7 +407,7 @@
             <div class="fm-tab" data-tab="contact">Contact</div>
         </div>
 
-        <div class="tab-content" id="overview-tab" data-mobile-title="Overview">
+        <div class="tab-content" id="overview-tab" data-mobile-title="Overview" data-print-title="Player Overview">
             <div class="fm-grid fm-grid-2">
                 <div class="fm-card">
                     <div class="fm-card-header">
@@ -460,7 +481,7 @@
             </div>
         </div>
 
-        <div class="tab-content" id="attributes-tab" style="display: none;" data-mobile-title="Attributes">
+        <div class="tab-content" id="attributes-tab" style="display: none;" data-mobile-title="Attributes" data-print-title="Player Attributes">
             <div class="fm-card">
                 <div class="fm-card-header">
                     <h3 class="fm-card-title">Technical Attributes</h3>
@@ -495,7 +516,7 @@
             </div>
         </div>
 
-        <div class="tab-content" id="positions-tab" style="display: none;" data-mobile-title="Positions">
+        <div class="tab-content" id="positions-tab" style="display: none;" data-mobile-title="Positions" data-print-title="Playing Positions">
             <div class="fm-card">
                 <div class="fm-card-header">
                     <h3 class="fm-card-title">Position Map</h3>
@@ -519,7 +540,7 @@
             </div>
         </div>
 
-        <div class="tab-content" id="history-tab" style="display: none;" data-mobile-title="History">
+        <div class="tab-content" id="history-tab" style="display: none;" data-mobile-title="History" data-print-title="Playing History">
             <div class="fm-card">
                 <div class="fm-card-header">
                     <h3 class="fm-card-title">Playing History</h3>
@@ -672,8 +693,16 @@
                 </div>
             </div>
         </div>
+        <div class="print-footer-qr">
+            <div class="qr-code-container">
+                <canvas id="qr-code-canvas" width="80" height="80"></canvas>
+                <div class="qr-code-text">Scan to view online profile</div>
+            </div>
+        </div>
     </div>
 
+    <!-- QR Code generation library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <script src="profile-view.js"></script>
 </body>
 </html>
