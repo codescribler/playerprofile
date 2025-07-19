@@ -299,7 +299,8 @@ class PlayerProfileApp {
         }
         
         document.getElementById('yearsPlaying').value = player.playingInfo?.yearsPlaying || '';
-        document.getElementById('currentTeam').value = player.playingInfo?.currentTeam?.clubName || player.playingInfo?.currentTeam || '';
+        document.getElementById('currentTeam').value = player.playingInfo?.currentTeam?.clubName || 
+            (typeof player.playingInfo?.currentTeam === 'string' ? player.playingInfo.currentTeam : '') || '';
         document.getElementById('league').value = player.playingInfo?.currentTeam?.league || player.playingInfo?.league || '';
         
         document.getElementById('currentSchool').value = player.academicInfo?.currentSchool || '';
@@ -848,8 +849,17 @@ class PlayerProfileApp {
         card.className = 'player-card';
         
         const age = this.calculateAge(player.personalInfo?.dateOfBirth);
-        const height = player.personalInfo?.height?.centimeters ? `${player.personalInfo.height.centimeters} cm` : 'N/A';
-        const weight = player.personalInfo?.weight?.kilograms ? `${player.personalInfo.weight.kilograms} kg` : 'N/A';
+        // Handle height - check if it's a number or can be parsed as a number
+        const heightValue = player.personalInfo?.height?.centimeters;
+        const height = (heightValue !== undefined && heightValue !== null && heightValue !== '' && !isNaN(parseFloat(heightValue))) 
+            ? `${parseFloat(heightValue)} cm` 
+            : 'N/A';
+        
+        // Handle weight - check if it's a number or can be parsed as a number
+        const weightValue = player.personalInfo?.weight?.kilograms;
+        const weight = (weightValue !== undefined && weightValue !== null && weightValue !== '' && !isNaN(parseFloat(weightValue))) 
+            ? `${parseFloat(weightValue)} kg` 
+            : 'N/A';
         
         // Handle profile photo - check both media.profilePhoto and potential upload path
         let profilePhotoHtml = '';
@@ -920,7 +930,10 @@ class PlayerProfileApp {
             <p><strong>Height:</strong> ${height}</p>
             <p><strong>Weight:</strong> ${weight}</p>
             <p><strong>Preferred Foot:</strong> ${this.formatFootPreference(player.personalInfo?.preferredFoot, player.personalInfo?.weakFootStrength)}</p>
-            <p><strong>Team:</strong> ${player.playingInfo?.currentTeam?.clubName || player.playingInfo?.currentTeam || 'N/A'}</p>
+            <p><strong>Team:</strong> ${
+                player.playingInfo?.currentTeam?.clubName || 
+                (typeof player.playingInfo?.currentTeam === 'string' ? player.playingInfo.currentTeam : 'N/A')
+            }</p>
             <p><strong>School:</strong> ${player.academicInfo?.currentSchool || 'N/A'}</p>
             ${publishedUrlSection}
             <div class="actions">
