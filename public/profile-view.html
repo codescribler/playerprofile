@@ -421,7 +421,13 @@
             background: var(--fm-surface-light);
             padding: var(--spacing-xs);
             border-radius: 8px;
-            margin-bottom: var(--spacing-lg);
+            margin-bottom: 0;
+        }
+        
+        /* Tab container background */
+        .tabs-container {
+            background: white;
+            padding: var(--spacing-md) 0;
         }
         
         /* Sticky header wrapper */
@@ -431,6 +437,13 @@
             z-index: 100;
             background: white;
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Remove margin and sticky behavior from nav when in sticky header */
+        .sticky-header-wrapper .fm-nav {
+            margin-bottom: 0;
+            position: relative;
+            top: auto;
         }
         
         /* Compact profile header when sticky */
@@ -462,6 +475,28 @@
             width: 50px;
             height: 50px;
             font-size: 1.2rem;
+        }
+        
+        /* Compact nav bar when scrolled */
+        .sticky-header-wrapper .fm-nav {
+            transition: padding 0.3s ease;
+        }
+        
+        .sticky-header-wrapper.scrolled .fm-nav {
+            padding: var(--spacing-xs) 0;
+        }
+        
+        .sticky-header-wrapper .fm-nav-brand img {
+            transition: height 0.3s ease;
+        }
+        
+        .sticky-header-wrapper.scrolled .fm-nav-brand img {
+            height: 40px;
+        }
+        
+        /* Add bottom margin to main container for sticky header */
+        .fm-container:has(.scroll-section) {
+            padding-top: var(--spacing-xl);
         }
         
         .fm-tab {
@@ -629,24 +664,6 @@
     </style>
 </head>
 <body>
-    <nav class="fm-nav">
-        <div class="fm-container">
-            <div class="fm-nav-container">
-                <div class="fm-nav-brand">
-                    <img src="images/playerprofilelogofull.png" alt="Player Profile Manager" style="height: 60px;">
-                </div>
-                <div class="fm-nav-actions">
-                    <button class="fm-btn fm-btn-primary fm-btn-sm" onclick="window.print()">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/>
-                        </svg>
-                        Print
-                    </button>
-                </div>
-            </div>
-        </div>
-    </nav>
-
     <!-- Print Header Logo (only visible when printing) -->
     <div class="print-header-logo" style="display: none;">
         <img src="images/playerprofilelogolightbackground.png" alt="Player Profile Manager">
@@ -656,6 +673,23 @@
     </div>
 
     <div class="sticky-header-wrapper" id="sticky-header">
+        <nav class="fm-nav">
+            <div class="fm-container">
+                <div class="fm-nav-container">
+                    <div class="fm-nav-brand">
+                        <img src="images/playerprofilelogofull.png" alt="Player Profile Manager" style="height: 60px;">
+                    </div>
+                    <div class="fm-nav-actions">
+                        <button class="fm-btn fm-btn-primary fm-btn-sm" onclick="window.print()">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6z"/>
+                            </svg>
+                            Print
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </nav>
         <div class="profile-header">
             <div class="fm-container">
                 <div class="profile-header-content">
@@ -694,13 +728,15 @@
                 </div>
             </div>
         </div>
-        <div class="fm-container">
-            <div class="fm-tabs" id="profile-tabs">
-                <div class="fm-tab active" data-section="overview-section">Overview</div>
-                <div class="fm-tab" data-section="attributes-section">Attributes</div>
-                <div class="fm-tab" data-section="positions-section">Positions</div>
-                <div class="fm-tab" data-section="history-section">History</div>
-                <div class="fm-tab" data-section="contact-section">Contact</div>
+        <div class="tabs-container">
+            <div class="fm-container">
+                <div class="fm-tabs" id="profile-tabs">
+                    <div class="fm-tab active" data-section="overview-section">Overview</div>
+                    <div class="fm-tab" data-section="attributes-section">Attributes</div>
+                    <div class="fm-tab" data-section="positions-section">Positions</div>
+                    <div class="fm-tab" data-section="history-section">History</div>
+                    <div class="fm-tab" data-section="contact-section">Contact</div>
+                </div>
             </div>
         </div>
     </div>
