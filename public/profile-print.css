@@ -513,7 +513,6 @@ body {
     height: 25px;
     max-width: 150px;
     object-fit: contain;
-    filter: grayscale(100%);
 }
 
 .footer-tagline {
