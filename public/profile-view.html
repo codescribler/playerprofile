@@ -321,7 +321,9 @@
     <nav class="fm-nav">
         <div class="fm-container">
             <div class="fm-nav-container">
-                <div class="fm-nav-brand">Player Profile System</div>
+                <div class="fm-nav-brand">
+                    <img src="images/playerprofilelogofull.png" alt="Player Profile Manager" style="height: 40px;">
+                </div>
                 <div class="fm-nav-actions">
                     <button class="fm-btn fm-btn-primary fm-btn-sm" onclick="window.print()">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -333,6 +335,11 @@
             </div>
         </div>
     </nav>
+
+    <!-- Print Header Logo (only visible when printing) -->
+    <div class="print-header-logo" style="display: none;">
+        <img src="images/playerprofilelogofull.png" alt="Player Profile Manager">
+    </div>
 
     <div class="profile-header">
         <div class="fm-container">
@@ -648,6 +655,24 @@
             </div>
         </div>
     </footer>
+
+    <!-- Print Footer (only visible when printing) -->
+    <div class="print-footer" style="display: none;">
+        <div class="footer-content">
+            <div class="footer-logo">
+                <img src="images/playerprofilelogofull.png" alt="Player Profile Manager">
+            </div>
+            <div class="footer-info">
+                <p><strong>Player Profile Management System</strong></p>
+                <p>The premier platform for football player profiles</p>
+                <p>Connecting talent with opportunities worldwide</p>
+                <div class="footer-contact">
+                    <p>For more information visit: <strong>www.playerprofilemanager.com</strong></p>
+                    <p>Contact: support@playerprofile.com | Phone: +1 (555) 123-4567</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="profile-view.js"></script>
 </body>

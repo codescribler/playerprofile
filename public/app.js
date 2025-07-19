@@ -20,14 +20,9 @@ class PlayerProfileApp {
 
         document.getElementById('login-form-content').addEventListener('submit', (e) => this.handleLogin(e));
         document.getElementById('register-form-content').addEventListener('submit', (e) => this.handleRegister(e));
-        document.getElementById('player-form-content').addEventListener('submit', (e) => this.handlePlayerForm(e));
-        document.getElementById('cancel-btn').addEventListener('click', () => this.hideModal('player-form'));
 
-        // Add secondary position button
-        document.getElementById('addSecondaryPosition').addEventListener('click', () => this.addSecondaryPosition());
-        
-        // Remove photo button
-        document.getElementById('remove-photo-btn').addEventListener('click', () => this.removeProfilePhoto());
+        // Position system handlers
+        this.setupPositionHandlers();
 
         const closeButtons = document.querySelectorAll('.close');
         closeButtons.forEach(btn => {
@@ -53,11 +48,221 @@ class PlayerProfileApp {
             }
         });
 
-        // Handle remove position button clicks
-        document.addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-position')) {
-                e.target.closest('.secondary-position-item').remove();
+    }
+
+    setupPositionHandlers() {
+        // Handle position checkbox changes
+        document.addEventListener('change', (e) => {
+            if (e.target.type === 'checkbox' && e.target.dataset.position) {
+                const positionItem = e.target.closest('.position-item');
+                if (e.target.checked) {
+                    positionItem.classList.add('selected');
+                } else {
+                    positionItem.classList.remove('selected');
+                }
             }
+        });
+
+        // Handle range slider updates for position suitability
+        document.addEventListener('input', (e) => {
+            if (e.target.type === 'range' && e.target.dataset.position) {
+                const rangeValue = e.target.nextElementSibling;
+                if (rangeValue && rangeValue.classList.contains('range-value')) {
+                    rangeValue.textContent = e.target.value + '%';
+                }
+            }
+        });
+
+        // Setup drag and drop functionality for position reordering
+        this.setupPositionDragAndDrop();
+    }
+
+    setupPositionDragAndDrop() {
+        let draggedElement = null;
+
+        document.addEventListener('dragstart', (e) => {
+            if (e.target.classList.contains('position-drag-handle')) {
+                const positionItem = e.target.closest('.position-item');
+                if (positionItem.classList.contains('selected')) {
+                    draggedElement = positionItem;
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/html', positionItem.outerHTML);
+                    positionItem.style.opacity = '0.4';
+                }
+            }
+        });
+
+        document.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            const positionItem = e.target.closest('.position-item');
+            if (positionItem && positionItem.classList.contains('selected') && positionItem !== draggedElement) {
+                e.dataTransfer.dropEffect = 'move';
+                positionItem.style.borderTop = '3px solid var(--fm-accent)';
+            }
+        });
+
+        document.addEventListener('dragleave', (e) => {
+            const positionItem = e.target.closest('.position-item');
+            if (positionItem) {
+                positionItem.style.borderTop = '';
+            }
+        });
+
+        document.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const targetItem = e.target.closest('.position-item');
+            if (targetItem && targetItem.classList.contains('selected') && draggedElement && targetItem !== draggedElement) {
+                const container = targetItem.parentNode;
+                container.insertBefore(draggedElement, targetItem);
+                targetItem.style.borderTop = '';
+            }
+        });
+
+        document.addEventListener('dragend', (e) => {
+            if (draggedElement) {
+                draggedElement.style.opacity = '1';
+                draggedElement = null;
+            }
+            // Clean up any remaining border styles
+            document.querySelectorAll('.position-item').forEach(item => {
+                item.style.borderTop = '';
+            });
+        });
+
+        // Make position items draggable when selected
+        document.addEventListener('change', (e) => {
+            if (e.target.type === 'checkbox' && e.target.dataset.position) {
+                const positionItem = e.target.closest('.position-item');
+                const dragHandle = positionItem.querySelector('.position-drag-handle');
+                if (e.target.checked) {
+                    dragHandle.setAttribute('draggable', 'true');
+                    dragHandle.style.cursor = 'grab';
+                } else {
+                    dragHandle.removeAttribute('draggable');
+                    dragHandle.style.cursor = 'default';
+                }
+            }
+        });
+    }
+
+    collectPositionData() {
+        const positions = [];
+        const selectedItems = document.querySelectorAll('.position-item.selected');
+        
+        selectedItems.forEach((item, index) => {
+            const position = item.dataset.position;
+            const checkbox = item.querySelector(`input[type="checkbox"][data-position="${position}"]`);
+            const suitabilityRange = item.querySelector(`input[type="range"][data-position="${position}"]`);
+            const notesTextarea = item.querySelector(`textarea[data-position="${position}"]`);
+            
+            if (checkbox && checkbox.checked) {
+                positions.push({
+                    position: position,
+                    suitability: parseInt(suitabilityRange.value) || 75,
+                    notes: notesTextarea.value.trim() || '',
+                    order: index + 1
+                });
+            }
+        });
+
+        return positions.sort((a, b) => a.order - b.order);
+    }
+
+    populatePositionData(positions) {
+        // Reset all position checkboxes
+        document.querySelectorAll('.position-item input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+            const positionItem = checkbox.closest('.position-item');
+            positionItem.classList.remove('selected');
+            
+            // Reset drag handle
+            const dragHandle = positionItem.querySelector('.position-drag-handle');
+            dragHandle.removeAttribute('draggable');
+            dragHandle.style.cursor = 'default';
+        });
+
+        if (!positions || !Array.isArray(positions)) return;
+
+        // Sort positions by order and populate form
+        const sortedPositions = positions.sort((a, b) => a.order - b.order);
+        
+        sortedPositions.forEach(pos => {
+            // Find the corresponding position item
+            const positionItem = document.querySelector(`.position-item[data-position="${pos.position}"]`);
+            if (positionItem) {
+                // Check the checkbox
+                const checkbox = positionItem.querySelector('input[type="checkbox"]');
+                const suitabilityRange = positionItem.querySelector('input[type="range"]');
+                const notesTextarea = positionItem.querySelector('textarea');
+                
+                if (checkbox) {
+                    checkbox.checked = true;
+                    positionItem.classList.add('selected');
+                    
+                    // Enable dragging
+                    const dragHandle = positionItem.querySelector('.position-drag-handle');
+                    dragHandle.setAttribute('draggable', 'true');
+                    dragHandle.style.cursor = 'grab';
+                }
+                
+                if (suitabilityRange) {
+                    suitabilityRange.value = pos.suitability || 75;
+                    const rangeValue = suitabilityRange.nextElementSibling;
+                    if (rangeValue && rangeValue.classList.contains('range-value')) {
+                        rangeValue.textContent = (pos.suitability || 75) + '%';
+                    }
+                }
+                
+                if (notesTextarea) {
+                    notesTextarea.value = pos.notes || '';
+                }
+            }
+        });
+
+        // Reorder position items in the DOM to match the order
+        this.reorderPositionItems(sortedPositions);
+    }
+
+    reorderPositionItems(sortedPositions) {
+        const container = document.getElementById('positions-container');
+        if (!container) return;
+
+        // Create a map of position to order for selected positions
+        const positionOrder = {};
+        sortedPositions.forEach((pos, index) => {
+            positionOrder[pos.position] = index;
+        });
+
+        // Get all position groups
+        const positionGroups = container.querySelectorAll('.position-group');
+        
+        positionGroups.forEach(group => {
+            const positionItems = Array.from(group.querySelectorAll('.position-item'));
+            const selectedItems = positionItems.filter(item => 
+                item.classList.contains('selected')
+            );
+            const unselectedItems = positionItems.filter(item => 
+                !item.classList.contains('selected')
+            );
+
+            // Sort selected items by their order
+            selectedItems.sort((a, b) => {
+                const aPosition = a.dataset.position;
+                const bPosition = b.dataset.position;
+                const aOrder = positionOrder[aPosition] !== undefined ? positionOrder[aPosition] : 999;
+                const bOrder = positionOrder[bPosition] !== undefined ? positionOrder[bPosition] : 999;
+                return aOrder - bOrder;
+            });
+
+            // Clear the group content and rebuild with sorted items
+            const groupTitle = group.querySelector('.position-group-title');
+            group.innerHTML = '';
+            group.appendChild(groupTitle);
+            
+            // Add selected items first (in order), then unselected items
+            [...selectedItems, ...unselectedItems].forEach(item => {
+                group.appendChild(item);
+            });
         });
     }
 
@@ -230,30 +435,6 @@ class PlayerProfileApp {
         }
     }
 
-    addSecondaryPosition(position = '', suitability = 75, notes = '') {
-        const container = document.getElementById('secondaryPositionsContainer');
-        const addButton = document.getElementById('addSecondaryPosition');
-        
-        const positionDiv = document.createElement('div');
-        positionDiv.className = 'secondary-position-item';
-        positionDiv.innerHTML = `
-            <div class="position-header">
-                <input type="text" class="secondary-position-name" placeholder="e.g., Right Wing, Center Back" value="${position}">
-                <button type="button" class="remove-position">Remove</button>
-            </div>
-            <div class="position-suitability">
-                <label>Suitability:</label>
-                <input type="range" class="secondary-position-suitability" min="0" max="100" value="${suitability}">
-                <span class="range-value">${suitability}</span>
-                <span>%</span>
-            </div>
-            <div class="position-notes">
-                <textarea class="secondary-position-notes" placeholder="Notes about player's ability in this position">${notes}</textarea>
-            </div>
-        `;
-        
-        container.insertBefore(positionDiv, addButton);
-    }
 
     removeProfilePhoto() {
         if (this.currentPlayer && this.currentPlayer.media) {
@@ -279,29 +460,8 @@ class PlayerProfileApp {
         document.getElementById('guardianPhone').value = player.contactInfo?.guardian?.phone || '';
         document.getElementById('guardianEmail').value = player.contactInfo?.guardian?.email || '';
         
-        document.getElementById('primaryPosition').value = player.playingInfo?.primaryPosition?.position || player.playingInfo?.primaryPosition || '';
-        document.getElementById('primaryPositionSuitability').value = player.playingInfo?.primaryPosition?.suitability || 100;
-        document.getElementById('primaryPositionNotes').value = player.playingInfo?.primaryPosition?.notes || '';
-        
-        // Clear existing secondary positions
-        const container = document.getElementById('secondaryPositionsContainer');
-        const existingPositions = container.querySelectorAll('.secondary-position-item');
-        existingPositions.forEach(item => item.remove());
-        
-        // Add secondary positions
-        if (player.playingInfo?.secondaryPositions && Array.isArray(player.playingInfo.secondaryPositions)) {
-            if (typeof player.playingInfo.secondaryPositions[0] === 'string') {
-                // Old format - convert to new format
-                player.playingInfo.secondaryPositions.forEach(pos => {
-                    this.addSecondaryPosition(pos, 75, '');
-                });
-            } else {
-                // New format with suitability and notes
-                player.playingInfo.secondaryPositions.forEach(pos => {
-                    this.addSecondaryPosition(pos.position, pos.suitability || 75, pos.notes || '');
-                });
-            }
-        }
+        // Handle position data population
+        this.populatePositionData(player.playingInfo?.positions);
         
         document.getElementById('yearsPlaying').value = player.playingInfo?.yearsPlaying || '';
         document.getElementById('currentTeam').value = player.playingInfo?.currentTeam?.clubName || 
@@ -392,10 +552,17 @@ class PlayerProfileApp {
     clearForm() {
         document.getElementById('player-form-content').reset();
         
-        // Clear secondary positions
-        const container = document.getElementById('secondaryPositionsContainer');
-        const existingPositions = container.querySelectorAll('.secondary-position-item');
-        existingPositions.forEach(item => item.remove());
+        // Clear position selections
+        document.querySelectorAll('.position-item input[type="checkbox"]').forEach(checkbox => {
+            checkbox.checked = false;
+            const positionItem = checkbox.closest('.position-item');
+            positionItem.classList.remove('selected');
+            
+            // Reset drag handle
+            const dragHandle = positionItem.querySelector('.position-drag-handle');
+            dragHandle.removeAttribute('draggable');
+            dragHandle.style.cursor = 'default';
+        });
         
         // Reset range inputs
         const rangeInputs = document.querySelectorAll('input[type="range"]');
@@ -605,24 +772,6 @@ class PlayerProfileApp {
         }
     }
 
-    collectSecondaryPositions() {
-        const positions = [];
-        const container = document.getElementById('secondaryPositionsContainer');
-        const positionItems = container.querySelectorAll('.secondary-position-item');
-        
-        positionItems.forEach(item => {
-            const position = item.querySelector('.secondary-position-name').value.trim();
-            if (position) {
-                positions.push({
-                    position: position,
-                    suitability: parseInt(item.querySelector('.secondary-position-suitability').value) || 75,
-                    notes: item.querySelector('.secondary-position-notes').value.trim()
-                });
-            }
-        });
-        
-        return positions;
-    }
 
     collectFormData() {
         const formData = {
@@ -654,12 +803,7 @@ class PlayerProfileApp {
                 }
             },
             playingInfo: {
-                primaryPosition: {
-                    position: document.getElementById('primaryPosition').value,
-                    suitability: parseInt(document.getElementById('primaryPositionSuitability').value) || 100,
-                    notes: document.getElementById('primaryPositionNotes').value.trim()
-                },
-                secondaryPositions: this.collectSecondaryPositions(),
+                positions: this.collectPositionData(),
                 yearsPlaying: parseInt(document.getElementById('yearsPlaying').value) || 0,
                 currentTeam: {
                     clubName: document.getElementById('currentTeam').value,
@@ -903,9 +1047,23 @@ class PlayerProfileApp {
             profilePhotoHtml = `<div class="profile-photo-placeholder">${initials}</div>`;
         }
         
-        // Format positions display
+        // Format positions display - updated for new position system
         let positionsDisplay = '';
-        if (player.playingInfo?.primaryPosition) {
+        if (player.playingInfo?.positions?.length > 0) {
+            // Sort by order and get primary position (order 1)
+            const sortedPositions = player.playingInfo.positions.sort((a, b) => a.order - b.order);
+            const primaryPosition = sortedPositions[0];
+            positionsDisplay = this.formatPositionName(primaryPosition.position);
+            
+            // Add secondary positions if any
+            if (sortedPositions.length > 1) {
+                const secondaryPositions = sortedPositions.slice(1, 3).map(pos => 
+                    this.formatPositionName(pos.position)
+                ).join(', ');
+                positionsDisplay += ` / ${secondaryPositions}`;
+            }
+        } else if (player.playingInfo?.primaryPosition) {
+            // Fallback for legacy data
             if (typeof player.playingInfo.primaryPosition === 'string') {
                 positionsDisplay = player.playingInfo.primaryPosition;
             } else {
@@ -913,17 +1071,6 @@ class PlayerProfileApp {
             }
         } else {
             positionsDisplay = 'N/A';
-        }
-        
-        if (player.playingInfo?.secondaryPositions && player.playingInfo.secondaryPositions.length > 0) {
-            const secondaryPositions = player.playingInfo.secondaryPositions.map(pos => {
-                if (typeof pos === 'string') {
-                    return pos;
-                } else {
-                    return pos.position;
-                }
-            }).join(', ');
-            positionsDisplay += ` | ${secondaryPositions}`;
         }
         
         // Create published URL section if published
@@ -1186,6 +1333,30 @@ class PlayerProfileApp {
         setTimeout(() => {
             messageDiv.remove();
         }, 5000);
+    }
+
+    formatPositionName(position) {
+        // Convert kebab-case position names to readable format
+        const positionMap = {
+            'goalkeeper': 'Goalkeeper',
+            'centre-back': 'Centre Back',
+            'right-back': 'Right Back',
+            'left-back': 'Left Back',
+            'right-wing-back': 'Right Wing Back',
+            'left-wing-back': 'Left Wing Back',
+            'defensive-midfielder': 'Defensive Midfielder',
+            'central-midfielder': 'Central Midfielder',
+            'attacking-midfielder': 'Attacking Midfielder',
+            'right-midfielder': 'Right Midfielder',
+            'left-midfielder': 'Left Midfielder',
+            'right-winger': 'Right Winger',
+            'left-winger': 'Left Winger',
+            'striker': 'Striker',
+            'centre-forward': 'Centre Forward',
+            'false-nine': 'False Nine'
+        };
+        
+        return positionMap[position] || position.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
 }
 

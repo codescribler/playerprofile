@@ -103,6 +103,43 @@ function repairPlayerData(player) {
     }
   }
   
+  // Migrate old position format to new format
+  if (player.playingInfo) {
+    // Check if we have old primaryPosition/secondaryPositions format but not new positions format
+    if ((player.playingInfo.primaryPosition || player.playingInfo.secondaryPositions) && !player.playingInfo.positions) {
+      console.log('Migrating position data for player:', player.personalInfo?.fullName);
+      const newPositions = [];
+      
+      // Convert primary position
+      if (player.playingInfo.primaryPosition) {
+        const primary = player.playingInfo.primaryPosition;
+        newPositions.push({
+          position: typeof primary === 'string' ? primary : primary.position,
+          suitability: typeof primary === 'object' ? (primary.suitability || 100) : 100,
+          notes: typeof primary === 'object' ? (primary.notes || '') : '',
+          order: 1
+        });
+      }
+      
+      // Convert secondary positions
+      if (player.playingInfo.secondaryPositions && Array.isArray(player.playingInfo.secondaryPositions)) {
+        player.playingInfo.secondaryPositions.forEach((secondary, index) => {
+          newPositions.push({
+            position: typeof secondary === 'string' ? secondary : secondary.position,
+            suitability: typeof secondary === 'object' ? (secondary.suitability || 75) : 75,
+            notes: typeof secondary === 'object' ? (secondary.notes || '') : '',
+            order: index + 2
+          });
+        });
+      }
+      
+      // Set new positions array and remove old properties
+      player.playingInfo.positions = newPositions;
+      delete player.playingInfo.primaryPosition;
+      delete player.playingInfo.secondaryPositions;
+    }
+  }
+  
   return player;
 }
 

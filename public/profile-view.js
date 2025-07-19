@@ -189,8 +189,34 @@ class ModernProfileView {
         positionMap.innerHTML = '';
         positionDetails.innerHTML = '';
 
-        // Primary position
-        if (player.playingInfo?.primaryPosition) {
+        // Handle new positions array format
+        if (player.playingInfo?.positions?.length > 0) {
+            const sortedPositions = player.playingInfo.positions.sort((a, b) => a.order - b.order);
+            
+            sortedPositions.forEach((pos, index) => {
+                const position = this.formatPositionName(pos.position);
+                const coords = this.getPositionCoordinates(position);
+                
+                if (coords) {
+                    const isPrimary = index === 0;
+                    positionMap.innerHTML += `
+                        <div class="position-marker ${isPrimary ? '' : 'secondary'}" style="left: ${coords.x}%; top: ${coords.y}%;" title="${position} (${pos.suitability}%)">
+                            ${this.getPositionAbbreviation(position)}
+                        </div>
+                    `;
+                }
+
+                positionDetails.innerHTML += `
+                    <div class="fm-stat">
+                        <span class="fm-stat-label">${index === 0 ? 'Primary Position' : 'Secondary Position'}</span>
+                        <span class="fm-stat-value">${position} (${pos.suitability}%)</span>
+                    </div>
+                    ${pos.notes ? `<div class="fm-stat"><span class="fm-stat-label">Notes</span><span class="fm-stat-value">${pos.notes}</span></div>` : ''}
+                `;
+            });
+        }
+        // Fallback for legacy data (handled by migration in server)
+        else if (player.playingInfo?.primaryPosition) {
             const primary = player.playingInfo.primaryPosition;
             const primaryPos = typeof primary === 'string' ? primary : primary.position;
             const primaryCoords = this.getPositionCoordinates(primaryPos);
@@ -209,29 +235,29 @@ class ModernProfileView {
                     <span class="fm-stat-value">${primaryPos} ${typeof primary === 'object' && primary.suitability ? `(${primary.suitability}%)` : ''}</span>
                 </div>
             `;
-        }
 
-        // Secondary positions
-        if (player.playingInfo?.secondaryPositions?.length > 0) {
-            player.playingInfo.secondaryPositions.forEach(pos => {
-                const position = typeof pos === 'string' ? pos : pos.position;
-                const coords = this.getPositionCoordinates(position);
-                
-                if (coords) {
-                    positionMap.innerHTML += `
-                        <div class="position-marker secondary" style="left: ${coords.x}%; top: ${coords.y}%;" title="${position}">
-                            ${this.getPositionAbbreviation(position)}
+            // Handle legacy secondary positions
+            if (player.playingInfo?.secondaryPositions?.length > 0) {
+                player.playingInfo.secondaryPositions.forEach(pos => {
+                    const position = typeof pos === 'string' ? pos : pos.position;
+                    const coords = this.getPositionCoordinates(position);
+                    
+                    if (coords) {
+                        positionMap.innerHTML += `
+                            <div class="position-marker secondary" style="left: ${coords.x}%; top: ${coords.y}%;" title="${position}">
+                                ${this.getPositionAbbreviation(position)}
+                            </div>
+                        `;
+                    }
+
+                    positionDetails.innerHTML += `
+                        <div class="fm-stat">
+                            <span class="fm-stat-label">Secondary Position</span>
+                            <span class="fm-stat-value">${position} ${typeof pos === 'object' && pos.suitability ? `(${pos.suitability}%)` : ''}</span>
                         </div>
                     `;
-                }
-
-                positionDetails.innerHTML += `
-                    <div class="fm-stat">
-                        <span class="fm-stat-label">Secondary Position</span>
-                        <span class="fm-stat-value">${position} ${typeof pos === 'object' && pos.suitability ? `(${pos.suitability}%)` : ''}</span>
-                    </div>
-                `;
-            });
+                });
+            }
         }
     }
 
@@ -304,6 +330,22 @@ class ModernProfileView {
     }
 
     getPositionDisplay(playingInfo) {
+        // Handle new positions array format
+        if (playingInfo?.positions?.length > 0) {
+            const sortedPositions = playingInfo.positions.sort((a, b) => a.order - b.order);
+            const primaryPosition = this.formatPositionName(sortedPositions[0].position);
+            
+            if (sortedPositions.length === 1) {
+                return primaryPosition;
+            } else {
+                const secondaryPositions = sortedPositions.slice(1, 3).map(pos => 
+                    this.formatPositionName(pos.position)
+                ).join(', ');
+                return `${primaryPosition} / ${secondaryPositions}`;
+            }
+        }
+        
+        // Fallback for legacy data
         if (!playingInfo?.primaryPosition) return 'Unknown';
         
         const primary = playingInfo.primaryPosition;
@@ -319,6 +361,30 @@ class ModernProfileView {
         }
         
         return display;
+    }
+
+    formatPositionName(position) {
+        // Convert kebab-case position names to readable format
+        const positionMap = {
+            'goalkeeper': 'Goalkeeper',
+            'centre-back': 'Centre Back',
+            'right-back': 'Right Back',
+            'left-back': 'Left Back',
+            'right-wing-back': 'Right Wing Back',
+            'left-wing-back': 'Left Wing Back',
+            'defensive-midfielder': 'Defensive Midfielder',
+            'central-midfielder': 'Central Midfielder',
+            'attacking-midfielder': 'Attacking Midfielder',
+            'right-midfielder': 'Right Midfielder',
+            'left-midfielder': 'Left Midfielder',
+            'right-winger': 'Right Winger',
+            'left-winger': 'Left Winger',
+            'striker': 'Striker',
+            'centre-forward': 'Centre Forward',
+            'false-nine': 'False Nine'
+        };
+        
+        return positionMap[position] || position.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
     }
 
     getHeight(personalInfo) {
@@ -432,6 +498,7 @@ class ModernProfileView {
             'Goalkeeper': { x: 50, y: 90 },
             'Right Back': { x: 80, y: 75 },
             'Center Back': { x: 50, y: 75 },
+            'Centre Back': { x: 50, y: 75 },
             'Left Back': { x: 20, y: 75 },
             'Right Wing Back': { x: 85, y: 60 },
             'Left Wing Back': { x: 15, y: 60 },
@@ -445,7 +512,9 @@ class ModernProfileView {
             'Right Wing': { x: 85, y: 30 },
             'Left Wing': { x: 15, y: 30 },
             'Striker': { x: 50, y: 20 },
-            'Center Forward': { x: 50, y: 20 }
+            'Center Forward': { x: 50, y: 20 },
+            'Centre Forward': { x: 50, y: 20 },
+            'False Nine': { x: 50, y: 25 }
         };
         
         return positions[position] || null;
@@ -456,6 +525,7 @@ class ModernProfileView {
             'Goalkeeper': 'GK',
             'Right Back': 'RB',
             'Center Back': 'CB',
+            'Centre Back': 'CB',
             'Left Back': 'LB',
             'Right Wing Back': 'RWB',
             'Left Wing Back': 'LWB',
@@ -469,7 +539,9 @@ class ModernProfileView {
             'Right Wing': 'RW',
             'Left Wing': 'LW',
             'Striker': 'ST',
-            'Center Forward': 'CF'
+            'Center Forward': 'CF',
+            'Centre Forward': 'CF',
+            'False Nine': 'F9'
         };
         
         return abbreviations[position] || position.slice(0, 3).toUpperCase();

@@ -4,530 +4,801 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Player Profile Form</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="fm-style.css">
     <link rel="icon" type="image/png" href="images/playerprofilemanagerlogo.png">
-    <style>
-        body {
-            background-color: #f5f5f5;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        .form-container {
-            max-width: 800px;
-            margin: 20px auto;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-        
-        .form-header {
-            background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%);
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-        
-        .form-header h1 {
-            margin: 0;
-            font-size: 2rem;
-        }
-        
-        .form-header .subtitle {
-            margin: 10px 0 0 0;
-            opacity: 0.9;
-            font-size: 1.1rem;
-        }
-        
-        .form-actions {
-            background: #34495e;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        
-        .form-actions .back-btn {
-            background: #95a5a6;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-        
-        .form-actions .back-btn:hover {
-            background: #7f8c8d;
-        }
-        
-        .form-content {
-            padding: 30px;
-        }
-        
-        .form-section {
-            margin-bottom: 30px;
-            padding: 20px;
-            border: 1px solid #ecf0f1;
-            border-radius: 8px;
-            background: #fafbfc;
-        }
-        
-        .form-section h3 {
-            margin-top: 0;
-            color: #2c3e50;
-            border-bottom: 2px solid #3498db;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .form-buttons {
-            background: #f8f9fa;
-            padding: 20px;
-            border-top: 1px solid #ecf0f1;
-            display: flex;
-            justify-content: flex-end;
-            gap: 15px;
-        }
-        
-        .form-buttons button {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 500;
-        }
-        
-        .form-buttons button[type="submit"] {
-            background: #27ae60;
-            color: white;
-        }
-        
-        .form-buttons button[type="submit"]:hover {
-            background: #219a52;
-        }
-        
-        .form-buttons button[type="button"] {
-            background: #95a5a6;
-            color: white;
-        }
-        
-        .form-buttons button[type="button"]:hover {
-            background: #7f8c8d;
-        }
-        
-        /* Progress indicator */
-        .progress-indicator {
-            background: white;
-            padding: 15px 20px;
-            border-bottom: 1px solid #ecf0f1;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .progress-step {
-            width: 30px;
-            height: 30px;
-            border-radius: 50%;
-            background: #ecf0f1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 10px;
-            font-weight: bold;
-            color: #7f8c8d;
-            position: relative;
-        }
-        
-        .progress-step.active {
-            background: #3498db;
-            color: white;
-        }
-        
-        .progress-step.completed {
-            background: #27ae60;
-            color: white;
-        }
-        
-        .progress-step::after {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 100%;
-            width: 20px;
-            height: 2px;
-            background: #ecf0f1;
-            transform: translateY(-50%);
-        }
-        
-        .progress-step:last-child::after {
-            display: none;
-        }
-        
-        /* Responsive design */
-        @media (max-width: 768px) {
-            .form-container {
-                margin: 10px;
-                border-radius: 0;
-            }
-            
-            .form-content {
-                padding: 20px;
-            }
-            
-            .form-header h1 {
-                font-size: 1.5rem;
-            }
-            
-            .form-buttons {
-                flex-direction: column;
-            }
-            
-            .form-buttons button {
-                width: 100%;
-            }
-        }
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="form-container">
-        <div class="form-header">
-            <h1 id="form-title">Create Player Profile</h1>
-            <p class="subtitle">Complete all sections to create a comprehensive player profile</p>
-        </div>
-        
-        <div class="form-actions">
-            <button class="back-btn" onclick="window.history.back()">← Back to Dashboard</button>
-            <div class="form-status">
-                <span id="form-status-text">Ready to create profile</span>
+    <!-- Navigation -->
+    <nav class="fm-nav">
+        <div class="fm-container">
+            <div class="fm-nav-container">
+                <div class="fm-nav-brand">
+                    <img src="images/playerprofilelogofull.png" alt="Player Profile Manager" style="height: 40px;">
+                </div>
+                <div class="fm-nav-actions">
+                    <button id="back-btn" class="fm-btn fm-btn-secondary fm-btn-sm">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.5rem;">
+                            <path d="M19 12H5M12 19l-7-7 7-7"/>
+                        </svg>
+                        Back to Dashboard
+                    </button>
+                    <button id="quick-save-btn" class="fm-btn fm-btn-success fm-btn-sm">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.5rem;">
+                            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+                            <polyline points="17,21 17,13 7,13 7,21"/>
+                            <polyline points="7,3 7,8 15,8"/>
+                        </svg>
+                        Quick Save
+                    </button>
+                </div>
             </div>
         </div>
-        
-        <div class="form-content">
-            <form id="player-form-content">
-                <div class="form-section">
-                    <h3>Personal Information</h3>
-                    <div class="form-group">
-                        <label for="fullName">Full Name *</label>
-                        <input type="text" id="fullName" placeholder="Enter player's full name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="dateOfBirth">Date of Birth *</label>
-                        <input type="date" id="dateOfBirth" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="heightCm">Height (cm)</label>
-                        <input type="number" id="heightCm" placeholder="Height in centimeters (e.g., 175.5)" min="120" max="220" step="0.1">
-                    </div>
-                    <div class="form-group">
-                        <label for="weightKg">Weight (kg)</label>
-                        <input type="number" id="weightKg" placeholder="Weight in kilograms (e.g., 70.5)" min="30" max="150" step="0.1">
-                    </div>
-                    <div class="form-group">
-                        <label for="preferredFoot">Preferred Foot</label>
-                        <select id="preferredFoot">
-                            <option value="">Select Preferred Foot</option>
-                            <option value="right">Right</option>
-                            <option value="left">Left</option>
-                            <option value="both">Both</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="weakFootStrength">Weak Foot Strength (%)</label>
-                        <input type="number" id="weakFootStrength" placeholder="e.g., 70" min="0" max="100" value="50">
-                        <small>How good is the weak foot compared to the strong foot (0-100%)</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="nationality">Nationality</label>
-                        <input type="text" id="nationality" placeholder="Enter nationality">
-                    </div>
-                </div>
+    </nav>
 
-                <div class="form-section">
-                    <h3>Contact Information</h3>
-                    <div class="form-group">
-                        <label for="playerPhone">Player Phone</label>
-                        <input type="tel" id="playerPhone" placeholder="Enter player's phone number">
-                    </div>
-                    <div class="form-group">
-                        <label for="playerEmail">Player Email</label>
-                        <input type="email" id="playerEmail" placeholder="Enter player's email address">
-                    </div>
-                    <div class="form-group">
-                        <label for="guardianName">Guardian/Parent Name</label>
-                        <input type="text" id="guardianName" placeholder="Enter guardian's full name">
-                    </div>
-                    <div class="form-group">
-                        <label for="guardianPhone">Guardian/Parent Phone</label>
-                        <input type="tel" id="guardianPhone" placeholder="Enter guardian's phone number">
-                    </div>
-                    <div class="form-group">
-                        <label for="guardianEmail">Guardian/Parent Email</label>
-                        <input type="email" id="guardianEmail" placeholder="Enter guardian's email address">
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <h3>Playing Information</h3>
-                    <div class="form-group">
-                        <label for="primaryPosition">Primary Position</label>
-                        <input type="text" id="primaryPosition" placeholder="e.g., Forward, Midfielder, Defender, Goalkeeper">
-                    </div>
-                    <div class="form-group">
-                        <label for="primaryPositionSuitability">Primary Position Suitability (%)</label>
-                        <input type="range" id="primaryPositionSuitability" min="0" max="100" value="100">
-                        <span class="range-value">100</span>
-                        <span>%</span>
-                        <small>How well suited is the player to their primary position (0-100%)</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="primaryPositionNotes">Primary Position Notes</label>
-                        <textarea id="primaryPositionNotes" placeholder="Notes about player's ability in their primary position"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Secondary Positions</label>
-                        <div id="secondaryPositionsContainer">
-                            <button type="button" id="addSecondaryPosition" class="add-position-btn">+ Add Secondary Position</button>
+    <!-- Main Content -->
+    <div class="fm-container fm-mt-lg">
+        <div class="fm-card">
+            <div class="fm-card-header">
+                <h2 id="form-title" class="fm-card-title">Create Player Profile</h2>
+            </div>
+            <div class="fm-card-body">
+                <form id="player-form-content" class="fm-form">
+                    <!-- Personal Information -->
+                    <div class="fm-card fm-mb-lg">
+                        <div class="fm-card-header">
+                            <h3 class="fm-card-title">Personal Information</h3>
                         </div>
-                        <small>Add each secondary position with suitability rating and notes</small>
-                    </div>
-                    <div class="form-group">
-                        <label for="yearsPlaying">Years Playing</label>
-                        <input type="number" id="yearsPlaying" placeholder="Number of years playing football" min="0" max="30">
-                    </div>
-                    <div class="form-group">
-                        <label for="currentTeam">Current Team/Club</label>
-                        <input type="text" id="currentTeam" placeholder="Enter current team or club name">
-                    </div>
-                    <div class="form-group">
-                        <label for="league">League/Division</label>
-                        <input type="text" id="league" placeholder="Enter league or division name">
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <h3>Academic Information</h3>
-                    <div class="form-group">
-                        <label for="currentSchool">Current School</label>
-                        <input type="text" id="currentSchool" placeholder="Enter school name">
-                    </div>
-                    <div class="form-group">
-                        <label for="gradeYear">Current Grade/Year</label>
-                        <input type="text" id="gradeYear" placeholder="e.g., 10th Grade, Year 11, Sophomore">
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <h3>Profile Photo</h3>
-                    <div class="form-group">
-                        <div id="current-photo-preview" style="display: none;">
-                            <img id="current-photo" src="" alt="Current profile photo" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; margin-bottom: 10px;">
-                            <button type="button" id="remove-photo-btn" class="remove-photo-btn">Remove Photo</button>
-                        </div>
-                        <label for="profilePhoto">Upload New Profile Photo</label>
-                        <input type="file" id="profilePhoto" accept="image/*">
-                        <small>Leave empty to keep current photo</small>
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <h3>Player Abilities (Rate 1-10)</h3>
-                    
-                    <div class="abilities-category">
-                        <h4>Technical Skills</h4>
-                        <div class="abilities-grid">
-                            <div class="ability-item">
-                                <label>Ball Control</label>
-                                <input type="range" id="ballControl" min="1" max="10" value="5">
-                                <span class="range-value">5</span>
+                        <div class="fm-card-body">
+                            <div class="fm-form-group">
+                                <label for="fullName" class="fm-label">Full Name *</label>
+                                <input type="text" id="fullName" class="fm-input" placeholder="Enter player's full name" required>
                             </div>
-                            <div class="ability-item">
-                                <label>Passing</label>
-                                <input type="range" id="passing" min="1" max="10" value="5">
-                                <span class="range-value">5</span>
+                            <div class="fm-form-group">
+                                <label for="dateOfBirth" class="fm-label">Date of Birth *</label>
+                                <input type="date" id="dateOfBirth" class="fm-input" required>
                             </div>
-                            <div class="ability-item">
-                                <label>Shooting</label>
-                                <input type="range" id="shooting" min="1" max="10" value="5">
-                                <span class="range-value">5</span>
+                            <div class="fm-grid fm-grid-2">
+                                <div class="fm-form-group">
+                                    <label for="heightCm" class="fm-label">Height (cm)</label>
+                                    <input type="number" id="heightCm" class="fm-input" placeholder="e.g., 175.5" min="120" max="220" step="0.1">
+                                </div>
+                                <div class="fm-form-group">
+                                    <label for="weightKg" class="fm-label">Weight (kg)</label>
+                                    <input type="number" id="weightKg" class="fm-input" placeholder="e.g., 70.5" min="30" max="150" step="0.1">
+                                </div>
                             </div>
-                            <div class="ability-item">
-                                <label>Dribbling</label>
-                                <input type="range" id="dribbling" min="1" max="10" value="5">
-                                <span class="range-value">5</span>
+                            <div class="fm-grid fm-grid-2">
+                                <div class="fm-form-group">
+                                    <label for="preferredFoot" class="fm-label">Preferred Foot</label>
+                                    <select id="preferredFoot" class="fm-select">
+                                        <option value="">Select Preferred Foot</option>
+                                        <option value="Right">Right</option>
+                                        <option value="Left">Left</option>
+                                        <option value="Both">Both</option>
+                                    </select>
+                                </div>
+                                <div class="fm-form-group">
+                                    <label for="weakFootStrength" class="fm-label">Weak Foot Strength (%)</label>
+                                    <input type="range" id="weakFootStrength" class="fm-input" min="0" max="100" value="50" style="width: 100%;">
+                                    <span class="range-value">50%</span>
+                                </div>
                             </div>
-                            <div class="ability-item">
-                                <label>First Touch</label>
-                                <input type="range" id="firstTouch" min="1" max="10" value="5">
-                                <span class="range-value">5</span>
-                            </div>
-                            <div class="ability-item">
-                                <label>Crossing</label>
-                                <input type="range" id="crossing" min="1" max="10" value="5">
-                                <span class="range-value">5</span>
-                            </div>
-                            <div class="ability-item">
-                                <label>Tackling</label>
-                                <input type="range" id="tackling" min="1" max="10" value="5">
-                                <span class="range-value">5</span>
-                            </div>
-                            <div class="ability-item">
-                                <label>Heading</label>
-                                <input type="range" id="heading" min="1" max="10" value="5">
-                                <span class="range-value">5</span>
+                            <div class="fm-form-group">
+                                <label for="nationality" class="fm-label">Nationality</label>
+                                <input type="text" id="nationality" class="fm-input" placeholder="Enter nationality">
                             </div>
                         </div>
                     </div>
 
-                    <div class="abilities-category">
-                        <h4>Physical Attributes</h4>
-                        <div class="abilities-grid">
-                            <div class="ability-item">
-                                <label>Pace</label>
-                                <input type="range" id="pace" min="1" max="10" value="5">
-                                <span class="range-value">5</span>
+                    <!-- Contact Information -->
+                    <div class="fm-card fm-mb-lg">
+                        <div class="fm-card-header">
+                            <h3 class="fm-card-title">Contact Information</h3>
+                        </div>
+                        <div class="fm-card-body">
+                            <div class="fm-form-group">
+                                <label for="playerPhone" class="fm-label">Player Phone</label>
+                                <input type="tel" id="playerPhone" class="fm-input" placeholder="Enter player's phone number">
                             </div>
-                            <div class="ability-item">
-                                <label>Strength</label>
-                                <input type="range" id="strength" min="1" max="10" value="5">
-                                <span class="range-value">5</span>
+                            <div class="fm-form-group">
+                                <label for="playerEmail" class="fm-label">Player Email</label>
+                                <input type="email" id="playerEmail" class="fm-input" placeholder="Enter player's email address">
                             </div>
-                            <div class="ability-item">
-                                <label>Stamina</label>
-                                <input type="range" id="stamina" min="1" max="10" value="5">
-                                <span class="range-value">5</span>
+                            <div class="fm-form-group">
+                                <label for="guardianName" class="fm-label">Guardian/Parent Name</label>
+                                <input type="text" id="guardianName" class="fm-input" placeholder="Enter guardian's full name">
                             </div>
-                            <div class="ability-item">
-                                <label>Agility</label>
-                                <input type="range" id="agility" min="1" max="10" value="5">
-                                <span class="range-value">5</span>
+                            <div class="fm-form-group">
+                                <label for="guardianPhone" class="fm-label">Guardian/Parent Phone</label>
+                                <input type="tel" id="guardianPhone" class="fm-input" placeholder="Enter guardian's phone number">
                             </div>
-                            <div class="ability-item">
-                                <label>Balance</label>
-                                <input type="range" id="balance" min="1" max="10" value="5">
-                                <span class="range-value">5</span>
-                            </div>
-                            <div class="ability-item">
-                                <label>Jumping</label>
-                                <input type="range" id="jumping" min="1" max="10" value="5">
-                                <span class="range-value">5</span>
+                            <div class="fm-form-group">
+                                <label for="guardianEmail" class="fm-label">Guardian/Parent Email</label>
+                                <input type="email" id="guardianEmail" class="fm-input" placeholder="Enter guardian's email address">
                             </div>
                         </div>
                     </div>
 
-                    <div class="abilities-category">
-                        <h4>Mental & Tactical</h4>
-                        <div class="abilities-grid">
-                            <div class="ability-item">
-                                <label>Decision Making</label>
-                                <input type="range" id="decisionMaking" min="1" max="10" value="5">
-                                <span class="range-value">5</span>
+                    <!-- Playing Information -->
+                    <div class="fm-card fm-mb-lg">
+                        <div class="fm-card-header">
+                            <h3 class="fm-card-title">Playing Information</h3>
+                        </div>
+                        <div class="fm-card-body">
+                            <div class="fm-form-group">
+                                <label class="fm-label">Player Positions</label>
+                                <div class="position-instructions">
+                                    <small class="fm-text-muted">
+                                        <strong>Instructions:</strong> Select all positions the player can play. 
+                                        <br><strong>Primary Position:</strong> Use the "Primary" checkbox to mark one position as the main position.
+                                        <br><strong>Note:</strong> Only one position can be marked as primary at a time.
+                                    </small>
+                                </div>
+                                <div id="positions-container" class="positions-container">
+                                    <!-- Goalkeeper -->
+                                    <div class="position-group">
+                                        <h4 class="position-group-title">Goalkeeper</h4>
+                                        <div class="position-item" data-position="goalkeeper">
+                                            <div class="position-header">
+                                                <input type="checkbox" id="pos-goalkeeper" data-position="goalkeeper">
+                                                <label for="pos-goalkeeper">Goalkeeper (GK)</label>
+                                                <div class="position-primary">
+                                                    <input type="checkbox" id="primary-goalkeeper" class="primary-checkbox" data-position="goalkeeper">
+                                                    <label for="primary-goalkeeper" class="primary-label">Primary</label>
+                                                </div>
+                                            </div>
+                                            <div class="position-details">
+                                                <div class="position-suitability">
+                                                    <label>Suitability:</label>
+                                                    <input type="range" min="1" max="100" value="75" data-position="goalkeeper">
+                                                    <span class="range-value">75%</span>
+                                                </div>
+                                                <textarea placeholder="Notes about ability in this position..." data-position="goalkeeper"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Defenders -->
+                                    <div class="position-group">
+                                        <h4 class="position-group-title">Defenders</h4>
+                                        <div class="position-item" data-position="centre-back">
+                                            <div class="position-header">
+                                                <input type="checkbox" id="pos-centre-back" data-position="centre-back">
+                                                <label for="pos-centre-back">Centre Back (CB)</label>
+                                                <div class="position-primary">
+                                                    <input type="checkbox" id="primary-centre-back" class="primary-checkbox" data-position="centre-back">
+                                                    <label for="primary-centre-back" class="primary-label">Primary</label>
+                                                </div>
+                                            </div>
+                                            <div class="position-details">
+                                                <div class="position-suitability">
+                                                    <label>Suitability:</label>
+                                                    <input type="range" min="1" max="100" value="75" data-position="centre-back">
+                                                    <span class="range-value">75%</span>
+                                                </div>
+                                                <textarea placeholder="Notes about ability in this position..." data-position="centre-back"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="position-item" data-position="right-back">
+                                            <div class="position-header">
+                                                <input type="checkbox" id="pos-right-back" data-position="right-back">
+                                                <label for="pos-right-back">Right Back (RB)</label>
+                                                <div class="position-primary">
+                                                    <input type="checkbox" id="primary-right-back" class="primary-checkbox" data-position="right-back">
+                                                    <label for="primary-right-back" class="primary-label">Primary</label>
+                                                </div>
+                                            </div>
+                                            <div class="position-details">
+                                                <div class="position-suitability">
+                                                    <label>Suitability:</label>
+                                                    <input type="range" min="1" max="100" value="75" data-position="right-back">
+                                                    <span class="range-value">75%</span>
+                                                </div>
+                                                <textarea placeholder="Notes about ability in this position..." data-position="right-back"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="position-item" data-position="left-back">
+                                            <div class="position-header">
+                                                <input type="checkbox" id="pos-left-back" data-position="left-back">
+                                                <label for="pos-left-back">Left Back (LB)</label>
+                                                <div class="position-primary">
+                                                    <input type="checkbox" id="primary-left-back" class="primary-checkbox" data-position="left-back">
+                                                    <label for="primary-left-back" class="primary-label">Primary</label>
+                                                </div>
+                                            </div>
+                                            <div class="position-details">
+                                                <div class="position-suitability">
+                                                    <label>Suitability:</label>
+                                                    <input type="range" min="1" max="100" value="75" data-position="left-back">
+                                                    <span class="range-value">75%</span>
+                                                </div>
+                                                <textarea placeholder="Notes about ability in this position..." data-position="left-back"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="position-item" data-position="right-wing-back">
+                                            <div class="position-header">
+                                                <input type="checkbox" id="pos-right-wing-back" data-position="right-wing-back">
+                                                <label for="pos-right-wing-back">Right Wing Back (RWB)</label>
+                                                <div class="position-primary">
+                                                    <input type="checkbox" id="primary-right-wing-back" class="primary-checkbox" data-position="right-wing-back">
+                                                    <label for="primary-right-wing-back" class="primary-label">Primary</label>
+                                                </div>
+                                            </div>
+                                            <div class="position-details">
+                                                <div class="position-suitability">
+                                                    <label>Suitability:</label>
+                                                    <input type="range" min="1" max="100" value="75" data-position="right-wing-back">
+                                                    <span class="range-value">75%</span>
+                                                </div>
+                                                <textarea placeholder="Notes about ability in this position..." data-position="right-wing-back"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="position-item" data-position="left-wing-back">
+                                            <div class="position-header">
+                                                <input type="checkbox" id="pos-left-wing-back" data-position="left-wing-back">
+                                                <label for="pos-left-wing-back">Left Wing Back (LWB)</label>
+                                                <div class="position-primary">
+                                                    <input type="checkbox" id="primary-left-wing-back" class="primary-checkbox" data-position="left-wing-back">
+                                                    <label for="primary-left-wing-back" class="primary-label">Primary</label>
+                                                </div>
+                                            </div>
+                                            <div class="position-details">
+                                                <div class="position-suitability">
+                                                    <label>Suitability:</label>
+                                                    <input type="range" min="1" max="100" value="75" data-position="left-wing-back">
+                                                    <span class="range-value">75%</span>
+                                                </div>
+                                                <textarea placeholder="Notes about ability in this position..." data-position="left-wing-back"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Midfielders -->
+                                    <div class="position-group">
+                                        <h4 class="position-group-title">Midfielders</h4>
+                                        <div class="position-item" data-position="defensive-midfielder">
+                                            <div class="position-header">
+                                                <input type="checkbox" id="pos-defensive-midfielder" data-position="defensive-midfielder">
+                                                <label for="pos-defensive-midfielder">Defensive Midfielder (DM/CDM)</label>
+                                                <div class="position-primary">
+                                                    <input type="checkbox" id="primary-defensive-midfielder" class="primary-checkbox" data-position="defensive-midfielder">
+                                                    <label for="primary-defensive-midfielder" class="primary-label">Primary</label>
+                                                </div>
+                                            </div>
+                                            <div class="position-details">
+                                                <div class="position-suitability">
+                                                    <label>Suitability:</label>
+                                                    <input type="range" min="1" max="100" value="75" data-position="defensive-midfielder">
+                                                    <span class="range-value">75%</span>
+                                                </div>
+                                                <textarea placeholder="Notes about ability in this position..." data-position="defensive-midfielder"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="position-item" data-position="central-midfielder">
+                                            <div class="position-header">
+                                                <input type="checkbox" id="pos-central-midfielder" data-position="central-midfielder">
+                                                <label for="pos-central-midfielder">Central Midfielder (CM)</label>
+                                                <div class="position-primary">
+                                                    <input type="checkbox" id="primary-central-midfielder" class="primary-checkbox" data-position="central-midfielder">
+                                                    <label for="primary-central-midfielder" class="primary-label">Primary</label>
+                                                </div>
+                                            </div>
+                                            <div class="position-details">
+                                                <div class="position-suitability">
+                                                    <label>Suitability:</label>
+                                                    <input type="range" min="1" max="100" value="75" data-position="central-midfielder">
+                                                    <span class="range-value">75%</span>
+                                                </div>
+                                                <textarea placeholder="Notes about ability in this position..." data-position="central-midfielder"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="position-item" data-position="attacking-midfielder">
+                                            <div class="position-header">
+                                                <input type="checkbox" id="pos-attacking-midfielder" data-position="attacking-midfielder">
+                                                <label for="pos-attacking-midfielder">Attacking Midfielder (AM/CAM)</label>
+                                                <div class="position-primary">
+                                                    <input type="checkbox" id="primary-attacking-midfielder" class="primary-checkbox" data-position="attacking-midfielder">
+                                                    <label for="primary-attacking-midfielder" class="primary-label">Primary</label>
+                                                </div>
+                                            </div>
+                                            <div class="position-details">
+                                                <div class="position-suitability">
+                                                    <label>Suitability:</label>
+                                                    <input type="range" min="1" max="100" value="75" data-position="attacking-midfielder">
+                                                    <span class="range-value">75%</span>
+                                                </div>
+                                                <textarea placeholder="Notes about ability in this position..." data-position="attacking-midfielder"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="position-item" data-position="right-midfielder">
+                                            <div class="position-header">
+                                                <input type="checkbox" id="pos-right-midfielder" data-position="right-midfielder">
+                                                <label for="pos-right-midfielder">Right Midfielder (RM)</label>
+                                                <div class="position-primary">
+                                                    <input type="checkbox" id="primary-right-midfielder" class="primary-checkbox" data-position="right-midfielder">
+                                                    <label for="primary-right-midfielder" class="primary-label">Primary</label>
+                                                </div>
+                                            </div>
+                                            <div class="position-details">
+                                                <div class="position-suitability">
+                                                    <label>Suitability:</label>
+                                                    <input type="range" min="1" max="100" value="75" data-position="right-midfielder">
+                                                    <span class="range-value">75%</span>
+                                                </div>
+                                                <textarea placeholder="Notes about ability in this position..." data-position="right-midfielder"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="position-item" data-position="left-midfielder">
+                                            <div class="position-header">
+                                                <input type="checkbox" id="pos-left-midfielder" data-position="left-midfielder">
+                                                <label for="pos-left-midfielder">Left Midfielder (LM)</label>
+                                                <div class="position-primary">
+                                                    <input type="checkbox" id="primary-left-midfielder" class="primary-checkbox" data-position="left-midfielder">
+                                                    <label for="primary-left-midfielder" class="primary-label">Primary</label>
+                                                </div>
+                                            </div>
+                                            <div class="position-details">
+                                                <div class="position-suitability">
+                                                    <label>Suitability:</label>
+                                                    <input type="range" min="1" max="100" value="75" data-position="left-midfielder">
+                                                    <span class="range-value">75%</span>
+                                                </div>
+                                                <textarea placeholder="Notes about ability in this position..." data-position="left-midfielder"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Forwards -->
+                                    <div class="position-group">
+                                        <h4 class="position-group-title">Forwards</h4>
+                                        <div class="position-item" data-position="right-winger">
+                                            <div class="position-header">
+                                                <input type="checkbox" id="pos-right-winger" data-position="right-winger">
+                                                <label for="pos-right-winger">Right Winger (RW)</label>
+                                                <div class="position-primary">
+                                                    <input type="checkbox" id="primary-right-winger" class="primary-checkbox" data-position="right-winger">
+                                                    <label for="primary-right-winger" class="primary-label">Primary</label>
+                                                </div>
+                                            </div>
+                                            <div class="position-details">
+                                                <div class="position-suitability">
+                                                    <label>Suitability:</label>
+                                                    <input type="range" min="1" max="100" value="75" data-position="right-winger">
+                                                    <span class="range-value">75%</span>
+                                                </div>
+                                                <textarea placeholder="Notes about ability in this position..." data-position="right-winger"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="position-item" data-position="left-winger">
+                                            <div class="position-header">
+                                                <input type="checkbox" id="pos-left-winger" data-position="left-winger">
+                                                <label for="pos-left-winger">Left Winger (LW)</label>
+                                                <div class="position-primary">
+                                                    <input type="checkbox" id="primary-left-winger" class="primary-checkbox" data-position="left-winger">
+                                                    <label for="primary-left-winger" class="primary-label">Primary</label>
+                                                </div>
+                                            </div>
+                                            <div class="position-details">
+                                                <div class="position-suitability">
+                                                    <label>Suitability:</label>
+                                                    <input type="range" min="1" max="100" value="75" data-position="left-winger">
+                                                    <span class="range-value">75%</span>
+                                                </div>
+                                                <textarea placeholder="Notes about ability in this position..." data-position="left-winger"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="position-item" data-position="striker">
+                                            <div class="position-header">
+                                                <input type="checkbox" id="pos-striker" data-position="striker">
+                                                <label for="pos-striker">Striker (ST)</label>
+                                                <div class="position-primary">
+                                                    <input type="checkbox" id="primary-striker" class="primary-checkbox" data-position="striker">
+                                                    <label for="primary-striker" class="primary-label">Primary</label>
+                                                </div>
+                                            </div>
+                                            <div class="position-details">
+                                                <div class="position-suitability">
+                                                    <label>Suitability:</label>
+                                                    <input type="range" min="1" max="100" value="75" data-position="striker">
+                                                    <span class="range-value">75%</span>
+                                                </div>
+                                                <textarea placeholder="Notes about ability in this position..." data-position="striker"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="position-item" data-position="centre-forward">
+                                            <div class="position-header">
+                                                <input type="checkbox" id="pos-centre-forward" data-position="centre-forward">
+                                                <label for="pos-centre-forward">Centre Forward (CF)</label>
+                                                <div class="position-primary">
+                                                    <input type="checkbox" id="primary-centre-forward" class="primary-checkbox" data-position="centre-forward">
+                                                    <label for="primary-centre-forward" class="primary-label">Primary</label>
+                                                </div>
+                                            </div>
+                                            <div class="position-details">
+                                                <div class="position-suitability">
+                                                    <label>Suitability:</label>
+                                                    <input type="range" min="1" max="100" value="75" data-position="centre-forward">
+                                                    <span class="range-value">75%</span>
+                                                </div>
+                                                <textarea placeholder="Notes about ability in this position..." data-position="centre-forward"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="position-item" data-position="false-nine">
+                                            <div class="position-header">
+                                                <input type="checkbox" id="pos-false-nine" data-position="false-nine">
+                                                <label for="pos-false-nine">False Nine (F9)</label>
+                                                <div class="position-primary">
+                                                    <input type="checkbox" id="primary-false-nine" class="primary-checkbox" data-position="false-nine">
+                                                    <label for="primary-false-nine" class="primary-label">Primary</label>
+                                                </div>
+                                            </div>
+                                            <div class="position-details">
+                                                <div class="position-suitability">
+                                                    <label>Suitability:</label>
+                                                    <input type="range" min="1" max="100" value="75" data-position="false-nine">
+                                                    <span class="range-value">75%</span>
+                                                </div>
+                                                <textarea placeholder="Notes about ability in this position..." data-position="false-nine"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="ability-item">
-                                <label>Positioning</label>
-                                <input type="range" id="positioning" min="1" max="10" value="5">
-                                <span class="range-value">5</span>
+                            <div class="fm-form-group">
+                                <label for="yearsPlaying" class="fm-label">Years Playing</label>
+                                <input type="number" id="yearsPlaying" class="fm-input" placeholder="Number of years playing football" min="0" max="30">
                             </div>
-                            <div class="ability-item">
-                                <label>Concentration</label>
-                                <input type="range" id="concentration" min="1" max="10" value="5">
-                                <span class="range-value">5</span>
+                            <div class="fm-form-group">
+                                <label for="currentTeam" class="fm-label">Current Team/Club</label>
+                                <input type="text" id="currentTeam" class="fm-input" placeholder="Enter current team or club name">
                             </div>
-                            <div class="ability-item">
-                                <label>Leadership</label>
-                                <input type="range" id="leadership" min="1" max="10" value="5">
-                                <span class="range-value">5</span>
-                            </div>
-                            <div class="ability-item">
-                                <label>Communication</label>
-                                <input type="range" id="communication" min="1" max="10" value="5">
-                                <span class="range-value">5</span>
+                            <div class="fm-form-group">
+                                <label for="league" class="fm-label">League/Division</label>
+                                <input type="text" id="league" class="fm-input" placeholder="Enter league or division name">
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div class="form-section">
-                    <h3>Player Showcase</h3>
-                    <div class="form-group">
-                        <label for="playerShowcase">Player Description & Potential</label>
-                        <textarea id="playerShowcase" placeholder="Write a compelling description that showcases this player's potential, character, and what makes them special. Focus on their standout qualities, future prospects, and why scouts should be interested.&#10;&#10;Example: 'An exceptional young talent with natural leadership qualities and an eye for goal. Shows maturity beyond years and consistently performs under pressure. Has the technical ability and work ethic to succeed at higher levels.'"></textarea>
+                    <!-- Academic Information -->
+                    <div class="fm-card fm-mb-lg">
+                        <div class="fm-card-header">
+                            <h3 class="fm-card-title">Academic Information</h3>
+                        </div>
+                        <div class="fm-card-body">
+                            <div class="fm-form-group">
+                                <label for="currentSchool" class="fm-label">Current School</label>
+                                <input type="text" id="currentSchool" class="fm-input" placeholder="Enter school name">
+                            </div>
+                            <div class="fm-form-group">
+                                <label for="gradeYear" class="fm-label">Current Grade/Year</label>
+                                <input type="text" id="gradeYear" class="fm-input" placeholder="e.g., 10th Grade, Year 11, Sophomore">
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="playingStyleSummary">Playing Style Summary</label>
-                        <textarea id="playingStyleSummary" placeholder="Brief description of playing style (e.g., 'Creative attacking midfielder with excellent vision')"></textarea>
+
+                    <!-- Profile Photo -->
+                    <div class="fm-card fm-mb-lg">
+                        <div class="fm-card-header">
+                            <h3 class="fm-card-title">Profile Photo</h3>
+                        </div>
+                        <div class="fm-card-body">
+                            <div class="fm-form-group">
+                                <div id="current-photo-preview" style="display: none;">
+                                    <img id="current-photo" src="" alt="Current profile photo" style="width: 100px; height: 100px; object-fit: cover; border-radius: 50%; margin-bottom: 10px;">
+                                    <button type="button" id="remove-photo-btn" class="fm-btn fm-btn-danger fm-btn-sm">Remove Photo</button>
+                                </div>
+                                <label for="profilePhoto" class="fm-label">Upload New Profile Photo</label>
+                                <input type="file" id="profilePhoto" class="fm-input" accept="image/*">
+                                <small class="fm-text-muted">Leave empty to keep current photo</small>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="strengths">Key Strengths</label>
-                        <textarea id="strengths" placeholder="Enter player's main strengths (one per line)&#10;e.g.,&#10;- Excellent ball control&#10;- Strong aerial ability&#10;- Good leadership skills"></textarea>
+
+                    <!-- Player Abilities -->
+                    <div class="fm-card fm-mb-lg">
+                        <div class="fm-card-header">
+                            <h3 class="fm-card-title">Player Abilities</h3>
+                            <p class="fm-text-muted">Rate each ability from 1-10. Tap and drag the sliders to adjust values.</p>
+                        </div>
+                        <div class="fm-card-body">
+                            <!-- Technical Skills -->
+                            <div class="abilities-section">
+                                <h4 class="abilities-section-title">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+                                        <circle cx="12" cy="12" r="3"/>
+                                        <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1"/>
+                                    </svg>
+                                    Technical Skills
+                                </h4>
+                                <div class="abilities-list">
+                                    <div class="ability-row">
+                                        <div class="ability-info">
+                                            <label class="ability-label">Ball Control</label>
+                                            <span class="ability-value" id="ballControl-value">5</span>
+                                        </div>
+                                        <div class="ability-control">
+                                            <input type="range" id="ballControl" min="1" max="10" value="5" class="ability-slider">
+                                        </div>
+                                    </div>
+                                    <div class="ability-row">
+                                        <div class="ability-info">
+                                            <label class="ability-label">Passing</label>
+                                            <span class="ability-value" id="passing-value">5</span>
+                                        </div>
+                                        <div class="ability-control">
+                                            <input type="range" id="passing" min="1" max="10" value="5" class="ability-slider">
+                                        </div>
+                                    </div>
+                                    <div class="ability-row">
+                                        <div class="ability-info">
+                                            <label class="ability-label">Shooting</label>
+                                            <span class="ability-value" id="shooting-value">5</span>
+                                        </div>
+                                        <div class="ability-control">
+                                            <input type="range" id="shooting" min="1" max="10" value="5" class="ability-slider">
+                                        </div>
+                                    </div>
+                                    <div class="ability-row">
+                                        <div class="ability-info">
+                                            <label class="ability-label">Dribbling</label>
+                                            <span class="ability-value" id="dribbling-value">5</span>
+                                        </div>
+                                        <div class="ability-control">
+                                            <input type="range" id="dribbling" min="1" max="10" value="5" class="ability-slider">
+                                        </div>
+                                    </div>
+                                    <div class="ability-row">
+                                        <div class="ability-info">
+                                            <label class="ability-label">First Touch</label>
+                                            <span class="ability-value" id="firstTouch-value">5</span>
+                                        </div>
+                                        <div class="ability-control">
+                                            <input type="range" id="firstTouch" min="1" max="10" value="5" class="ability-slider">
+                                        </div>
+                                    </div>
+                                    <div class="ability-row">
+                                        <div class="ability-info">
+                                            <label class="ability-label">Crossing</label>
+                                            <span class="ability-value" id="crossing-value">5</span>
+                                        </div>
+                                        <div class="ability-control">
+                                            <input type="range" id="crossing" min="1" max="10" value="5" class="ability-slider">
+                                        </div>
+                                    </div>
+                                    <div class="ability-row">
+                                        <div class="ability-info">
+                                            <label class="ability-label">Tackling</label>
+                                            <span class="ability-value" id="tackling-value">5</span>
+                                        </div>
+                                        <div class="ability-control">
+                                            <input type="range" id="tackling" min="1" max="10" value="5" class="ability-slider">
+                                        </div>
+                                    </div>
+                                    <div class="ability-row">
+                                        <div class="ability-info">
+                                            <label class="ability-label">Heading</label>
+                                            <span class="ability-value" id="heading-value">5</span>
+                                        </div>
+                                        <div class="ability-control">
+                                            <input type="range" id="heading" min="1" max="10" value="5" class="ability-slider">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Physical Skills -->
+                            <div class="abilities-section">
+                                <h4 class="abilities-section-title">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+                                        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+                                    </svg>
+                                    Physical Skills
+                                </h4>
+                                <div class="abilities-list">
+                                    <div class="ability-row">
+                                        <div class="ability-info">
+                                            <label class="ability-label">Pace</label>
+                                            <span class="ability-value" id="pace-value">5</span>
+                                        </div>
+                                        <div class="ability-control">
+                                            <input type="range" id="pace" min="1" max="10" value="5" class="ability-slider">
+                                        </div>
+                                    </div>
+                                    <div class="ability-row">
+                                        <div class="ability-info">
+                                            <label class="ability-label">Strength</label>
+                                            <span class="ability-value" id="strength-value">5</span>
+                                        </div>
+                                        <div class="ability-control">
+                                            <input type="range" id="strength" min="1" max="10" value="5" class="ability-slider">
+                                        </div>
+                                    </div>
+                                    <div class="ability-row">
+                                        <div class="ability-info">
+                                            <label class="ability-label">Stamina</label>
+                                            <span class="ability-value" id="stamina-value">5</span>
+                                        </div>
+                                        <div class="ability-control">
+                                            <input type="range" id="stamina" min="1" max="10" value="5" class="ability-slider">
+                                        </div>
+                                    </div>
+                                    <div class="ability-row">
+                                        <div class="ability-info">
+                                            <label class="ability-label">Agility</label>
+                                            <span class="ability-value" id="agility-value">5</span>
+                                        </div>
+                                        <div class="ability-control">
+                                            <input type="range" id="agility" min="1" max="10" value="5" class="ability-slider">
+                                        </div>
+                                    </div>
+                                    <div class="ability-row">
+                                        <div class="ability-info">
+                                            <label class="ability-label">Balance</label>
+                                            <span class="ability-value" id="balance-value">5</span>
+                                        </div>
+                                        <div class="ability-control">
+                                            <input type="range" id="balance" min="1" max="10" value="5" class="ability-slider">
+                                        </div>
+                                    </div>
+                                    <div class="ability-row">
+                                        <div class="ability-info">
+                                            <label class="ability-label">Jumping</label>
+                                            <span class="ability-value" id="jumping-value">5</span>
+                                        </div>
+                                        <div class="ability-control">
+                                            <input type="range" id="jumping" min="1" max="10" value="5" class="ability-slider">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Mental Skills -->
+                            <div class="abilities-section">
+                                <h4 class="abilities-section-title">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 8px;">
+                                        <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                    </svg>
+                                    Mental Skills
+                                </h4>
+                                <div class="abilities-list">
+                                    <div class="ability-row">
+                                        <div class="ability-info">
+                                            <label class="ability-label">Decision Making</label>
+                                            <span class="ability-value" id="decisionMaking-value">5</span>
+                                        </div>
+                                        <div class="ability-control">
+                                            <input type="range" id="decisionMaking" min="1" max="10" value="5" class="ability-slider">
+                                        </div>
+                                    </div>
+                                    <div class="ability-row">
+                                        <div class="ability-info">
+                                            <label class="ability-label">Positioning</label>
+                                            <span class="ability-value" id="positioning-value">5</span>
+                                        </div>
+                                        <div class="ability-control">
+                                            <input type="range" id="positioning" min="1" max="10" value="5" class="ability-slider">
+                                        </div>
+                                    </div>
+                                    <div class="ability-row">
+                                        <div class="ability-info">
+                                            <label class="ability-label">Concentration</label>
+                                            <span class="ability-value" id="concentration-value">5</span>
+                                        </div>
+                                        <div class="ability-control">
+                                            <input type="range" id="concentration" min="1" max="10" value="5" class="ability-slider">
+                                        </div>
+                                    </div>
+                                    <div class="ability-row">
+                                        <div class="ability-info">
+                                            <label class="ability-label">Leadership</label>
+                                            <span class="ability-value" id="leadership-value">5</span>
+                                        </div>
+                                        <div class="ability-control">
+                                            <input type="range" id="leadership" min="1" max="10" value="5" class="ability-slider">
+                                        </div>
+                                    </div>
+                                    <div class="ability-row">
+                                        <div class="ability-info">
+                                            <label class="ability-label">Communication</label>
+                                            <span class="ability-value" id="communication-value">5</span>
+                                        </div>
+                                        <div class="ability-control">
+                                            <input type="range" id="communication" min="1" max="10" value="5" class="ability-slider">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="weaknesses">Areas for Improvement</label>
-                        <textarea id="weaknesses" placeholder="Enter areas that need development (one per line)&#10;e.g.,&#10;- Defensive positioning&#10;- Weak foot accuracy&#10;- Stamina in final minutes"></textarea>
+
+                    <!-- Player Showcase -->
+                    <div class="fm-card fm-mb-lg">
+                        <div class="fm-card-header">
+                            <h3 class="fm-card-title">Player Showcase</h3>
+                        </div>
+                        <div class="fm-card-body">
+                            <div class="fm-form-group">
+                                <label for="playerShowcase" class="fm-label">Player Description & Potential</label>
+                                <textarea id="playerShowcase" class="fm-textarea" placeholder="Write a compelling description that showcases this player's potential, character, and what makes them special. Focus on their standout qualities, future prospects, and why scouts should be interested.&#10;&#10;Example: 'An exceptional young talent with natural leadership qualities and an eye for goal. Shows maturity beyond years and consistently performs under pressure. Has the technical ability and work ethic to succeed at higher levels.'"></textarea>
+                            </div>
+                            <div class="fm-form-group">
+                                <label for="playingStyleSummary" class="fm-label">Playing Style Summary</label>
+                                <textarea id="playingStyleSummary" class="fm-textarea" placeholder="Brief description of playing style (e.g., 'Creative attacking midfielder with excellent vision')"></textarea>
+                            </div>
+                            <div class="fm-form-group">
+                                <label for="strengths" class="fm-label">Key Strengths</label>
+                                <textarea id="strengths" class="fm-textarea" placeholder="Enter player's main strengths (one per line)&#10;e.g.,&#10;- Excellent ball control&#10;- Strong aerial ability&#10;- Good leadership skills"></textarea>
+                            </div>
+                            <div class="fm-form-group">
+                                <label for="weaknesses" class="fm-label">Areas for Improvement</label>
+                                <textarea id="weaknesses" class="fm-textarea" placeholder="Enter areas that need development (one per line)&#10;e.g.,&#10;- Defensive positioning&#10;- Weak foot accuracy&#10;- Stamina in final minutes"></textarea>
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </form>
-        </div>
-        
-        <div class="form-buttons">
-            <button type="button" id="cancel-btn">Cancel</button>
-            <button type="submit" form="player-form-content">Save Player Profile</button>
+
+                    <!-- Form Actions -->
+                    <div class="fm-form-actions fm-mt-xl">
+                        <button type="submit" class="fm-btn fm-btn-success fm-btn-lg">Save Player Profile</button>
+                        <button type="button" id="cancel-btn" class="fm-btn fm-btn-secondary fm-btn-lg">Cancel</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 
+    <!-- Footer -->
+    <footer class="fm-footer">
+        <div class="fm-container">
+            <div class="fm-footer-content">
+                <div class="fm-footer-section">
+                    <div class="fm-footer-brand">
+                        <img src="images/playerprofilelogofull.png" alt="Player Profile Manager" class="fm-footer-logo">
+                        <p class="fm-text-secondary">
+                            The premier platform for football player profiles, connecting talent with opportunities worldwide.
+                        </p>
+                    </div>
+                </div>
+                <div class="fm-footer-section">
+                    <h4>Platform</h4>
+                    <ul class="fm-footer-links">
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/app">Dashboard</a></li>
+                        <li><a href="#" onclick="window.print()">Print</a></li>
+                    </ul>
+                </div>
+                <div class="fm-footer-section">
+                    <h4>For Users</h4>
+                    <ul class="fm-footer-links">
+                        <li><a href="/app">Players</a></li>
+                        <li><a href="/app">Coaches</a></li>
+                        <li><a href="/app">Scouts</a></li>
+                        <li><a href="/app">Agents</a></li>
+                    </ul>
+                </div>
+                <div class="fm-footer-section">
+                    <h4>Support</h4>
+                    <ul class="fm-footer-links">
+                        <li><a href="mailto:support@playerprofile.com">Contact</a></li>
+                        <li><a href="#">Help Center</a></li>
+                        <li><a href="#">Privacy Policy</a></li>
+                        <li><a href="#">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="fm-footer-bottom">
+                <div class="fm-footer-copyright">
+                    <p>&copy; 2024 Player Profile Management System. All rights reserved.</p>
+                </div>
+                <div class="fm-footer-powered">
+                    <p>Powered by innovation in sports technology</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
     <script src="player-form.js"></script>
-    <script>
-        // Set the form title based on URL parameters
-        document.addEventListener('DOMContentLoaded', function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const mode = urlParams.get('mode');
-            const playerId = urlParams.get('id');
-            
-            if (mode === 'edit' && playerId) {
-                document.getElementById('form-title').textContent = 'Edit Player Profile';
-                document.getElementById('form-status-text').textContent = 'Editing existing profile';
-                // Load existing player data
-                if (window.loadPlayerForEditing) {
-                    window.loadPlayerForEditing(playerId);
-                }
-            } else {
-                document.getElementById('form-title').textContent = 'Create Player Profile';
-                document.getElementById('form-status-text').textContent = 'Ready to create profile';
-            }
-            
-            // Handle cancel button
-            document.getElementById('cancel-btn').addEventListener('click', function() {
-                if (confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
-                    window.history.back();
-                }
-            });
-        });
-        
-        // Auto-save functionality (optional)
-        function autoSave() {
-            const formData = new FormData(document.getElementById('player-form-content'));
-            const data = Object.fromEntries(formData);
-            localStorage.setItem('playerFormDraft', JSON.stringify(data));
-        }
-        
-        // Auto-save every 30 seconds
-        setInterval(autoSave, 30000);
-        
-        // Load draft on page load
-        window.addEventListener('load', function() {
-            const draft = localStorage.getItem('playerFormDraft');
-            if (draft && confirm('Found a saved draft. Would you like to restore it?')) {
-                const data = JSON.parse(draft);
-                Object.keys(data).forEach(key => {
-                    const element = document.getElementById(key);
-                    if (element) {
-                        element.value = data[key];
-                    }
-                });
-            }
-        });
-    </script>
 </body>
 </html>
