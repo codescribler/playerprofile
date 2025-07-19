@@ -453,7 +453,7 @@ class ModernProfileView {
                         <span class="fm-stat-label">${index === 0 ? 'Primary Position' : 'Secondary Position'}</span>
                         <span class="fm-stat-value">${position} (${pos.suitability}%)</span>
                     </div>
-                    ${pos.notes ? `<div class="fm-stat"><span class="fm-stat-label">Notes</span><span class="fm-stat-value">${pos.notes}</span></div>` : ''}
+                    ${pos.notes ? `<div class="fm-stat" style="margin-top: 8px;"><span class="fm-stat-label">Notes</span><span class="fm-stat-value" style="display: block; margin-top: 4px;">${pos.notes}</span></div>` : ''}
                 `;
             });
         }

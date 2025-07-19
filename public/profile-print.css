@@ -375,8 +375,8 @@ body {
 
 .info-value {
     font-size: 10pt;
-    font-weight: 700;
-    color: #333;
+    font-weight: 800;
+    color: #000;
 }
 
 /* Additional Information Section */
@@ -431,8 +431,8 @@ body {
 }
 
 .detail-item .value {
-    color: #333;
-    font-weight: 500;
+    color: #000;
+    font-weight: 700;
 }
 
 /* Awards and Achievements - Inline Style */
@@ -794,35 +794,55 @@ body {
     
     .profile-photo-container {
         flex-shrink: 0 !important;
-        order: -1 !important;
-        margin-right: 20px !important;
+        position: relative !important;
+        margin-right: 0 !important;
     }
     
     .profile-info {
         flex: 1 !important;
         margin-top: 0 !important;
+        padding-top: 0 !important;
     }
     
     .profile-name {
         margin-top: 0 !important;
-        margin-bottom: 10px !important;
+        margin-bottom: 8px !important;
+        font-size: 26pt !important;
+        font-weight: 700 !important;
+        color: #000 !important;
     }
     
     .overall-rating {
-        position: relative !important;
-        bottom: auto !important;
-        right: auto !important;
-        margin-top: 10px !important;
-        display: inline-flex !important;
+        position: absolute !important;
+        bottom: -5px !important;
+        right: -15px !important;
+        margin-top: 0 !important;
+        display: flex !important;
+        min-width: 70px !important;
+        height: 70px !important;
+        font-size: 0.9rem !important;
+        border: 3px solid #3498db !important;
+        background: white !important;
+        color: #000 !important;
+        font-weight: 800 !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
     }
     
     .profile-details {
         font-size: 11pt !important;
         color: #000 !important;
-        font-weight: 500 !important;
+        font-weight: 600 !important;
+        margin-top: 0 !important;
+        gap: 15px !important;
     }
     
     .profile-detail {
+        color: #000 !important;
+        font-weight: 600 !important;
+    }
+    
+    .profile-detail span {
+        font-weight: 700 !important;
         color: #000 !important;
     }
     
@@ -848,12 +868,6 @@ body {
         margin-top: 0 !important;
     }
     
-    .overall-rating {
-        background: white !important;
-        color: #3498db !important;
-        border: 2px solid #3498db !important;
-        font-weight: 700 !important;
-    }
     
     /* Adjust font sizes for print */
     .player-identity h1 {
@@ -876,9 +890,9 @@ body {
     .rating-value,
     .ability-value {
         background: transparent !important;
-        color: #333 !important;
-        border: 1px solid #333 !important;
-        font-weight: 700 !important;
+        color: #000 !important;
+        border: 2px solid #000 !important;
+        font-weight: 800 !important;
     }
     
     /* Remove all colored backgrounds from ratings */
@@ -887,7 +901,8 @@ body {
     .rating-10, .rating-9, .rating-8, .rating-7, .rating-6,
     .rating-5, .rating-4, .rating-3, .rating-2, .rating-1 {
         background: transparent !important;
-        color: #333 !important;
+        color: #000 !important;
+        font-weight: 800 !important;
     }
     
     /* Remove elite rating effects for print */
@@ -973,6 +988,22 @@ body {
         padding: 10px !important;
     }
     
+    /* Make all user content darker */
+    .fm-card p,
+    .fm-card span,
+    .fm-card div {
+        color: #000 !important;
+        font-weight: 500 !important;
+    }
+    
+    /* User entered values should be even darker */
+    .fm-stat-value,
+    .fm-list li,
+    p {
+        color: #000 !important;
+        font-weight: 600 !important;
+    }
+    
     .fm-card-header {
         border-bottom: 1px solid #e0e0e0 !important;
         background: white !important;
@@ -992,6 +1023,8 @@ body {
         padding: 4px 0 !important;
         list-style: none !important;
         margin-bottom: 4px !important;
+        color: #000 !important;
+        font-weight: 600 !important;
     }
     
     /* Ensure grid layouts work in print */
