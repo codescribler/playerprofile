@@ -908,6 +908,44 @@ body {
         grid-template-columns: 1fr 1fr !important;
     }
     
+    /* Rating info box for print */
+    .rating-info-box {
+        background: #f8f9fa !important;
+        border: 1px solid #e0e0e0 !important;
+        padding: 10px !important;
+        margin-bottom: 15px !important;
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+        page-break-inside: avoid !important;
+    }
+    
+    .rating-info-icon {
+        display: none !important; /* Hide icon in print to save space */
+    }
+    
+    .rating-info-text {
+        font-size: 8pt !important;
+        line-height: 1.4 !important;
+        color: #333 !important;
+    }
+    
+    .rating-info-text strong {
+        color: #000 !important;
+        font-weight: 700 !important;
+    }
+    
+    /* Rating note for print */
+    .rating-note {
+        font-size: 7pt !important;
+        color: #666 !important;
+        text-align: center !important;
+        padding-bottom: 6px !important;
+        margin-bottom: 8px !important;
+        border-bottom: 1px solid #e0e0e0 !important;
+        font-style: italic !important;
+    }
+    
     /* Position map */
     .position-map {
         display: none !important;

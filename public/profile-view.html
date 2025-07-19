@@ -414,6 +414,46 @@
             box-shadow: var(--shadow-sm);
         }
         
+        /* Rating info box */
+        .rating-info-box {
+            background: var(--fm-surface-light);
+            border: 1px solid var(--fm-border);
+            border-radius: 8px;
+            padding: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+            display: flex;
+            align-items: flex-start;
+            gap: var(--spacing-md);
+        }
+        
+        .rating-info-icon {
+            color: var(--fm-accent);
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        
+        .rating-info-text {
+            font-size: 0.875rem;
+            line-height: 1.5;
+            color: var(--fm-text-secondary);
+        }
+        
+        .rating-info-text strong {
+            color: var(--fm-text-primary);
+            font-weight: 600;
+        }
+        
+        /* Rating note */
+        .rating-note {
+            font-size: 0.75rem;
+            color: var(--fm-text-muted);
+            text-align: center;
+            padding-bottom: var(--spacing-sm);
+            margin-bottom: var(--spacing-sm);
+            border-bottom: 1px solid var(--fm-border);
+            font-style: italic;
+        }
+        
         @media (max-width: 768px) {
             .contact-form-row {
                 grid-template-columns: 1fr;
@@ -626,8 +666,13 @@
                     <div class="fm-card-header">
                         <h3 class="fm-card-title">Key Attributes</h3>
                     </div>
-                    <div class="fm-card-body" id="key-attributes">
-                        <!-- Key attributes will be inserted here -->
+                    <div class="fm-card-body">
+                        <div class="rating-note">
+                            <small>Scores are rated 1-10 relative to players in the same league and age group</small>
+                        </div>
+                        <div id="key-attributes">
+                            <!-- Key attributes will be inserted here -->
+                        </div>
                     </div>
                 </div>
             </div>
@@ -684,6 +729,22 @@
         </div>
 
         <div class="tab-content" id="attributes-tab" style="display: none;" data-mobile-title="Attributes" data-print-title="Player Attributes">
+            <!-- Rating Information -->
+            <div class="rating-info-box">
+                <div class="rating-info-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                </div>
+                <div class="rating-info-text">
+                    <strong>Rating Scale:</strong> All scores are rated from 1-10, with 10 being the highest. 
+                    Ratings are relative to players in the same league and age group - a score of 10 represents 
+                    performance equal to the best players at that level.
+                </div>
+            </div>
+            
             <div class="fm-card">
                 <div class="fm-card-header">
                     <h3 class="fm-card-title">Technical Attributes</h3>
