@@ -278,6 +278,12 @@ class ModernProfileView {
         } else {
             document.querySelector('#player-foot').parentElement.style.display = 'none';
         }
+        
+        // Only show location if available
+        if (player.playingInfo?.basedLocation) {
+            document.getElementById('player-location').textContent = player.playingInfo.basedLocation;
+            document.getElementById('player-location-wrapper').style.display = 'block';
+        }
 
         // Calculate and display top attribute
         const topAttribute = this.getTopAttribute(player.abilities);

@@ -27,6 +27,8 @@ body {
     padding: 15px 0;
     margin-bottom: 15px;
     border-bottom: 3px solid #1a1a1a;
+    page-break-inside: avoid;
+    page-break-after: avoid;
 }
 
 .header-content {
@@ -40,6 +42,7 @@ body {
 
 .player-identity {
     flex: 1;
+    page-break-inside: avoid;
 }
 
 .player-identity h1 {
@@ -73,15 +76,18 @@ body {
     font-size: 9pt;
     color: #666;
     display: flex;
-    gap: 12px;
+    gap: 10px;
     flex-wrap: wrap;
     margin-top: 5px;
     page-break-inside: avoid;
+    max-width: 100%;
 }
 
 .player-basics span {
     position: relative;
-    padding-right: 12px;
+    padding-right: 10px;
+    white-space: nowrap;
+    display: inline-block;
 }
 
 .player-basics span:not(:last-child)::after {
@@ -588,9 +594,10 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 5px;
-    padding: 10px;
-    border: 1px solid #e0e0e0;
-    background: #fafafa;
+    padding: 15px;
+    border: 2px solid #3498db;
+    background: #f0f8ff;
+    border-radius: 8px;
 }
 
 .qr-code-container {
@@ -614,18 +621,20 @@ body {
 }
 
 .qr-code-text strong {
-    font-size: 8pt;
+    font-size: 10pt;
     color: #333;
     display: block;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+    font-weight: 700;
 }
 
 .qr-code-text small {
-    font-size: 7pt;
-    color: #666;
+    font-size: 8pt;
+    color: #333;
     display: block;
+    line-height: 1.4;
 }
 
 /* Print-specific styles */
@@ -680,10 +689,26 @@ body {
     .fm-footer,
     .fm-tabs,
     .print-controls,
-    .contact-section,
+    .contact-form,
     .fm-bg-gradient,
     .tab-navigation {
         display: none !important;
+    }
+    
+    /* Show contact QR emphasis in print */
+    .contact-qr-emphasis {
+        display: block !important;
+        text-align: center !important;
+        border: 2px solid #333 !important;
+        padding: 15px !important;
+        margin: 20px 0 !important;
+        background: #f8f9fa !important;
+    }
+    
+    .contact-instruction {
+        font-size: 10pt !important;
+        color: #333 !important;
+        margin: 10px 0 !important;
     }
     
     /* Show print-specific elements */
@@ -752,7 +777,16 @@ body {
         border-bottom: 3px solid #1a1a1a !important;
         background: white !important;
         page-break-after: avoid !important;
+        page-break-inside: avoid !important;
         margin-bottom: 10px !important;
+    }
+    
+    /* Keep profile header content together */
+    .profile-header,
+    .profile-details,
+    .player-basics {
+        page-break-inside: avoid !important;
+        page-break-after: avoid !important;
     }
     
     /* Ensure overview content starts right after header */
