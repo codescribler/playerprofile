@@ -69,6 +69,20 @@ const upload = multer({
 
 const db = require('./database-config');
 
+// Helper function to repair corrupted player data
+function repairPlayerData(player) {
+  // Fix corrupted team data if it's stored as "[object Object]"
+  if (player.playingInfo?.currentTeam === '[object Object]') {
+    console.log('Repairing corrupted team data for player:', player.personalInfo?.fullName);
+    player.playingInfo.currentTeam = {
+      clubName: '',
+      league: ''
+    };
+  }
+  
+  return player;
+}
+
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -222,10 +236,12 @@ app.get('/api/players', authenticateToken, (req, res) => {
     }
     
     const players = rows.map(row => {
-      const player = JSON.parse(row.data);
+      let player = JSON.parse(row.data);
       // Include the player ID in the response
       player.id = row.id;
       player.playerId = row.id;
+      // Repair any corrupted data
+      player = repairPlayerData(player);
       return player;
     });
     res.json(players);
@@ -244,10 +260,12 @@ app.get('/api/players/:id', authenticateToken, (req, res) => {
         return res.status(404).json({ error: 'Player not found' });
       }
       
-      const player = JSON.parse(row.data);
+      let player = JSON.parse(row.data);
       // Include the player ID in the response
       player.id = row.id;
       player.playerId = row.id;
+      // Repair any corrupted data
+      player = repairPlayerData(player);
       
       if (req.user.role === 'player' && row.user_id !== req.user.id) {
         return res.status(403).json({ error: 'Access denied' });
@@ -265,6 +283,26 @@ app.put('/api/players/:id', authenticateToken, (req, res) => {
     lastUpdated: new Date().toISOString(),
     updatedBy: req.user.username
   };
+  
+  // Fix corrupted team data if it's stored as "[object Object]"
+  if (playerData.playingInfo?.currentTeam === '[object Object]') {
+    console.log('Fixing corrupted team data for player:', req.params.id);
+    playerData.playingInfo.currentTeam = {
+      clubName: '',
+      league: ''
+    };
+  }
+  
+  // Also check if currentTeam is a string that looks like an object but isn't "[object Object]"
+  if (typeof playerData.playingInfo?.currentTeam === 'string' && 
+      playerData.playingInfo.currentTeam !== '[object Object]' &&
+      playerData.playingInfo.currentTeam !== '') {
+    // If it's a valid team name string, convert to object format
+    playerData.playingInfo.currentTeam = {
+      clubName: playerData.playingInfo.currentTeam,
+      league: playerData.playingInfo.league || ''
+    };
+  }
   
   console.log('Updating player:', req.params.id);
   console.log('Player data size:', JSON.stringify(playerData).length);
@@ -325,7 +363,9 @@ app.post('/api/players/:id/publish', authenticateToken, (req, res) => {
         return res.status(404).json({ error: 'Player not found or access denied' });
       }
       
-      const playerData = JSON.parse(row.data);
+      let playerData = JSON.parse(row.data);
+      // Repair any corrupted data
+      playerData = repairPlayerData(playerData);
       playerData.metadata = {
         ...playerData.metadata,
         published: published,
@@ -369,7 +409,9 @@ app.get('/api/public/players/:id', (req, res) => {
         return res.status(404).json({ error: 'Player not found' });
       }
       
-      const player = JSON.parse(row.data);
+      let player = JSON.parse(row.data);
+      // Repair any corrupted data
+      player = repairPlayerData(player);
       console.log('Player found:', player.personalInfo?.fullName, 'Published:', player.metadata?.published);
       
       // Check if profile is published
@@ -414,7 +456,9 @@ app.post('/api/public/players/:id/message', (req, res) => {
         return res.status(404).json({ error: 'Player not found' });
       }
       
-      const player = JSON.parse(row.data);
+      let player = JSON.parse(row.data);
+      // Repair any corrupted data
+      player = repairPlayerData(player);
       if (!player.metadata?.published) {
         return res.status(404).json({ error: 'Profile not published' });
       }
@@ -584,10 +628,12 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
     }
     
     const players = rows.map(row => {
-      const player = JSON.parse(row.data);
+      let player = JSON.parse(row.data);
       // Include the player ID in the response
       player.id = row.id;
       player.playerId = row.id;
+      // Repair any corrupted data
+      player = repairPlayerData(player);
       return player;
     });
     res.json(players);
