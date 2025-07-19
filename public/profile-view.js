@@ -126,12 +126,53 @@ class ModernProfileView {
 
         // Basic info
         document.getElementById('player-name').textContent = player.personalInfo?.fullName || 'Unknown Player';
-        document.getElementById('player-age').textContent = this.calculateAge(player.personalInfo?.dateOfBirth);
-        document.getElementById('player-nationality').textContent = player.personalInfo?.nationality || 'Unknown';
-        document.getElementById('player-position').textContent = this.getPositionDisplay(player.playingInfo);
-        document.getElementById('player-height').textContent = this.getHeight(player.personalInfo);
-        document.getElementById('player-weight').textContent = this.getWeight(player.personalInfo);
-        document.getElementById('player-foot').textContent = player.personalInfo?.preferredFoot || 'Unknown';
+        
+        // Only show age if we have DOB
+        const age = this.calculateAge(player.personalInfo?.dateOfBirth);
+        const ageElement = document.getElementById('player-age');
+        if (age !== '--') {
+            ageElement.textContent = age;
+        } else {
+            ageElement.parentElement.style.display = 'none';
+        }
+        
+        // Only show nationality if available
+        if (player.personalInfo?.nationality) {
+            document.getElementById('player-nationality').textContent = player.personalInfo.nationality;
+        } else {
+            document.querySelector('#player-nationality').parentElement.style.display = 'none';
+        }
+        
+        // Only show position if available
+        const position = this.getPositionDisplay(player.playingInfo);
+        if (position && position !== '--') {
+            document.getElementById('player-position').textContent = position;
+        } else {
+            document.querySelector('#player-position').parentElement.style.display = 'none';
+        }
+        
+        // Only show height if available
+        const height = this.getHeight(player.personalInfo);
+        if (height && height !== '--') {
+            document.getElementById('player-height').textContent = height;
+        } else {
+            document.querySelector('#player-height').parentElement.style.display = 'none';
+        }
+        
+        // Only show weight if available
+        const weight = this.getWeight(player.personalInfo);
+        if (weight && weight !== '--') {
+            document.getElementById('player-weight').textContent = weight;
+        } else {
+            document.querySelector('#player-weight').parentElement.style.display = 'none';
+        }
+        
+        // Only show preferred foot if available
+        if (player.personalInfo?.preferredFoot) {
+            document.getElementById('player-foot').textContent = player.personalInfo.preferredFoot;
+        } else {
+            document.querySelector('#player-foot').parentElement.style.display = 'none';
+        }
 
         // Calculate and display top attribute
         const topAttribute = this.getTopAttribute(player.abilities);
@@ -145,21 +186,43 @@ class ModernProfileView {
             // Find primary team
             const primaryTeam = player.playingInfo.teams.find(t => t.isPrimary) || player.playingInfo.teams[0];
             document.getElementById('current-team').textContent = primaryTeam.clubName || 'Free Agent';
-            document.getElementById('current-league').textContent = primaryTeam.league || '--';
+            if (primaryTeam.league) {
+                document.getElementById('current-league').textContent = primaryTeam.league;
+            } else {
+                document.querySelector('#current-league').parentElement.style.display = 'none';
+            }
         } else {
             // Fallback to legacy format
             document.getElementById('current-team').textContent = 
                 player.playingInfo?.currentTeam?.clubName || player.playingInfo?.currentTeam || 'Free Agent';
-            document.getElementById('current-league').textContent = 
-                player.playingInfo?.currentTeam?.league || player.playingInfo?.league || '--';
+            const league = player.playingInfo?.currentTeam?.league || player.playingInfo?.league;
+            if (league) {
+                document.getElementById('current-league').textContent = league;
+            } else {
+                document.querySelector('#current-league').parentElement.style.display = 'none';
+            }
         }
         
-        document.getElementById('years-playing').textContent = 
-            player.playingInfo?.yearsPlaying || '--';
-        document.getElementById('current-school').textContent = 
-            player.academicInfo?.currentSchool || '--';
-        document.getElementById('grade-year').textContent = 
-            player.academicInfo?.gradeYear || '--';
+        // Only show years playing if available
+        if (player.playingInfo?.yearsPlaying) {
+            document.getElementById('years-playing').textContent = player.playingInfo.yearsPlaying;
+        } else {
+            document.querySelector('#years-playing').parentElement.style.display = 'none';
+        }
+        
+        // Only show school if available
+        if (player.academicInfo?.currentSchool) {
+            document.getElementById('current-school').textContent = player.academicInfo.currentSchool;
+        } else {
+            document.querySelector('#current-school').parentElement.style.display = 'none';
+        }
+        
+        // Only show grade/year if available
+        if (player.academicInfo?.gradeYear) {
+            document.getElementById('grade-year').textContent = player.academicInfo.gradeYear;
+        } else {
+            document.querySelector('#grade-year').parentElement.style.display = 'none';
+        }
 
         // Key attributes
         this.displayKeyAttributes(player.abilities);
@@ -167,6 +230,8 @@ class ModernProfileView {
         // Player showcase
         if (player.showcase?.description) {
             document.getElementById('player-showcase').textContent = player.showcase.description;
+        } else {
+            document.querySelector('#player-showcase').parentElement.parentElement.style.display = 'none';
         }
 
         // Strengths and weaknesses
@@ -220,8 +285,9 @@ class ModernProfileView {
 
     displayAttributeCategory(containerId, attributes) {
         const container = document.getElementById(containerId);
-        if (!attributes) {
-            container.innerHTML = '<p>No attributes available</p>';
+        if (!attributes || Object.keys(attributes).length === 0) {
+            // Hide the entire card if no attributes
+            container.closest('.fm-card').style.display = 'none';
             return;
         }
 
@@ -329,13 +395,33 @@ class ModernProfileView {
     displayHistory(player) {
         // This could be expanded to show previous teams, achievements, etc.
         const historyContainer = document.getElementById('playing-history');
-        const yearsPlaying = player.playingInfo?.yearsPlaying || 0;
-        const currentTeam = player.playingInfo?.currentTeam?.clubName || player.playingInfo?.currentTeam || 'No team';
+        const yearsPlaying = player.playingInfo?.yearsPlaying;
+        let historyContent = [];
         
-        historyContainer.innerHTML = `
-            <p>Has been playing football for ${yearsPlaying} years.</p>
-            <p>Currently playing for ${currentTeam}.</p>
-        `;
+        if (yearsPlaying) {
+            historyContent.push(`<p>Has been playing football for ${yearsPlaying} years.</p>`);
+        }
+        
+        // Get current team info
+        let currentTeam = null;
+        if (player.playingInfo?.teams && Array.isArray(player.playingInfo.teams) && player.playingInfo.teams.length > 0) {
+            const primaryTeam = player.playingInfo.teams.find(t => t.isPrimary) || player.playingInfo.teams[0];
+            currentTeam = primaryTeam.clubName;
+        } else if (player.playingInfo?.currentTeam) {
+            currentTeam = player.playingInfo.currentTeam.clubName || player.playingInfo.currentTeam;
+        }
+        
+        if (currentTeam) {
+            historyContent.push(`<p>Currently playing for ${currentTeam}.</p>`);
+        }
+        
+        if (historyContent.length > 0) {
+            historyContainer.innerHTML = historyContent.join('');
+        } else {
+            // Hide the history tab if no content
+            document.querySelector('[data-tab="history"]').style.display = 'none';
+            document.getElementById('history-tab').style.display = 'none';
+        }
     }
 
     displayList(elementId, items) {
@@ -343,7 +429,8 @@ class ModernProfileView {
         if (items && items.length > 0) {
             element.innerHTML = items.map(item => `<li>${item}</li>`).join('');
         } else {
-            element.innerHTML = '<li>None listed</li>';
+            // Hide the entire card if no items
+            element.closest('.fm-card').style.display = 'none';
         }
     }
 

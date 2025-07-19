@@ -105,7 +105,6 @@ body {
 /* Visual Abilities Chart - Magazine Style */
 .abilities-showcase {
     margin-bottom: 15px;
-    page-break-inside: avoid;
 }
 
 .abilities-showcase h2 {
@@ -715,11 +714,16 @@ body {
     .fm-card,
     .attribute-section,
     .tab-content,
-    .abilities-showcase,
     .player-info-grid,
     .awards-section {
         page-break-inside: avoid;
         break-inside: avoid;
+    }
+    
+    /* Allow abilities to break if needed to prevent awkward page breaks */
+    .abilities-showcase {
+        page-break-inside: auto !important;
+        break-inside: auto !important;
     }
     
     /* Ensure additional info card is visible in print */
@@ -737,6 +741,7 @@ body {
     .showcase-header {
         border-bottom: 3px solid #1a1a1a !important;
         background: white !important;
+        page-break-after: avoid !important;
     }
     
     .overall-rating {
