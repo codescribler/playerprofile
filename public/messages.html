@@ -122,9 +122,6 @@
             color: #7f8c8d;
         }
         .close-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
             background-color: #95a5a6;
             color: white;
             border: none;
@@ -156,7 +153,14 @@
     </style>
 </head>
 <body>
-    <button onclick="window.close()" class="close-btn">Close</button>
+    <nav style="background-color: #1a1a1a; padding: 1rem 0;">
+        <div style="max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center;">
+                <img src="images/playerprofilelogofull.png" alt="Player Profile Manager" style="height: 60px;">
+            </div>
+            <button onclick="window.close()" class="close-btn">Close</button>
+        </div>
+    </nav>
     
     <div class="messages-container">
         <div class="messages-header">

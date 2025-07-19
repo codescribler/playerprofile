@@ -384,6 +384,15 @@ a:hover {
   font-size: 1.25rem;
   font-weight: 700;
   color: var(--fm-text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+}
+
+.fm-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
 }
 
 .fm-nav-menu {
