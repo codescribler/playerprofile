@@ -52,24 +52,68 @@ class ModernProfileView {
     }
 
     setupEventListeners() {
-        // Tab switching
-        document.querySelectorAll('.fm-tab').forEach(tab => {
-            tab.addEventListener('click', (e) => {
-                const tabElement = e.target.closest('.fm-tab');
-                if (tabElement) {
-                    this.switchTab(tabElement.dataset.tab);
+        // Smooth scroll navigation
+        this.setupSmoothScrollNav();
+        
+        // Contact form
+        const contactForm = document.getElementById('contact-form');
+        if (contactForm) {
+            contactForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.handleContactForm();
+            });
+        }
+    }
+    
+    setupSmoothScrollNav() {
+        const navLinks = document.querySelectorAll('.nav-link');
+        const sections = document.querySelectorAll('.scroll-section');
+        
+        // Handle nav link clicks
+        navLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = link.getAttribute('href').substring(1);
+                const targetSection = document.getElementById(targetId);
+                if (targetSection) {
+                    const navHeight = document.getElementById('sticky-nav').offsetHeight;
+                    const targetPosition = targetSection.offsetTop - navHeight - 20;
+                    window.scrollTo({
+                        top: targetPosition,
+                        behavior: 'smooth'
+                    });
                 }
             });
         });
-
-        // Contact form
-        document.getElementById('contact-form').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.handleContactForm();
+        
+        // Update active nav on scroll
+        const observerOptions = {
+            root: null,
+            rootMargin: '-20% 0px -70% 0px',
+            threshold: 0
+        };
+        
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.id;
+                    navLinks.forEach(link => {
+                        link.classList.remove('active');
+                        if (link.getAttribute('href') === `#${id}`) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
+            });
+        }, observerOptions);
+        
+        sections.forEach(section => {
+            observer.observe(section);
         });
     }
     
-    navigateTab(direction) {
+    // Remove tab navigation methods as we're using smooth scrolling now
+    navigateTab_deprecated(direction) {
         const tabs = ['overview', 'attributes', 'positions', 'history', 'contact'];
         const currentTab = document.querySelector('.fm-tab.active').dataset.tab;
         const currentIndex = tabs.indexOf(currentTab);
@@ -103,7 +147,7 @@ class ModernProfileView {
         }
     }
 
-    switchTab(tabName) {
+    switchTab_deprecated(tabName) {
         // Update active tab
         document.querySelectorAll('.fm-tab').forEach(tab => {
             tab.classList.toggle('active', tab.dataset.tab === tabName);
@@ -122,7 +166,7 @@ class ModernProfileView {
         window.scrollTo(0, document.querySelector('.fm-container').offsetTop - 80);
     }
     
-    updateNavigationButtons(currentTab) {
+    updateNavigationButtons_deprecated(currentTab) {
         const tabs = ['overview', 'attributes', 'positions', 'history', 'contact'];
         const tabNames = {
             'overview': 'Overview',

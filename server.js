@@ -337,7 +337,7 @@ app.get('/api/players/:id', authenticateToken, (req, res) => {
 });
 
 app.put('/api/players/:id', authenticateToken, (req, res) => {
-  const playerData = req.body;
+  const incomingData = req.body;
   
   // First, get the existing player data to preserve certain fields
   db.get(
@@ -354,7 +354,23 @@ app.put('/api/players/:id', authenticateToken, (req, res) => {
       
       const existingData = JSON.parse(row.data);
       
-      // Preserve the published status from existing data
+      // Deep merge function to preserve existing data
+      const deepMerge = (target, source) => {
+        const result = { ...target };
+        for (const key in source) {
+          if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key]) && source[key].constructor === Object) {
+            result[key] = deepMerge(target[key] || {}, source[key]);
+          } else if (source[key] !== undefined) {
+            result[key] = source[key];
+          }
+        }
+        return result;
+      };
+      
+      // Merge the incoming data with existing data
+      const playerData = deepMerge(existingData, incomingData);
+      
+      // Update metadata
       playerData.metadata = {
         ...existingData.metadata,  // Start with existing metadata
         ...playerData.metadata,    // Apply any new metadata from request
@@ -416,7 +432,7 @@ app.put('/api/players/:id', authenticateToken, (req, res) => {
 
 app.delete('/api/players/:id', authenticateToken, (req, res) => {
   db.run(
-    'DELETE FROM players WHERE id = ? AND (user_id = ? OR ? = \'admin\')'
+    'DELETE FROM players WHERE id = ? AND (user_id = ? OR ? = \'admin\')',
     [req.params.id, req.user.id, req.user.role],
     function(err) {
       if (err) {
