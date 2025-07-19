@@ -301,53 +301,78 @@ app.get('/api/players/:id', authenticateToken, (req, res) => {
 
 app.put('/api/players/:id', authenticateToken, (req, res) => {
   const playerData = req.body;
-  playerData.metadata = {
-    ...playerData.metadata,
-    lastUpdated: new Date().toISOString(),
-    updatedBy: req.user.username
-  };
   
-  // Fix corrupted team data if it's stored as "[object Object]"
-  if (playerData.playingInfo?.currentTeam === '[object Object]') {
-    console.log('Fixing corrupted team data for player:', req.params.id);
-    playerData.playingInfo.currentTeam = {
-      clubName: '',
-      league: ''
-    };
-  }
-  
-  // Also check if currentTeam is a string that looks like an object but isn't "[object Object]"
-  if (typeof playerData.playingInfo?.currentTeam === 'string' && 
-      playerData.playingInfo.currentTeam !== '[object Object]' &&
-      playerData.playingInfo.currentTeam !== '') {
-    // If it's a valid team name string, convert to object format
-    playerData.playingInfo.currentTeam = {
-      clubName: playerData.playingInfo.currentTeam,
-      league: playerData.playingInfo.league || ''
-    };
-  }
-  
-  console.log('Updating player:', req.params.id);
-  console.log('Player data size:', JSON.stringify(playerData).length);
-  console.log('Has profile photo:', !!playerData.media?.profilePhoto);
-  if (playerData.media?.profilePhoto) {
-    console.log('Photo URL length:', playerData.media.profilePhoto.length);
-    console.log('Photo URL starts with data:', playerData.media.profilePhoto.startsWith('data:'));
-  }
-  
-  db.run(
-    'UPDATE players SET data = ? WHERE id = ? AND (user_id = ? OR ? = \'admin\')',
-    [JSON.stringify(playerData), req.params.id, req.user.id, req.user.role],
-    function(err) {
+  // First, get the existing player data to preserve certain fields
+  db.get(
+    'SELECT data FROM players WHERE id = ? AND (user_id = ? OR ? = \'admin\')',
+    [req.params.id, req.user.id, req.user.role],
+    (err, row) => {
       if (err) {
-        console.error('Database error updating player:', err);
-        return res.status(500).json({ error: 'Error updating player: ' + err.message });
+        console.error('Database error fetching player:', err);
+        return res.status(500).json({ error: 'Error fetching player' });
       }
-      if (this.changes === 0) {
+      if (!row) {
         return res.status(404).json({ error: 'Player not found or access denied' });
       }
-      console.log('Player updated successfully');
-      res.json({ message: 'Player profile updated' });
+      
+      const existingData = JSON.parse(row.data);
+      
+      // Preserve the published status from existing data
+      playerData.metadata = {
+        ...existingData.metadata,  // Start with existing metadata
+        ...playerData.metadata,    // Apply any new metadata from request
+        lastUpdated: new Date().toISOString(),
+        updatedBy: req.user.username,
+        // Explicitly preserve published status if it exists
+        published: playerData.metadata?.published !== undefined ? 
+          playerData.metadata.published : 
+          existingData.metadata?.published
+      };
+      
+      // Fix corrupted team data if it's stored as "[object Object]"
+      if (playerData.playingInfo?.currentTeam === '[object Object]') {
+        console.log('Fixing corrupted team data for player:', req.params.id);
+        playerData.playingInfo.currentTeam = {
+          clubName: '',
+          league: ''
+        };
+      }
+      
+      // Also check if currentTeam is a string that looks like an object but isn't "[object Object]"
+      if (typeof playerData.playingInfo?.currentTeam === 'string' && 
+          playerData.playingInfo.currentTeam !== '[object Object]' &&
+          playerData.playingInfo.currentTeam !== '') {
+        // If it's a valid team name string, convert to object format
+        playerData.playingInfo.currentTeam = {
+          clubName: playerData.playingInfo.currentTeam,
+          league: playerData.playingInfo.league || ''
+        };
+      }
+      
+      console.log('Updating player:', req.params.id);
+      console.log('Player data size:', JSON.stringify(playerData).length);
+      console.log('Has profile photo:', !!playerData.media?.profilePhoto);
+      console.log('Preserving published status:', playerData.metadata?.published);
+      if (playerData.media?.profilePhoto) {
+        console.log('Photo URL length:', playerData.media.profilePhoto.length);
+        console.log('Photo URL starts with data:', playerData.media.profilePhoto.startsWith('data:'));
+      }
+      
+      db.run(
+        'UPDATE players SET data = ? WHERE id = ? AND (user_id = ? OR ? = \'admin\')',
+        [JSON.stringify(playerData), req.params.id, req.user.id, req.user.role],
+        function(err) {
+          if (err) {
+            console.error('Database error updating player:', err);
+            return res.status(500).json({ error: 'Error updating player: ' + err.message });
+          }
+          if (this.changes === 0) {
+            return res.status(404).json({ error: 'Player not found or access denied' });
+          }
+          console.log('Player updated successfully');
+          res.json({ message: 'Player profile updated' });
+        }
+      );
     }
   );
 });

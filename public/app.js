@@ -850,15 +850,7 @@ class PlayerProfileApp {
         
         const age = this.calculateAge(player.personalInfo?.dateOfBirth);
         
-        // Debug height and weight data structure
-        console.log('Player:', player.personalInfo?.fullName);
-        console.log('Full personalInfo:', player.personalInfo);
-        console.log('Height data:', player.personalInfo?.height);
-        console.log('Weight data:', player.personalInfo?.weight);
-        
-        // Check if height/weight might be stored directly on personalInfo
-        console.log('Direct heightCm:', player.personalInfo?.heightCm);
-        console.log('Direct weightKg:', player.personalInfo?.weightKg);
+        // Remove debug logs - issues have been resolved
         
         // Handle height - check multiple possible data structures
         let heightValue = player.personalInfo?.height?.centimeters;
