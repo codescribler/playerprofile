@@ -273,7 +273,8 @@ class ModernProfileView {
         
         // Only show preferred foot if available
         if (player.personalInfo?.preferredFoot) {
-            document.getElementById('player-foot').textContent = player.personalInfo.preferredFoot;
+            const foot = player.personalInfo.preferredFoot;
+            document.getElementById('player-foot').textContent = foot.charAt(0).toUpperCase() + foot.slice(1).toLowerCase();
         } else {
             document.querySelector('#player-foot').parentElement.style.display = 'none';
         }

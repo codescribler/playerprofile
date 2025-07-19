@@ -34,6 +34,8 @@ body {
     justify-content: space-between;
     align-items: flex-start;
     gap: 20px;
+    page-break-inside: avoid;
+    page-break-after: avoid;
 }
 
 .player-identity {
@@ -74,6 +76,7 @@ body {
     gap: 12px;
     flex-wrap: wrap;
     margin-top: 5px;
+    page-break-inside: avoid;
 }
 
 .player-basics span {
@@ -95,6 +98,7 @@ body {
     border: 1px solid #e0e0e0;
     border-radius: 2px;
     filter: grayscale(20%);
+    page-break-inside: avoid;
 }
 
 /* Compact section spacing */
@@ -209,8 +213,9 @@ body {
 .player-info-grid {
     display: grid;
     grid-template-columns: 1.5fr 1fr;
-    gap: 20px;
-    margin-bottom: 15px;
+    gap: 15px;
+    margin-bottom: 10px;
+    page-break-inside: avoid;
 }
 
 /* Minimalist Playing Style Card */
@@ -362,9 +367,10 @@ body {
 
 /* Additional Information Section */
 .additional-info {
-    margin-top: 15px;
+    margin-top: 10px;
     border-top: 2px solid #e0e0e0;
-    padding-top: 15px;
+    padding-top: 10px;
+    page-break-before: avoid;
 }
 
 .info-grid {
@@ -716,7 +722,9 @@ body {
     .attribute-section,
     .tab-content,
     .player-info-grid,
-    .awards-section {
+    .awards-section,
+    .player-basics,
+    .additional-info {
         page-break-inside: avoid;
         break-inside: avoid;
     }
