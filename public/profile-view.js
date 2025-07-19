@@ -942,7 +942,11 @@ class ModernProfileView {
         let additionalCard = document.getElementById('additional-info-card');
         if (!additionalCard) {
             // Create the card after the overview cards
-            const overviewTab = document.getElementById('overview-tab');
+            const overviewSection = document.getElementById('overview-section');
+            if (!overviewSection) {
+                console.error('Overview section not found');
+                return;
+            }
             const cardHtml = `
                 <div id="additional-info-card" class="fm-card fm-mt-lg">
                     <div class="fm-card-header">
@@ -952,7 +956,7 @@ class ModernProfileView {
                     </div>
                 </div>
             `;
-            overviewTab.insertAdjacentHTML('beforeend', cardHtml);
+            overviewSection.insertAdjacentHTML('beforeend', cardHtml);
             additionalCard = document.getElementById('additional-info-card');
         }
         
