@@ -1110,6 +1110,7 @@ class ModernProfileView {
     generateQRCode() {
         // Generate QR code for the current public profile URL
         const publicProfileUrl = `${window.location.origin}/profile-view.html?id=${this.playerId}`;
+        console.log('Generating QR code for URL:', publicProfileUrl);
         const canvas = document.getElementById('qr-code-canvas');
         
         if (!canvas) {
@@ -1125,13 +1126,13 @@ class ModernProfileView {
                 
                 // Generate QR code
                 QRCode.toCanvas(canvas, publicProfileUrl, {
-                    width: 100,
-                    height: 100,
+                    width: 120,
+                    height: 120,
+                    margin: 2,
                     color: {
                         dark: '#000000',
                         light: '#FFFFFF'
                     },
-                    margin: 1,
                     scale: 4
                 }, function (error) {
                     if (error) {
@@ -1154,7 +1155,7 @@ class ModernProfileView {
     
     createFallbackQR(canvas, url) {
         // Create a simple QR code using a free API service as fallback
-        const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(url)}`;
+        const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(url)}`;
         
         // Create an image element
         const img = new Image();
@@ -1162,18 +1163,18 @@ class ModernProfileView {
         img.onload = function() {
             const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(img, 0, 0, 100, 100);
+            ctx.drawImage(img, 0, 0, 120, 120);
         };
         img.onerror = function() {
             // Final fallback - just show text
             const ctx = canvas.getContext('2d');
             ctx.fillStyle = 'white';
-            ctx.fillRect(0, 0, 100, 100);
+            ctx.fillRect(0, 0, 120, 120);
             ctx.fillStyle = 'black';
-            ctx.font = '10px Arial';
+            ctx.font = '12px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('Scan for', 50, 40);
-            ctx.fillText('Online Profile', 50, 55);
+            ctx.fillText('Scan for', 60, 50);
+            ctx.fillText('Online Profile', 60, 70);
         };
         img.src = qrApiUrl;
     }
