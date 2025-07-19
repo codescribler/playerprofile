@@ -456,6 +456,9 @@
     <!-- Print Header Logo (only visible when printing) -->
     <div class="print-header-logo" style="display: none;">
         <img src="images/playerprofilelogofull.png" alt="Player Profile Manager">
+        <div class="print-date">
+            <script>document.write(new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }))</script>
+        </div>
     </div>
 
     <div class="profile-header">
@@ -780,18 +783,18 @@
                 <div class="footer-logo">
                     <img src="images/playerprofilelogofull.png" alt="Player Profile Manager">
                 </div>
-                <p class="footer-tagline">Join the Premier Football Profile Platform</p>
+                <p class="footer-tagline">Professional Football Profile Platform</p>
                 <div class="footer-info">
-                    <p>Create professional profiles • Connect with coaches & scouts • Get discovered</p>
-                    <p>Visit <strong>www.playerprofilemanager.com</strong> to create your free profile today!</p>
+                    <p>Create your profile • Connect with opportunities • Track your progress</p>
+                    <p>Visit <a href="#" class="footer-url">www.playerprofilemanager.com</a></p>
                 </div>
             </div>
             <div class="print-footer-qr">
                 <div class="qr-code-container">
-                    <canvas id="qr-code-canvas" width="80" height="80"></canvas>
+                    <canvas id="qr-code-canvas" width="60" height="60"></canvas>
                     <div class="qr-code-text">
-                        <strong>Scan for Live Profile</strong>
-                        <small>View updates & send messages</small>
+                        <strong>Live Profile</strong>
+                        <small>Scan for updates</small>
                     </div>
                 </div>
             </div>
