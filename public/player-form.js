@@ -71,10 +71,29 @@ class PlayerForm {
             this.addAwardField();
         });
         
+        // Add team button
+        document.getElementById('add-team-btn').addEventListener('click', () => {
+            this.addTeamField();
+        });
+        
         // Remove award handlers (delegation)
         document.addEventListener('click', (e) => {
             if (e.target.classList.contains('remove-award-btn')) {
                 e.target.closest('.award-item').remove();
+            }
+            if (e.target.classList.contains('remove-team-btn')) {
+                e.target.closest('.team-item').remove();
+            }
+        });
+        
+        // Handle primary team radio button changes
+        document.addEventListener('change', (e) => {
+            if (e.target.name === 'primary-team') {
+                // Ensure at least one team is always primary
+                const checkedRadios = document.querySelectorAll('input[name="primary-team"]:checked');
+                if (checkedRadios.length === 0 && document.querySelectorAll('.team-item').length > 0) {
+                    e.target.checked = true;
+                }
             }
         });
     }
@@ -213,9 +232,22 @@ class PlayerForm {
         // Playing Information
         this.populatePositionData(player.playingInfo?.positions);
         document.getElementById('yearsPlaying').value = player.playingInfo?.yearsPlaying || '';
-        document.getElementById('currentTeam').value = player.playingInfo?.currentTeam?.clubName || 
-            (typeof player.playingInfo?.currentTeam === 'string' ? player.playingInfo.currentTeam : '') || '';
-        document.getElementById('league').value = player.playingInfo?.currentTeam?.league || player.playingInfo?.league || '';
+        
+        // Handle teams - check for new format first, then fallback to legacy
+        if (player.playingInfo?.teams && Array.isArray(player.playingInfo.teams)) {
+            // New format with multiple teams
+            player.playingInfo.teams.forEach(team => {
+                this.addTeamField(team.clubName, team.league, team.isPrimary);
+            });
+        } else if (player.playingInfo?.currentTeam) {
+            // Legacy format - single team
+            const teamName = typeof player.playingInfo.currentTeam === 'string' 
+                ? player.playingInfo.currentTeam 
+                : player.playingInfo.currentTeam.clubName;
+            const league = player.playingInfo?.currentTeam?.league || player.playingInfo?.league || '';
+            this.addTeamField(teamName, league, true);
+        }
+        
         document.getElementById('basedLocation').value = player.playingInfo?.basedLocation || '';
         
         // Representative Teams
@@ -415,6 +447,48 @@ class PlayerForm {
         
         container.insertBefore(awardItem, container.querySelector('small'));
     }
+    
+    addTeamField(teamName = '', league = '', isPrimary = false) {
+        const container = document.getElementById('teams-container');
+        const teamItem = document.createElement('div');
+        teamItem.className = 'team-item fm-card fm-mb-sm';
+        teamItem.style.cssText = 'background: var(--fm-background); padding: var(--spacing-md); position: relative;';
+        
+        // Generate unique ID for radio button
+        const teamId = Date.now() + Math.random();
+        
+        // Check if this is the first team being added
+        const isFirstTeam = container.querySelectorAll('.team-item').length === 0;
+        
+        teamItem.innerHTML = `
+            <button type="button" class="remove-team-btn fm-btn fm-btn-danger fm-btn-sm" style="position: absolute; top: 10px; right: 10px; padding: 4px 8px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <div style="display: flex; align-items: center; gap: var(--spacing-md); margin-bottom: var(--spacing-md);">
+                <input type="radio" id="primary-${teamId}" name="primary-team" value="${teamId}" ${isPrimary || isFirstTeam ? 'checked' : ''}>
+                <label for="primary-${teamId}" style="font-weight: 600; color: var(--fm-accent);">Primary Team</label>
+            </div>
+            <div class="fm-grid fm-grid-2" style="gap: var(--spacing-md);">
+                <div>
+                    <input type="text" class="team-name fm-input" placeholder="Team/Club Name" value="${teamName}">
+                </div>
+                <div>
+                    <input type="text" class="team-league fm-input" placeholder="League/Division" value="${league}">
+                </div>
+            </div>
+        `;
+        
+        container.insertBefore(teamItem, container.querySelector('small'));
+        
+        // If this is the first team, ensure it's selected as primary
+        if (isFirstTeam) {
+            const radioButton = teamItem.querySelector('input[type="radio"]');
+            if (radioButton) radioButton.checked = true;
+        }
+    }
 
     collectPositionData() {
         const positions = [];
@@ -471,6 +545,21 @@ class PlayerForm {
                 awards.push({ title, season });
             }
         });
+        
+        // Collect teams data
+        const teams = [];
+        document.querySelectorAll('.team-item').forEach(item => {
+            const teamName = item.querySelector('.team-name').value.trim();
+            const league = item.querySelector('.team-league').value.trim();
+            const isPrimary = item.querySelector('input[type="radio"]').checked;
+            if (teamName) {
+                teams.push({ 
+                    clubName: teamName, 
+                    league: league,
+                    isPrimary: isPrimary
+                });
+            }
+        });
 
         const formData = {
             personalInfo: {
@@ -503,10 +592,9 @@ class PlayerForm {
             playingInfo: {
                 positions: this.collectPositionData(),
                 yearsPlaying: parseInt(document.getElementById('yearsPlaying').value) || 0,
-                currentTeam: {
-                    clubName: document.getElementById('currentTeam').value,
-                    league: document.getElementById('league').value
-                },
+                teams: teams,
+                // Keep currentTeam for backward compatibility - use primary team
+                currentTeam: teams.find(t => t.isPrimary) || teams[0] || { clubName: '', league: '' },
                 basedLocation: document.getElementById('basedLocation').value,
                 representativeTeams: {
                     district: {

@@ -1111,10 +1111,7 @@ class PlayerProfileApp {
                     </div>
                     <div class="fm-stat">
                         <span class="fm-stat-label">Team</span>
-                        <span class="fm-stat-value">${
-                            player.playingInfo?.currentTeam?.clubName || 
-                            (typeof player.playingInfo?.currentTeam === 'string' ? player.playingInfo.currentTeam : 'N/A')
-                        }</span>
+                        <span class="fm-stat-value">${this.getPrimaryTeam(player.playingInfo)}</span>
                     </div>
                     ${location}
                 </div>
@@ -1366,6 +1363,28 @@ class PlayerProfileApp {
         };
         
         return positionMap[position] || position.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+    }
+    
+    getPrimaryTeam(playingInfo) {
+        // Check for new teams array format
+        if (playingInfo?.teams && Array.isArray(playingInfo.teams)) {
+            const primaryTeam = playingInfo.teams.find(t => t.isPrimary);
+            if (primaryTeam) {
+                return primaryTeam.clubName || 'N/A';
+            }
+            // If no primary team marked, use the first team
+            if (playingInfo.teams.length > 0) {
+                return playingInfo.teams[0].clubName || 'N/A';
+            }
+        }
+        
+        // Fallback to legacy currentTeam format
+        if (playingInfo?.currentTeam) {
+            return playingInfo.currentTeam.clubName || 
+                   (typeof playingInfo.currentTeam === 'string' ? playingInfo.currentTeam : 'N/A');
+        }
+        
+        return 'N/A';
     }
 }
 

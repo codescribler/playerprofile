@@ -149,16 +149,24 @@
         .attribute-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: var(--spacing-md);
+            gap: var(--spacing-lg);
         }
         
         .attribute-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: var(--spacing-sm);
-            background: var(--fm-background);
-            border-radius: 6px;
+            padding: var(--spacing-md);
+            background: var(--fm-surface);
+            border-radius: 8px;
+            border: 1px solid var(--fm-border);
+            transition: all var(--transition-fast);
+        }
+        
+        .attribute-item:hover {
+            background: var(--fm-surface-light);
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-sm);
         }
         
         .attribute-label {
@@ -203,6 +211,58 @@
             color: white;
         }
         
+        /* Elite rating styling for ratings 9 and 10 */
+        .attribute-rating.elite-rating {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #dc2626 100%);
+            box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+            animation: elite-pulse 2s ease-in-out infinite;
+            transform: scale(1.1);
+        }
+        
+        .rating-10.elite-rating {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #dc2626 100%);
+        }
+        
+        .rating-9.elite-rating {
+            background: linear-gradient(135deg, #f59e0b 0%, #f97316 50%, #ea580c 100%);
+        }
+        
+        @keyframes elite-pulse {
+            0% {
+                box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+            }
+            50% {
+                box-shadow: 0 0 20px rgba(245, 158, 11, 0.8);
+            }
+            100% {
+                box-shadow: 0 0 10px rgba(245, 158, 11, 0.6);
+            }
+        }
+        
+        /* Key attributes spacing */
+        .key-attribute-item {
+            margin-bottom: var(--spacing-md);
+            padding: var(--spacing-sm) 0;
+        }
+        
+        .key-attribute-item:last-child {
+            margin-bottom: 0;
+            border-bottom: none;
+        }
+        
+        #key-attributes {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+        
+        /* Ensure proper alignment and spacing for attribute values */
+        .fm-stat-value {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+        
         .attribute-bar {
             width: 100px;
             height: 6px;
@@ -221,11 +281,13 @@
             border-radius: 8px;
             padding: var(--spacing-lg);
             position: relative;
-            height: 400px;
-            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600"><rect x="50" y="50" width="300" height="500" fill="none" stroke="rgba(168,179,196,0.2)" stroke-width="2"/><rect x="100" y="50" width="200" height="100" fill="none" stroke="rgba(168,179,196,0.2)" stroke-width="2"/><rect x="150" y="50" width="100" height="50" fill="none" stroke="rgba(168,179,196,0.2)" stroke-width="2"/><circle cx="200" cy="300" r="50" fill="none" stroke="rgba(168,179,196,0.2)" stroke-width="2"/><line x1="50" y1="300" x2="350" y2="300" stroke="rgba(168,179,196,0.2)" stroke-width="2"/></svg>');
-            background-size: contain;
+            height: 500px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 600"><rect x="50" y="50" width="300" height="500" fill="none" stroke="rgba(168,179,196,0.3)" stroke-width="2"/><rect x="100" y="50" width="200" height="100" fill="none" stroke="rgba(168,179,196,0.3)" stroke-width="2"/><rect x="150" y="50" width="100" height="50" fill="none" stroke="rgba(168,179,196,0.3)" stroke-width="2"/><circle cx="200" cy="300" r="50" fill="none" stroke="rgba(168,179,196,0.3)" stroke-width="2"/><line x1="50" y1="300" x2="350" y2="300" stroke="rgba(168,179,196,0.3)" stroke-width="2"/></svg>');
+            background-size: 90% 90%;
             background-position: center;
             background-repeat: no-repeat;
+            max-width: 600px;
+            margin: 0 auto;
         }
         
         .position-marker {
@@ -302,6 +364,40 @@
             
             .profile-details {
                 justify-content: center;
+            }
+            
+            /* Mobile adjustments for key attributes */
+            .key-attribute-item {
+                padding: var(--spacing-xs) 0;
+            }
+            
+            .fm-stat-value {
+                gap: var(--spacing-sm);
+            }
+            
+            .attribute-bar {
+                width: 80px;
+            }
+            
+            .attribute-rating.elite-rating {
+                transform: scale(1.05);
+            }
+            
+            /* Position map mobile adjustments */
+            .position-map {
+                height: 350px;
+                padding: var(--spacing-md);
+                background-size: 95% 95%;
+            }
+            
+            .position-marker {
+                width: 35px;
+                height: 35px;
+                font-size: 0.65rem;
+            }
+            
+            .position-marker:hover {
+                transform: translate(-50%, -50%) scale(1.05);
             }
             
             /* Mobile-only: Hide tabs and show all content stacked */

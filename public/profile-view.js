@@ -140,10 +140,20 @@ class ModernProfileView {
 
     displayOverview(player) {
         // Player information
-        document.getElementById('current-team').textContent = 
-            player.playingInfo?.currentTeam?.clubName || player.playingInfo?.currentTeam || 'Free Agent';
-        document.getElementById('current-league').textContent = 
-            player.playingInfo?.currentTeam?.league || player.playingInfo?.league || '--';
+        // Handle multiple teams
+        if (player.playingInfo?.teams && Array.isArray(player.playingInfo.teams) && player.playingInfo.teams.length > 0) {
+            // Find primary team
+            const primaryTeam = player.playingInfo.teams.find(t => t.isPrimary) || player.playingInfo.teams[0];
+            document.getElementById('current-team').textContent = primaryTeam.clubName || 'Free Agent';
+            document.getElementById('current-league').textContent = primaryTeam.league || '--';
+        } else {
+            // Fallback to legacy format
+            document.getElementById('current-team').textContent = 
+                player.playingInfo?.currentTeam?.clubName || player.playingInfo?.currentTeam || 'Free Agent';
+            document.getElementById('current-league').textContent = 
+                player.playingInfo?.currentTeam?.league || player.playingInfo?.league || '--';
+        }
+        
         document.getElementById('years-playing').textContent = 
             player.playingInfo?.yearsPlaying || '--';
         document.getElementById('current-school').textContent = 
@@ -176,17 +186,23 @@ class ModernProfileView {
         const keyAttributesContainer = document.getElementById('key-attributes');
         const keyAttributes = this.getTopAttributes(abilities, 6);
         
-        keyAttributesContainer.innerHTML = keyAttributes.map(attr => `
-            <div class="fm-stat">
+        keyAttributesContainer.innerHTML = keyAttributes.map(attr => {
+            // Add special class for elite ratings (9 and 10)
+            const isElite = attr.rating >= 9;
+            const eliteClass = isElite ? ' elite-rating' : '';
+            
+            return `
+            <div class="fm-stat key-attribute-item">
                 <span class="fm-stat-label">${this.formatAttributeName(attr.name)}</span>
                 <div class="fm-stat-value">
-                    <span class="attribute-rating rating-${attr.rating}">${attr.rating}</span>
+                    <span class="attribute-rating rating-${attr.rating}${eliteClass}">${attr.rating}</span>
                     <div class="attribute-bar">
                         <div class="attribute-bar-fill" style="width: ${attr.rating * 5}%; background: ${this.getRatingColor(attr.rating)}"></div>
                     </div>
                 </div>
             </div>
-        `).join('');
+        `;
+        }).join('');
     }
 
     displayAttributes(player) {
@@ -212,11 +228,15 @@ class ModernProfileView {
         container.innerHTML = Object.entries(attributes).map(([key, value]) => {
             // Handle both new format (value.rating) and legacy format (value as number)
             const rating = value.rating || value || 5;
+            // Add special class for elite ratings (9 and 10)
+            const isElite = rating >= 9;
+            const eliteClass = isElite ? ' elite-rating' : '';
+            
             return `
             <div class="attribute-item">
                 <span class="attribute-label">${this.formatAttributeName(key)}</span>
                 <div class="attribute-value">
-                    <span class="attribute-rating rating-${rating}">${rating}</span>
+                    <span class="attribute-rating rating-${rating}${eliteClass}">${rating}</span>
                     <div class="attribute-bar">
                         <div class="attribute-bar-fill" style="width: ${rating * 5}%; background: ${this.getRatingColor(rating)}"></div>
                     </div>
@@ -413,8 +433,11 @@ class ModernProfileView {
         const positionMap = {
             'goalkeeper': 'Goalkeeper',
             'centre-back': 'Centre Back',
+            'center-back': 'Center Back',
             'right-back': 'Right Back',
             'left-back': 'Left Back',
+            'right-centre-back': 'Right Centre Back',
+            'left-centre-back': 'Left Centre Back',
             'right-wing-back': 'Right Wing Back',
             'left-wing-back': 'Left Wing Back',
             'defensive-midfielder': 'Defensive Midfielder',
@@ -424,9 +447,14 @@ class ModernProfileView {
             'left-midfielder': 'Left Midfielder',
             'right-winger': 'Right Winger',
             'left-winger': 'Left Winger',
+            'right-wing': 'Right Wing',
+            'left-wing': 'Left Wing',
             'striker': 'Striker',
             'centre-forward': 'Centre Forward',
-            'false-nine': 'False Nine'
+            'center-forward': 'Center Forward',
+            'false-nine': 'False Nine',
+            'second-striker': 'Second Striker',
+            'wide-forward': 'Wide Forward'
         };
         
         return positionMap[position] || position.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -540,26 +568,43 @@ class ModernProfileView {
 
     getPositionCoordinates(position) {
         const positions = {
+            // Goalkeeper
             'Goalkeeper': { x: 50, y: 90 },
+            
+            // Defenders
             'Right Back': { x: 80, y: 75 },
-            'Center Back': { x: 50, y: 75 },
             'Centre Back': { x: 50, y: 75 },
+            'Center Back': { x: 50, y: 75 },
             'Left Back': { x: 20, y: 75 },
-            'Right Wing Back': { x: 85, y: 60 },
-            'Left Wing Back': { x: 15, y: 60 },
+            'Right Wing Back': { x: 90, y: 65 },
+            'Left Wing Back': { x: 10, y: 65 },
+            
+            // Multiple CBs positioning
+            'Right Centre Back': { x: 65, y: 75 },
+            'Left Centre Back': { x: 35, y: 75 },
+            
+            // Midfielders
             'Defensive Midfielder': { x: 50, y: 60 },
             'Central Midfielder': { x: 50, y: 50 },
             'Right Midfielder': { x: 75, y: 50 },
             'Left Midfielder': { x: 25, y: 50 },
             'Attacking Midfielder': { x: 50, y: 35 },
-            'Right Winger': { x: 85, y: 30 },
-            'Left Winger': { x: 15, y: 30 },
-            'Right Wing': { x: 85, y: 30 },
-            'Left Wing': { x: 15, y: 30 },
-            'Striker': { x: 50, y: 20 },
-            'Center Forward': { x: 50, y: 20 },
-            'Centre Forward': { x: 50, y: 20 },
-            'False Nine': { x: 50, y: 25 }
+            
+            // Wingers
+            'Right Winger': { x: 90, y: 30 },
+            'Left Winger': { x: 10, y: 30 },
+            'Right Wing': { x: 90, y: 30 },
+            'Left Wing': { x: 10, y: 30 },
+            
+            // Forwards
+            'Striker': { x: 50, y: 15 },
+            'Center Forward': { x: 50, y: 15 },
+            'Centre Forward': { x: 50, y: 15 },
+            'False Nine': { x: 50, y: 25 },
+            
+            // Additional positions
+            'Second Striker': { x: 50, y: 25 },
+            'Wide Forward': { x: 75, y: 20 }
         };
         
         return positions[position] || null;
@@ -572,6 +617,8 @@ class ModernProfileView {
             'Center Back': 'CB',
             'Centre Back': 'CB',
             'Left Back': 'LB',
+            'Right Centre Back': 'RCB',
+            'Left Centre Back': 'LCB',
             'Right Wing Back': 'RWB',
             'Left Wing Back': 'LWB',
             'Defensive Midfielder': 'DM',
@@ -586,7 +633,9 @@ class ModernProfileView {
             'Striker': 'ST',
             'Center Forward': 'CF',
             'Centre Forward': 'CF',
-            'False Nine': 'F9'
+            'False Nine': 'F9',
+            'Second Striker': 'SS',
+            'Wide Forward': 'WF'
         };
         
         return abbreviations[position] || position.slice(0, 3).toUpperCase();
@@ -633,8 +682,9 @@ class ModernProfileView {
         const hasLocation = player.playingInfo?.basedLocation;
         const hasRepTeams = player.playingInfo?.representativeTeams;
         const hasAwards = player.playingInfo?.trophiesAwards?.length > 0;
+        const hasMultipleTeams = player.playingInfo?.teams?.length > 1;
         
-        if (!hasLocation && !hasRepTeams && !hasAwards) {
+        if (!hasLocation && !hasRepTeams && !hasAwards && !hasMultipleTeams) {
             return;
         }
         
@@ -658,6 +708,24 @@ class ModernProfileView {
         
         const content = document.getElementById('additional-info-content');
         let html = '';
+        
+        // All teams if multiple
+        if (hasMultipleTeams && player.playingInfo?.teams) {
+            const teamsHtml = player.playingInfo.teams.map(team => {
+                const primary = team.isPrimary ? ' <span style="color: var(--fm-accent); font-weight: 600;">(Primary)</span>' : '';
+                const league = team.league ? ` - ${team.league}` : '';
+                return `<li>${team.clubName}${league}${primary}</li>`;
+            }).join('');
+            
+            html += `
+                <div class="fm-stat" style="align-items: flex-start;">
+                    <span class="fm-stat-label" style="min-width: 120px;">All Teams</span>
+                    <ul class="fm-list" style="margin: 0; padding-left: 20px;">
+                        ${teamsHtml}
+                    </ul>
+                </div>
+            `;
+        }
         
         // Location - always show if available (public info)
         if (hasLocation) {

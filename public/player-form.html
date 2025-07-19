@@ -452,12 +452,17 @@
                                 <input type="number" id="yearsPlaying" class="fm-input" placeholder="Number of years playing football" min="0" max="30">
                             </div>
                             <div class="fm-form-group">
-                                <label for="currentTeam" class="fm-label">Current Team/Club</label>
-                                <input type="text" id="currentTeam" class="fm-input" placeholder="Enter current team or club name">
-                            </div>
-                            <div class="fm-form-group">
-                                <label for="league" class="fm-label">League/Division</label>
-                                <input type="text" id="league" class="fm-input" placeholder="Enter league or division name">
+                                <label class="fm-label">Current Teams</label>
+                                <div id="teams-container">
+                                    <small class="fm-text-muted" style="display: block; margin-bottom: var(--spacing-sm);">Add all teams you currently play for (club, school, etc.). Select one as primary.</small>
+                                </div>
+                                <button type="button" id="add-team-btn" class="fm-btn fm-btn-secondary fm-btn-sm" style="margin-top: var(--spacing-sm);">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <line x1="12" y1="5" x2="12" y2="19"></line>
+                                        <line x1="5" y1="12" x2="19" y2="12"></line>
+                                    </svg>
+                                    Add Team
+                                </button>
                             </div>
                             <div class="fm-form-group">
                                 <label for="basedLocation" class="fm-label">Based In (County)</label>
