@@ -55,7 +55,10 @@ class ModernProfileView {
         // Tab switching
         document.querySelectorAll('.fm-tab').forEach(tab => {
             tab.addEventListener('click', (e) => {
-                this.switchTab(e.target.dataset.tab);
+                const tabElement = e.target.closest('.fm-tab');
+                if (tabElement) {
+                    this.switchTab(tabElement.dataset.tab);
+                }
             });
         });
 
@@ -64,6 +67,40 @@ class ModernProfileView {
             e.preventDefault();
             this.handleContactForm();
         });
+    }
+    
+    navigateTab(direction) {
+        const tabs = ['overview', 'attributes', 'positions', 'history', 'contact'];
+        const currentTab = document.querySelector('.fm-tab.active').dataset.tab;
+        const currentIndex = tabs.indexOf(currentTab);
+        
+        let newIndex = currentIndex;
+        let attempts = 0;
+        const maxAttempts = tabs.length;
+        
+        // Keep trying until we find a visible tab or run out of tabs
+        while (attempts < maxAttempts) {
+            if (direction === 'next' && newIndex < tabs.length - 1) {
+                newIndex++;
+            } else if (direction === 'prev' && newIndex > 0) {
+                newIndex--;
+            } else {
+                return; // Reached the end
+            }
+            
+            const newTab = tabs[newIndex];
+            const tabElement = document.querySelector(`[data-tab="${newTab}"]`);
+            const tabContent = document.getElementById(`${newTab}-tab`);
+            
+            // Check if tab is visible
+            if (tabElement && tabElement.style.display !== 'none' && 
+                tabContent && !tabContent.classList.contains('hidden-tab')) {
+                this.switchTab(newTab);
+                return;
+            }
+            
+            attempts++;
+        }
     }
 
     switchTab(tabName) {
@@ -77,6 +114,73 @@ class ModernProfileView {
             content.style.display = 'none';
         });
         document.getElementById(`${tabName}-tab`).style.display = 'block';
+        
+        // Update navigation buttons
+        this.updateNavigationButtons(tabName);
+        
+        // Scroll to top of content
+        window.scrollTo(0, document.querySelector('.fm-container').offsetTop - 80);
+    }
+    
+    updateNavigationButtons(currentTab) {
+        const tabs = ['overview', 'attributes', 'positions', 'history', 'contact'];
+        const tabNames = {
+            'overview': 'Overview',
+            'attributes': 'Attributes', 
+            'positions': 'Positions',
+            'history': 'History',
+            'contact': 'Contact'
+        };
+        
+        const currentIndex = tabs.indexOf(currentTab);
+        const navButtons = document.querySelectorAll(`.tab-content#${currentTab}-tab .tab-navigation button`);
+        const indicator = document.querySelector(`.tab-content#${currentTab}-tab .tab-indicator`);
+        
+        if (navButtons.length === 2) {
+            const prevButton = navButtons[0];
+            const nextButton = navButtons[1];
+            
+            // Update indicator
+            if (indicator) {
+                indicator.textContent = `${currentIndex + 1} of ${tabs.length}`;
+            }
+            
+            // Update previous button
+            if (currentIndex === 0) {
+                prevButton.disabled = true;
+                prevButton.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                    Previous`;
+            } else {
+                prevButton.disabled = false;
+                const prevTab = tabs[currentIndex - 1];
+                prevButton.innerHTML = `
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                    Previous: ${tabNames[prevTab]}`;
+            }
+            
+            // Update next button
+            if (currentIndex === tabs.length - 1) {
+                nextButton.disabled = true;
+                nextButton.innerHTML = `
+                    ${tabNames[currentTab]}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>`;
+            } else {
+                nextButton.disabled = false;
+                const nextTab = tabs[currentIndex + 1];
+                nextButton.innerHTML = `
+                    Next: ${tabNames[nextTab]}
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>`;
+            }
+        }
     }
 
     async loadPlayerData() {
@@ -419,8 +523,17 @@ class ModernProfileView {
             historyContainer.innerHTML = historyContent.join('');
         } else {
             // Hide the history tab if no content
-            document.querySelector('[data-tab="history"]').style.display = 'none';
-            document.getElementById('history-tab').style.display = 'none';
+            const historyTabButton = document.querySelector('[data-tab="history"]');
+            const historyTabContent = document.getElementById('history-tab');
+            
+            if (historyTabButton) {
+                historyTabButton.style.display = 'none';
+            }
+            if (historyTabContent) {
+                historyTabContent.style.display = 'none';
+                // Add class to hide on mobile too
+                historyTabContent.classList.add('hidden-tab');
+            }
         }
     }
 
@@ -1060,6 +1173,7 @@ class ModernProfileView {
 }
 
 // Initialize the profile view when the page loads
+let profileView;
 document.addEventListener('DOMContentLoaded', () => {
-    new ModernProfileView();
+    profileView = new ModernProfileView();
 });

@@ -675,7 +675,8 @@ body {
     .fm-tabs,
     .print-controls,
     .contact-section,
-    .fm-bg-gradient {
+    .fm-bg-gradient,
+    .tab-navigation {
         display: none !important;
     }
     

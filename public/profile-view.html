@@ -352,6 +352,68 @@
             gap: var(--spacing-md);
         }
         
+        /* Tab navigation styling */
+        .tab-navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: var(--spacing-xl);
+            padding-top: var(--spacing-xl);
+            border-top: 1px solid var(--fm-border);
+        }
+        
+        .tab-indicator {
+            color: var(--fm-text-secondary);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .tab-number {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--fm-accent);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-right: var(--spacing-xs);
+        }
+        
+        .fm-tab.active .tab-number {
+            background: white;
+            color: var(--fm-accent);
+            border: 2px solid var(--fm-accent);
+        }
+        
+        /* Make tabs more prominent */
+        .fm-tabs {
+            background: var(--fm-surface-light);
+            padding: var(--spacing-xs);
+            border-radius: 8px;
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .fm-tab {
+            padding: var(--spacing-md) var(--spacing-lg);
+            border-radius: 6px;
+            transition: all var(--transition-fast);
+        }
+        
+        .fm-tab:hover {
+            background: var(--fm-surface);
+            transform: translateY(-1px);
+        }
+        
+        .fm-tab.active {
+            background: var(--fm-accent);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+        
         @media (max-width: 768px) {
             .contact-form-row {
                 grid-template-columns: 1fr;
@@ -364,6 +426,16 @@
             
             .profile-details {
                 justify-content: center;
+            }
+            
+            /* Hide tab navigation on mobile */
+            .tab-navigation {
+                display: none;
+            }
+            
+            /* Hide tab numbers on mobile */
+            .tab-number {
+                display: none;
             }
             
             /* Mobile adjustments for key attributes */
@@ -402,12 +474,12 @@
             
             /* Mobile-only: Hide tabs and show all content stacked */
             .fm-tabs {
-                display: none;
+                display: none !important;
             }
             
             .tab-content {
                 display: block !important;
-                margin-bottom: var(--spacing-xl);
+                margin-bottom: var(--spacing-xxl);
             }
             
             /* Ensure proper spacing between sections on mobile */
@@ -417,7 +489,7 @@
             #history-tab,
             #contact-tab {
                 display: block !important;
-                margin-bottom: var(--spacing-xl);
+                margin-bottom: var(--spacing-xxl);
             }
             
             /* Add section headers on mobile since tabs are hidden */
@@ -430,6 +502,20 @@
                 margin-bottom: var(--spacing-lg);
                 padding-bottom: var(--spacing-sm);
                 border-bottom: 2px solid var(--fm-accent);
+            }
+            
+            /* Add divider between sections on mobile */
+            .tab-content:not(:last-child)::after {
+                content: '';
+                display: block;
+                margin-top: var(--spacing-xl);
+                height: 1px;
+                background: var(--fm-border);
+            }
+            
+            /* Hide tabs that have no content even on mobile */
+            .tab-content.hidden-tab {
+                display: none !important;
             }
         }
     </style>
@@ -499,11 +585,11 @@
 
     <div class="fm-container">
         <div class="fm-tabs" id="profile-tabs">
-            <div class="fm-tab active" data-tab="overview">Overview</div>
-            <div class="fm-tab" data-tab="attributes">Attributes</div>
-            <div class="fm-tab" data-tab="positions">Positions</div>
-            <div class="fm-tab" data-tab="history">History</div>
-            <div class="fm-tab" data-tab="contact">Contact</div>
+            <div class="fm-tab active" data-tab="overview"><span class="tab-number">1</span> Overview</div>
+            <div class="fm-tab" data-tab="attributes"><span class="tab-number">2</span> Attributes</div>
+            <div class="fm-tab" data-tab="positions"><span class="tab-number">3</span> Positions</div>
+            <div class="fm-tab" data-tab="history"><span class="tab-number">4</span> History</div>
+            <div class="fm-tab" data-tab="contact"><span class="tab-number">5</span> Contact</div>
         </div>
 
         <div class="tab-content" id="overview-tab" data-mobile-title="Overview" data-print-title="Player Overview">
@@ -578,6 +664,23 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <button class="fm-btn fm-btn-secondary" disabled>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                    Previous
+                </button>
+                <span class="tab-indicator">1 of 5</span>
+                <button class="fm-btn fm-btn-secondary" onclick="profileView.navigateTab('next')">
+                    Next: Attributes
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <div class="tab-content" id="attributes-tab" style="display: none;" data-mobile-title="Attributes" data-print-title="Player Attributes">
@@ -613,6 +716,23 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <button class="fm-btn fm-btn-secondary" onclick="profileView.navigateTab('prev')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                    Previous: Overview
+                </button>
+                <span class="tab-indicator">2 of 5</span>
+                <button class="fm-btn fm-btn-secondary" onclick="profileView.navigateTab('next')">
+                    Next: Positions
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <div class="tab-content" id="positions-tab" style="display: none;" data-mobile-title="Positions" data-print-title="Playing Positions">
@@ -637,6 +757,23 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <button class="fm-btn fm-btn-secondary" onclick="profileView.navigateTab('prev')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                    Previous: Attributes
+                </button>
+                <span class="tab-indicator">3 of 5</span>
+                <button class="fm-btn fm-btn-secondary" onclick="profileView.navigateTab('next')">
+                    Next: History
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
+            </div>
         </div>
 
         <div class="tab-content" id="history-tab" style="display: none;" data-mobile-title="History" data-print-title="Playing History">
@@ -647,6 +784,23 @@
                 <div class="fm-card-body">
                     <p id="playing-history">No playing history available.</p>
                 </div>
+            </div>
+            
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <button class="fm-btn fm-btn-secondary" onclick="profileView.navigateTab('prev')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                    Previous: Positions
+                </button>
+                <span class="tab-indicator">4 of 5</span>
+                <button class="fm-btn fm-btn-secondary" onclick="profileView.navigateTab('next')">
+                    Next: Contact
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
             </div>
         </div>
 
@@ -674,6 +828,23 @@
                     </div>
                     <button type="submit" class="fm-btn fm-btn-primary fm-btn-lg">Send Message</button>
                 </form>
+            </div>
+            
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <button class="fm-btn fm-btn-secondary" onclick="profileView.navigateTab('prev')">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                    Previous: History
+                </button>
+                <span class="tab-indicator">5 of 5</span>
+                <button class="fm-btn fm-btn-secondary" disabled>
+                    Contact
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="9 18 15 12 9 6"></polyline>
+                    </svg>
+                </button>
             </div>
         </div>
     </div>
