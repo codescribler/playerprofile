@@ -66,17 +66,16 @@ class ModernProfileView {
     }
     
     setupSmoothScrollNav() {
-        const navLinks = document.querySelectorAll('.nav-link');
+        const tabs = document.querySelectorAll('.fm-tab');
         const sections = document.querySelectorAll('.scroll-section');
         
-        // Handle nav link clicks
-        navLinks.forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const targetId = link.getAttribute('href').substring(1);
+        // Handle tab clicks
+        tabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                const targetId = tab.dataset.section;
                 const targetSection = document.getElementById(targetId);
                 if (targetSection) {
-                    const navHeight = document.getElementById('sticky-nav').offsetHeight;
+                    const navHeight = document.querySelector('.sticky-nav-container').offsetHeight;
                     const targetPosition = targetSection.offsetTop - navHeight - 20;
                     window.scrollTo({
                         top: targetPosition,
@@ -86,7 +85,7 @@ class ModernProfileView {
             });
         });
         
-        // Update active nav on scroll
+        // Update active tab on scroll
         const observerOptions = {
             root: null,
             rootMargin: '-20% 0px -70% 0px',
@@ -97,10 +96,10 @@ class ModernProfileView {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     const id = entry.target.id;
-                    navLinks.forEach(link => {
-                        link.classList.remove('active');
-                        if (link.getAttribute('href') === `#${id}`) {
-                            link.classList.add('active');
+                    tabs.forEach(tab => {
+                        tab.classList.remove('active');
+                        if (tab.dataset.section === id) {
+                            tab.classList.add('active');
                         }
                     });
                 }

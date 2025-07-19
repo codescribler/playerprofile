@@ -650,15 +650,18 @@
     </div>
 
     <div class="fm-container">
-        <div class="fm-tabs" id="profile-tabs">
-            <div class="fm-tab active" data-tab="overview"><span class="tab-number">1</span> Overview</div>
-            <div class="fm-tab" data-tab="attributes"><span class="tab-number">2</span> Attributes</div>
-            <div class="fm-tab" data-tab="positions"><span class="tab-number">3</span> Positions</div>
-            <div class="fm-tab" data-tab="history"><span class="tab-number">4</span> History</div>
-            <div class="fm-tab" data-tab="contact"><span class="tab-number">5</span> Contact</div>
+        <div class="sticky-nav-container">
+            <div class="fm-tabs" id="profile-tabs">
+                <div class="fm-tab active" data-section="overview-section">Overview</div>
+                <div class="fm-tab" data-section="attributes-section">Attributes</div>
+                <div class="fm-tab" data-section="positions-section">Positions</div>
+                <div class="fm-tab" data-section="history-section">History</div>
+                <div class="fm-tab" data-section="contact-section">Contact</div>
+            </div>
         </div>
 
-        <div class="tab-content" id="overview-tab" data-mobile-title="Overview" data-print-title="Player Overview">
+        <div class="scroll-section" id="overview-section" data-mobile-title="Overview" data-print-title="Player Overview">
+            <h2 class="section-heading">Overview</h2>
             <div class="fm-grid fm-grid-2">
                 <div class="fm-card">
                     <div class="fm-card-header">
@@ -735,23 +738,6 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Tab Navigation -->
-            <div class="tab-navigation">
-                <button class="fm-btn fm-btn-secondary" disabled>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
-                    Previous
-                </button>
-                <span class="tab-indicator">1 of 5</span>
-                <button class="fm-btn fm-btn-secondary" onclick="profileView.navigateTab('next')">
-                    Next: Attributes
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
-                </button>
-            </div>
         </div>
 
         <div class="scroll-section" id="attributes-section" data-mobile-title="Attributes" data-print-title="Player Attributes">
@@ -804,23 +790,6 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Tab Navigation -->
-            <div class="tab-navigation">
-                <button class="fm-btn fm-btn-secondary" onclick="profileView.navigateTab('prev')">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
-                    Previous: Overview
-                </button>
-                <span class="tab-indicator">2 of 5</span>
-                <button class="fm-btn fm-btn-secondary" onclick="profileView.navigateTab('next')">
-                    Next: Positions
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
-                </button>
-            </div>
         </div>
 
         <div class="scroll-section" id="positions-section" data-mobile-title="Positions" data-print-title="Playing Positions">
@@ -846,23 +815,6 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Tab Navigation -->
-            <div class="tab-navigation">
-                <button class="fm-btn fm-btn-secondary" onclick="profileView.navigateTab('prev')">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
-                    Previous: Attributes
-                </button>
-                <span class="tab-indicator">3 of 5</span>
-                <button class="fm-btn fm-btn-secondary" onclick="profileView.navigateTab('next')">
-                    Next: History
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
-                </button>
-            </div>
         </div>
 
         <div class="scroll-section" id="history-section" data-mobile-title="History" data-print-title="Playing History">
@@ -874,23 +826,6 @@
                 <div class="fm-card-body">
                     <p id="playing-history">No playing history available.</p>
                 </div>
-            </div>
-            
-            <!-- Tab Navigation -->
-            <div class="tab-navigation">
-                <button class="fm-btn fm-btn-secondary" onclick="profileView.navigateTab('prev')">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
-                    Previous: Positions
-                </button>
-                <span class="tab-indicator">4 of 5</span>
-                <button class="fm-btn fm-btn-secondary" onclick="profileView.navigateTab('next')">
-                    Next: Contact
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
-                </button>
             </div>
         </div>
 
@@ -923,23 +858,6 @@
                     </div>
                     <button type="submit" class="fm-btn fm-btn-primary fm-btn-lg">Send Message</button>
                 </form>
-            </div>
-            
-            <!-- Tab Navigation -->
-            <div class="tab-navigation">
-                <button class="fm-btn fm-btn-secondary" onclick="profileView.navigateTab('prev')">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                    </svg>
-                    Previous: History
-                </button>
-                <span class="tab-indicator">5 of 5</span>
-                <button class="fm-btn fm-btn-secondary" disabled>
-                    Contact
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="9 18 15 12 9 6"></polyline>
-                    </svg>
-                </button>
             </div>
         </div>
     </div>
