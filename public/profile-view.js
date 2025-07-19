@@ -114,21 +114,8 @@ class ModernProfileView {
     }
     
     setupStickyHeaderScroll() {
-        const stickyHeader = document.getElementById('sticky-header');
-        let lastScroll = 0;
-        
-        window.addEventListener('scroll', () => {
-            const currentScroll = window.pageYOffset;
-            
-            // Add 'scrolled' class when scrolled down
-            if (currentScroll > 100) {
-                stickyHeader.classList.add('scrolled');
-            } else {
-                stickyHeader.classList.remove('scrolled');
-            }
-            
-            lastScroll = currentScroll;
-        });
+        // Removed scroll-based class changes to prevent jumping
+        // The sticky header remains at full size for consistency
     }
     
     // Remove tab navigation methods as we're using smooth scrolling now

@@ -75,6 +75,7 @@
             object-fit: cover;
             border: 4px solid var(--fm-accent);
             box-shadow: var(--shadow-lg);
+            transition: width 0.3s ease, height 0.3s ease;
         }
         
         .profile-photo-placeholder {
@@ -90,6 +91,7 @@
             color: var(--fm-text-muted);
             border: 4px solid var(--fm-accent);
             box-shadow: var(--shadow-lg);
+            transition: width 0.3s ease, height 0.3s ease;
         }
         
         .profile-info {
@@ -433,11 +435,6 @@
             transition: none !important;
         }
         
-        /* Ensure tabs container doesn't move when scrolled */
-        .sticky-header-wrapper.scrolled .tabs-container {
-            padding: var(--spacing-md) 0;
-            transition: none !important;
-        }
         
         /* Sticky header wrapper */
         .sticky-header-wrapper {
@@ -449,6 +446,14 @@
             transition: none !important;
             transform: none !important;
             will-change: auto !important;
+        }
+        
+        /* Reserve space to prevent jumping */
+        .sticky-header-wrapper::before {
+            content: '';
+            display: block;
+            height: 0;
+            transition: none !important;
         }
         
         /* Remove margin and sticky behavior from nav when in sticky header */
@@ -464,46 +469,17 @@
             padding: var(--spacing-md) 0;
         }
         
-        .sticky-header-wrapper.scrolled .profile-header {
-            padding: var(--spacing-sm) 0;
-        }
-        
-        .sticky-header-wrapper.scrolled .profile-photo,
-        .sticky-header-wrapper.scrolled .profile-photo-placeholder {
-            width: 60px;
-            height: 60px;
-        }
-        
-        .sticky-header-wrapper.scrolled .profile-name {
-            font-size: 1.5rem;
-        }
-        
-        .sticky-header-wrapper.scrolled .profile-details {
-            font-size: 0.875rem;
-        }
-        
-        .sticky-header-wrapper.scrolled .overall-rating {
-            width: 50px;
-            height: 50px;
-            font-size: 1.2rem;
-        }
         
         /* Compact nav bar when scrolled */
         .sticky-header-wrapper .fm-nav {
-            transition: padding 0.3s ease;
+            transition: none !important;
         }
         
-        .sticky-header-wrapper.scrolled .fm-nav {
-            padding: var(--spacing-xs) 0;
-        }
         
         .sticky-header-wrapper .fm-nav-brand img {
-            transition: height 0.3s ease;
+            transition: none !important;
         }
         
-        .sticky-header-wrapper.scrolled .fm-nav-brand img {
-            height: 40px;
-        }
         
         /* Add bottom margin to main container for sticky header */
         .fm-container:has(.scroll-section) {
