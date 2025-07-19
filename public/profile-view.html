@@ -421,7 +421,8 @@
             background: transparent;
             padding: var(--spacing-xs);
             border-radius: 8px;
-            margin-bottom: 0;
+            margin-bottom: 0 !important;
+            border-bottom: none !important;
         }
         
         /* Tab container background */
@@ -429,6 +430,13 @@
             background: #2c3e50;
             padding: var(--spacing-md) 0;
             position: relative;
+            transition: none !important;
+        }
+        
+        /* Ensure tabs container doesn't move when scrolled */
+        .sticky-header-wrapper.scrolled .tabs-container {
+            padding: var(--spacing-md) 0;
+            transition: none !important;
         }
         
         /* Sticky header wrapper */
@@ -438,6 +446,9 @@
             z-index: 100;
             background: white;
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            transition: none !important;
+            transform: none !important;
+            will-change: auto !important;
         }
         
         /* Remove margin and sticky behavior from nav when in sticky header */
@@ -451,7 +462,6 @@
         .sticky-header-wrapper .profile-header {
             margin-bottom: 0;
             padding: var(--spacing-md) 0;
-            transition: padding 0.3s ease;
         }
         
         .sticky-header-wrapper.scrolled .profile-header {
