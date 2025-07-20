@@ -382,6 +382,34 @@ class ModernProfileView {
             document.querySelector('#years-playing').parentElement.style.display = 'none';
         }
         
+        // Primary position
+        if (player.playingInfo?.positions && player.playingInfo.positions.length > 0) {
+            const primaryPos = player.playingInfo.positions.find(p => p.order === 1) || player.playingInfo.positions[0];
+            document.getElementById('primary-position').textContent = this.formatPositionName(primaryPos.position);
+        } else if (player.playingInfo?.primaryPosition) {
+            // Legacy format
+            const primaryPos = typeof player.playingInfo.primaryPosition === 'string' 
+                ? player.playingInfo.primaryPosition 
+                : player.playingInfo.primaryPosition.position;
+            document.getElementById('primary-position').textContent = this.formatPositionName(primaryPos);
+        } else {
+            document.querySelector('#primary-position').parentElement.style.display = 'none';
+        }
+        
+        // Strong foot
+        if (player.personalInfo?.preferredFoot) {
+            document.getElementById('strong-foot').textContent = player.personalInfo.preferredFoot;
+        } else {
+            document.querySelector('#strong-foot').parentElement.style.display = 'none';
+        }
+        
+        // Weak foot strength
+        if (player.personalInfo?.weakFootStrength !== undefined && player.personalInfo?.weakFootStrength !== null) {
+            document.getElementById('weak-foot-strength').textContent = player.personalInfo.weakFootStrength + '%';
+        } else {
+            document.querySelector('#weak-foot-strength').parentElement.style.display = 'none';
+        }
+        
         // Only show school if available
         if (player.academicInfo?.currentSchool) {
             document.getElementById('current-school').textContent = player.academicInfo.currentSchool;
