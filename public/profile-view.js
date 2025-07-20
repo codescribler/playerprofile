@@ -453,6 +453,64 @@ class ModernProfileView {
         
         // Mental attributes
         this.displayAttributeCategory('mental-attributes', abilities.mental);
+        
+        // Athletic performance
+        this.displayAthleticPerformance(abilities.athletic);
+    }
+
+    displayAthleticPerformance(athletic) {
+        if (!athletic || (!athletic.sprint10m && !athletic.sprint30m && !athletic.run1km && !athletic.bleepTest)) {
+            return; // Don't display if no athletic data
+        }
+        
+        // Find the attributes section
+        const attributesSection = document.getElementById('attributes-section');
+        if (!attributesSection) return;
+        
+        // Create athletic performance card
+        const athleticCard = document.createElement('div');
+        athleticCard.className = 'fm-card fm-mt-lg';
+        athleticCard.innerHTML = `
+            <div class="fm-card-header">
+                <h3 class="fm-card-title">Athletic Performance</h3>
+            </div>
+            <div class="fm-card-body">
+                <div class="athletic-performance-grid">
+                    ${athletic.sprint10m ? `
+                        <div class="athletic-stat">
+                            <span class="athletic-label">10m Sprint</span>
+                            <span class="athletic-value">${athletic.sprint10m}s</span>
+                        </div>
+                    ` : ''}
+                    ${athletic.sprint30m ? `
+                        <div class="athletic-stat">
+                            <span class="athletic-label">30m Sprint</span>
+                            <span class="athletic-value">${athletic.sprint30m}s</span>
+                        </div>
+                    ` : ''}
+                    ${athletic.run1km ? `
+                        <div class="athletic-stat">
+                            <span class="athletic-label">1km Run</span>
+                            <span class="athletic-value">${athletic.run1km} min</span>
+                        </div>
+                    ` : ''}
+                    ${athletic.bleepTest ? `
+                        <div class="athletic-stat">
+                            <span class="athletic-label">Bleep Test</span>
+                            <span class="athletic-value">Level ${athletic.bleepTest}</span>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `;
+        
+        // Add the card after the mental attributes card
+        const mentalCard = attributesSection.querySelector('#mental-attributes')?.closest('.fm-card');
+        if (mentalCard && mentalCard.parentNode) {
+            mentalCard.parentNode.insertBefore(athleticCard, mentalCard.nextSibling);
+        } else {
+            attributesSection.appendChild(athleticCard);
+        }
     }
 
     displayAttributeCategory(containerId, attributes) {

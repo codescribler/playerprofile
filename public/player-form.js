@@ -173,6 +173,26 @@ class PlayerForm {
                     }
                 }
             }
+            
+            // Handle athletic performance inputs
+            if (e.target.type === 'number' && ['sprint10m', 'sprint30m', 'run1km', 'bleepTest'].includes(e.target.id)) {
+                const displayId = e.target.id + '-display';
+                const displayElement = document.getElementById(displayId);
+                if (displayElement) {
+                    const value = e.target.value;
+                    if (value) {
+                        if (e.target.id === 'run1km') {
+                            displayElement.textContent = value + ' min';
+                        } else if (e.target.id === 'bleepTest') {
+                            displayElement.textContent = 'Level ' + value;
+                        } else {
+                            displayElement.textContent = value + 's';
+                        }
+                    } else {
+                        displayElement.textContent = '-';
+                    }
+                }
+            }
         });
     }
 
@@ -374,6 +394,26 @@ class PlayerForm {
         this.setAbilityValue('concentration', abilities?.mental?.concentration?.rating || 5);
         this.setAbilityValue('leadership', abilities?.mental?.leadership?.rating || 5);
         this.setAbilityValue('communication', abilities?.mental?.communication?.rating || 5);
+        
+        // Athletic performance
+        if (abilities?.athletic) {
+            if (abilities.athletic.sprint10m) {
+                document.getElementById('sprint10m').value = abilities.athletic.sprint10m;
+                document.getElementById('sprint10m-display').textContent = abilities.athletic.sprint10m + 's';
+            }
+            if (abilities.athletic.sprint30m) {
+                document.getElementById('sprint30m').value = abilities.athletic.sprint30m;
+                document.getElementById('sprint30m-display').textContent = abilities.athletic.sprint30m + 's';
+            }
+            if (abilities.athletic.run1km) {
+                document.getElementById('run1km').value = abilities.athletic.run1km;
+                document.getElementById('run1km-display').textContent = abilities.athletic.run1km + ' min';
+            }
+            if (abilities.athletic.bleepTest) {
+                document.getElementById('bleepTest').value = abilities.athletic.bleepTest;
+                document.getElementById('bleepTest-display').textContent = 'Level ' + abilities.athletic.bleepTest;
+            }
+        }
     }
 
     setAbilityValue(id, value) {
@@ -637,6 +677,12 @@ class PlayerForm {
                     concentration: { rating: parseInt(document.getElementById('concentration').value) || 5, description: '' },
                     leadership: { rating: parseInt(document.getElementById('leadership').value) || 5, description: '' },
                     communication: { rating: parseInt(document.getElementById('communication').value) || 5, description: '' }
+                },
+                athletic: {
+                    sprint10m: parseFloat(document.getElementById('sprint10m').value) || null,
+                    sprint30m: parseFloat(document.getElementById('sprint30m').value) || null,
+                    run1km: parseFloat(document.getElementById('run1km').value) || null,
+                    bleepTest: parseFloat(document.getElementById('bleepTest').value) || null
                 }
             },
             showcase: {
