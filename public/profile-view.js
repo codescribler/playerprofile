@@ -496,6 +496,9 @@ class ModernProfileView {
         if (player.playingInfo?.positions?.length > 0) {
             const sortedPositions = player.playingInfo.positions.sort((a, b) => a.order - b.order);
             
+            // Create position cards container
+            let positionCardsHTML = '<div class="position-cards-grid">';
+            
             sortedPositions.forEach((pos, index) => {
                 const position = this.formatPositionName(pos.position);
                 const coords = this.getPositionCoordinates(position);
@@ -509,20 +512,45 @@ class ModernProfileView {
                     `;
                 }
 
-                positionDetails.innerHTML += `
-                    <div class="fm-stat">
-                        <span class="fm-stat-label">${index === 0 ? 'Primary Position' : 'Secondary Position'}</span>
-                        <span class="fm-stat-value">${position} (${pos.suitability}%)</span>
+                // Create a card for each position
+                positionCardsHTML += `
+                    <div class="position-card ${index === 0 ? 'primary-position' : ''}">
+                        <div class="position-card-header">
+                            <h4 class="position-name">${position}</h4>
+                            ${index === 0 ? '<span class="position-badge">Main Position</span>' : '<span class="position-badge secondary">Alternative</span>'}
+                        </div>
+                        <div class="position-card-body">
+                            <div class="position-stat">
+                                <span class="position-stat-label">Position Suitability</span>
+                                <div class="position-suitability">
+                                    <div class="suitability-bar">
+                                        <div class="suitability-fill" style="width: ${pos.suitability}%; background: ${this.getRatingColor(pos.suitability/5)}"></div>
+                                    </div>
+                                    <span class="suitability-value">${pos.suitability}%</span>
+                                </div>
+                            </div>
+                            ${pos.notes ? `
+                                <div class="position-notes-section">
+                                    <h5 class="position-notes-header">Notes</h5>
+                                    <p class="position-notes">${pos.notes}</p>
+                                </div>
+                            ` : ''}
+                        </div>
                     </div>
-                    ${pos.notes ? `<div class="fm-stat" style="margin-top: 8px;"><span class="fm-stat-label">Notes</span><span class="fm-stat-value" style="display: block; margin-top: 4px;">${pos.notes}</span></div>` : ''}
                 `;
             });
+            
+            positionCardsHTML += '</div>';
+            positionDetails.innerHTML = positionCardsHTML;
         }
         // Fallback for legacy data (handled by migration in server)
         else if (player.playingInfo?.primaryPosition) {
             const primary = player.playingInfo.primaryPosition;
             const primaryPos = typeof primary === 'string' ? primary : primary.position;
             const primaryCoords = this.getPositionCoordinates(primaryPos);
+            const primarySuitability = typeof primary === 'object' && primary.suitability ? primary.suitability : 100;
+            
+            let positionCardsHTML = '<div class="position-cards-grid">';
             
             if (primaryCoords) {
                 positionMap.innerHTML += `
@@ -532,10 +560,24 @@ class ModernProfileView {
                 `;
             }
 
-            positionDetails.innerHTML += `
-                <div class="fm-stat">
-                    <span class="fm-stat-label">Primary Position</span>
-                    <span class="fm-stat-value">${primaryPos} ${typeof primary === 'object' && primary.suitability ? `(${primary.suitability}%)` : ''}</span>
+            // Primary position card
+            positionCardsHTML += `
+                <div class="position-card primary-position">
+                    <div class="position-card-header">
+                        <h4 class="position-name">${primaryPos}</h4>
+                        <span class="position-badge">Main Position</span>
+                    </div>
+                    <div class="position-card-body">
+                        <div class="position-stat">
+                            <span class="position-stat-label">Position Suitability</span>
+                            <div class="position-suitability">
+                                <div class="suitability-bar">
+                                    <div class="suitability-fill" style="width: ${primarySuitability}%; background: ${this.getRatingColor(primarySuitability/5)}"></div>
+                                </div>
+                                <span class="suitability-value">${primarySuitability}%</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             `;
 
@@ -543,6 +585,7 @@ class ModernProfileView {
             if (player.playingInfo?.secondaryPositions?.length > 0) {
                 player.playingInfo.secondaryPositions.forEach(pos => {
                     const position = typeof pos === 'string' ? pos : pos.position;
+                    const suitability = typeof pos === 'object' && pos.suitability ? pos.suitability : 75;
                     const coords = this.getPositionCoordinates(position);
                     
                     if (coords) {
@@ -553,14 +596,30 @@ class ModernProfileView {
                         `;
                     }
 
-                    positionDetails.innerHTML += `
-                        <div class="fm-stat">
-                            <span class="fm-stat-label">Secondary Position</span>
-                            <span class="fm-stat-value">${position} ${typeof pos === 'object' && pos.suitability ? `(${pos.suitability}%)` : ''}</span>
+                    positionCardsHTML += `
+                        <div class="position-card">
+                            <div class="position-card-header">
+                                <h4 class="position-name">${position}</h4>
+                                <span class="position-badge secondary">Alternative</span>
+                            </div>
+                            <div class="position-card-body">
+                                <div class="position-stat">
+                                    <span class="position-stat-label">Position Suitability</span>
+                                    <div class="position-suitability">
+                                        <div class="suitability-bar">
+                                            <div class="suitability-fill" style="width: ${suitability}%; background: ${this.getRatingColor(suitability/5)}"></div>
+                                        </div>
+                                        <span class="suitability-value">${suitability}%</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     `;
                 });
             }
+            
+            positionCardsHTML += '</div>';
+            positionDetails.innerHTML = positionCardsHTML;
         }
     }
 
