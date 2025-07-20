@@ -155,7 +155,7 @@ body {
 
 .ability-category {
     padding: 10px;
-    border-right: 1px solid #e0e0e0;
+    border-right: 1px solid #ddd;
     background: white;
 }
 
@@ -207,11 +207,13 @@ body {
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #e0e0e0;
+    border: 1px solid #999;
+    background: white;
 }
 
 .rating-dot.filled {
     background: #333;
+    border-color: #333;
 }
 
 .rating-value {
@@ -361,8 +363,8 @@ body {
     display: flex;
     flex-direction: column;
     padding: 8px;
-    border: 1px solid #e0e0e0;
-    background: #fafafa;
+    border: 1px solid #ddd;
+    background: white;
 }
 
 .info-label {
@@ -472,8 +474,8 @@ body {
     display: flex;
     justify-content: space-between;
     padding: 6px 10px;
-    background: #fafafa;
-    border: 1px solid #e0e0e0;
+    background: white;
+    border: 1px solid #ddd;
 }
 
 .athletic-print-label {
@@ -527,10 +529,10 @@ body {
     display: inline-flex;
     align-items: center;
     padding: 4px 10px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #ddd;
     font-size: 8pt;
     color: #333;
-    background: #fafafa;
+    background: white;
 }
 
 .award-item::before {
@@ -660,9 +662,9 @@ body {
     align-items: center;
     gap: 10px;
     padding: 20px;
-    border: 3px solid #3498db;
-    background: #f0f8ff;
-    border-radius: 8px;
+    border: 2px solid #999;
+    background: white;
+    border-radius: 0;
 }
 
 .qr-code-container {
@@ -745,9 +747,9 @@ body {
     }
     
     .profile-photo-placeholder {
-        background: #fafafa !important;
+        background: white !important;
         color: #333 !important;
-        border: 1px solid #e0e0e0 !important;
+        border: 1px solid #999 !important;
     }
     
     /* Hide elements that shouldn't print */
@@ -771,10 +773,10 @@ body {
     .contact-qr-emphasis {
         display: block !important;
         text-align: center !important;
-        border: 2px solid #333 !important;
+        border: 1px solid #999 !important;
         padding: 15px !important;
         margin: 20px 0 !important;
-        background: #f8f9fa !important;
+        background: white !important;
     }
     
     .contact-qr-emphasis h4 {
@@ -800,7 +802,7 @@ body {
         background: white !important;
         margin-bottom: 15px;
         padding-bottom: 10px;
-        border-bottom: 1px solid #e0e0e0;
+        border-bottom: 1px solid #ddd !important;
     }
     
     .print-date {
@@ -818,8 +820,9 @@ body {
     
     .print-footer-qr {
         display: flex !important;
-        background: #fafafa !important;
-        border: 1px solid #e0e0e0 !important;
+        background: white !important;
+        border: 1px solid #ddd !important;
+        padding: 15px !important;
     }
     
     /* Ensure good page breaks */
@@ -889,11 +892,11 @@ body {
         min-width: 70px !important;
         height: 70px !important;
         font-size: 0.9rem !important;
-        border: 3px solid #3498db !important;
+        border: 2px solid #333 !important;
         background: white !important;
         color: #000 !important;
         font-weight: 800 !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15) !important;
+        box-shadow: none !important;
     }
     
     .profile-details {
@@ -1107,8 +1110,8 @@ body {
     
     /* Rating info box for print */
     .rating-info-box {
-        background: #f8f9fa !important;
-        border: 1px solid #e0e0e0 !important;
+        background: white !important;
+        border: 1px solid #999 !important;
         padding: 10px !important;
         margin-bottom: 15px !important;
         display: flex !important;
@@ -1190,9 +1193,9 @@ body {
             display: block !important;
             page-break-inside: avoid;
             margin-bottom: 15px !important;
-            border: 1px solid #e0e0e0;
+            border: 1px solid #999;
             padding: 10px;
-            background: #fafafa;
+            background: white;
         }
         
         .print-only-contact h4 {

@@ -21,8 +21,21 @@
         
         /* Print-specific tab content display */
         @media print {
-            /* Hide sticky header in print */
+            /* Show header in print but remove sticky behavior */
             .sticky-header-wrapper {
+                position: relative !important;
+                top: auto !important;
+                box-shadow: none !important;
+                background: white !important;
+                page-break-after: avoid;
+            }
+            
+            /* Hide only navigation and tabs in print */
+            .fm-nav {
+                display: none !important;
+            }
+            
+            .tabs-container {
                 display: none !important;
             }
             
@@ -493,17 +506,133 @@
         
         @media print {
             body {
-                background: white;
-                color: black;
+                background: white !important;
+                color: black !important;
+            }
+            
+            /* Remove gradient backgrounds */
+            .profile-header {
+                background: white !important;
+                padding: var(--spacing-lg) 0 !important;
+            }
+            
+            .profile-header::before {
+                display: none !important;
+            }
+            
+            /* Make profile photo print-friendly */
+            .profile-photo,
+            .profile-photo-placeholder {
+                border-color: #333 !important;
+                border-width: 2px !important;
+            }
+            
+            /* Make overall rating print-friendly */
+            .overall-rating {
+                background: white !important;
+                color: #000 !important;
+                border: 2px solid #333 !important;
+                font-weight: 800 !important;
+            }
+            
+            /* Remove colored backgrounds from ratings */
+            .rating-20, .rating-19, .rating-18, .rating-17, .rating-16,
+            .rating-15, .rating-14, .rating-13, .rating-12, .rating-11,
+            .rating-10, .rating-9, .rating-8, .rating-7, .rating-6,
+            .rating-5, .rating-4, .rating-3, .rating-2, .rating-1 {
+                background: transparent !important;
+                color: #000 !important;
+                border: 2px solid #333 !important;
+                font-weight: 800 !important;
+            }
+            
+            /* Remove elite rating effects */
+            .attribute-rating.elite-rating {
+                background: transparent !important;
+                box-shadow: none !important;
+                animation: none !important;
+                transform: none !important;
+            }
+            
+            /* Make position markers print-friendly */
+            .position-marker {
+                background: white !important;
+                color: #000 !important;
+                border: 2px solid #333 !important;
+                box-shadow: none !important;
+            }
+            
+            .position-marker.secondary {
+                background: white !important;
+                border-style: dashed !important;
+            }
+            
+            /* Position cards print-friendly */
+            .position-card {
+                box-shadow: none !important;
+                border-color: #333 !important;
+            }
+            
+            .position-card-header {
+                background: #f5f5f5 !important;
+            }
+            
+            .position-badge {
+                background: #333 !important;
+                color: white !important;
+            }
+            
+            .position-badge.secondary {
+                background: white !important;
+                color: #333 !important;
+                border: 1px solid #333 !important;
+            }
+            
+            .suitability-fill {
+                background: #333 !important;
+            }
+            
+            /* Athletic performance print-friendly */
+            .athletic-stat {
+                background: #f5f5f5 !important;
+                border-color: #333 !important;
+                box-shadow: none !important;
+            }
+            
+            .athletic-value {
+                color: #000 !important;
+            }
+            
+            /* Rating info box */
+            .rating-info-box {
+                background: #f5f5f5 !important;
+                border-color: #333 !important;
+            }
+            
+            /* Contact form area */
+            .contact-qr-emphasis {
+                background: #f5f5f5 !important;
+                border-color: #333 !important;
+                border-style: solid !important;
             }
             
             .fm-card {
-                box-shadow: none;
-                border-color: #ddd;
+                box-shadow: none !important;
+                border-color: #333 !important;
             }
             
             .fm-btn {
-                display: none;
+                display: none !important;
+            }
+            
+            /* Hide decorative elements */
+            .fm-bg-gradient {
+                display: none !important;
+            }
+            
+            /* Print-friendly footer */
+            .fm-footer {
+                display: none !important;
             }
         }
         
