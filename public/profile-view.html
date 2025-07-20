@@ -548,6 +548,23 @@
         }
         
         @media (max-width: 768px) {
+            /* Remove sticky header on mobile */
+            .sticky-header-wrapper {
+                position: relative !important;
+                top: auto !important;
+                box-shadow: none !important;
+            }
+            
+            /* Restore normal spacing on mobile */
+            .tabs-container {
+                margin-bottom: var(--spacing-lg);
+            }
+            
+            /* Remove padding adjustment for scroll sections on mobile */
+            .fm-container:has(.scroll-section) {
+                padding-top: 0;
+            }
+            
             .contact-form-row {
                 grid-template-columns: 1fr;
             }
