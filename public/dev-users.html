@@ -149,7 +149,7 @@
                                         ${user.role !== 'admin' ? `
                                             <button 
                                                 class="fm-btn fm-btn-primary fm-btn-sm" 
-                                                onclick="makeAdmin(${user.id}, '${user.username}')"
+                                                onclick="makeAdmin(${user.id}, '${user.username.replace(/'/g, "\\'")}')"
                                                 style="margin-right: 0.5rem;"
                                             >
                                                 Make Admin
@@ -157,7 +157,7 @@
                                         ` : ''}
                                         <button 
                                             class="fm-btn fm-btn-danger fm-btn-sm delete-btn" 
-                                            onclick="deleteUser(${user.id}, '${user.username}')"
+                                            onclick="deleteUser(${user.id}, '${user.username.replace(/'/g, "\\'")}')"
                                         >
                                             Delete
                                         </button>
@@ -178,23 +178,35 @@
         }
 
         async function makeAdmin(userId, username) {
+            console.log('Making admin:', userId, username);
+            
             if (!confirm(`Make user "${username}" (ID: ${userId}) an admin?`)) {
                 return;
             }
             
             try {
                 const response = await fetch(`/api/dev/users/${userId}/make-admin`, {
-                    method: 'POST'
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
                 });
+                
+                console.log('Response status:', response.status);
                 
                 if (!response.ok) {
                     const error = await response.json();
+                    console.error('Error response:', error);
                     throw new Error(error.error || 'Failed to make admin');
                 }
+                
+                const result = await response.json();
+                console.log('Success:', result);
                 
                 alert('User is now an admin!');
                 loadUsers(); // Reload the list
             } catch (error) {
+                console.error('Error:', error);
                 alert('Error making admin: ' + error.message);
             }
         }
