@@ -1066,14 +1066,20 @@ app.post('/api/admin/migrations/:type', authenticateToken, async (req, res) => {
 
 // Request admin access (for first user only)
 app.post('/api/request-admin', authenticateToken, (req, res) => {
-  // Check if this is the first user (ID = 1) or the only user
-  db.get('SELECT COUNT(*) as count FROM users', [], (err, result) => {
+  // Check if this is the only user or has the lowest user ID
+  db.get('SELECT COUNT(*) as count, MIN(id) as firstUserId FROM users', [], (err, result) => {
     if (err) {
       return res.status(500).json({ error: 'Database error' });
     }
     
-    // If only one user exists, or if this is user ID 1, grant admin
-    if (result.count === 1 || req.user.id === 1) {
+    console.log('User check:', { 
+      totalUsers: result.count, 
+      firstUserId: result.firstUserId, 
+      requestingUserId: req.user.id 
+    });
+    
+    // If only one user exists, or if this is the user with the lowest ID, grant admin
+    if (result.count === 1 || req.user.id === result.firstUserId) {
       db.run(
         'UPDATE users SET role = ? WHERE id = ?',
         ['admin', req.user.id],
@@ -1090,7 +1096,14 @@ app.post('/api/request-admin', authenticateToken, (req, res) => {
         }
       );
     } else {
-      res.status(403).json({ error: 'Admin access can only be granted to the first user' });
+      res.status(403).json({ 
+        error: 'Admin access can only be granted to the first user',
+        debug: {
+          yourId: req.user.id,
+          firstUserId: result.firstUserId,
+          totalUsers: result.count
+        }
+      });
     }
   });
 });
