@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Tools - Player Profile Manager</title>
+    <link rel="stylesheet" href="fm-style.css">
+    <link rel="icon" type="image/png" href="images/playerprofilemanagerlogo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="fm-nav">
+        <div class="fm-container">
+            <div class="fm-nav-container">
+                <div class="fm-nav-brand">
+                    <img src="images/playerprofilelogofull.png" alt="Player Profile Manager" style="height: 60px;">
+                </div>
+                <div class="fm-nav-actions">
+                    <button id="back-btn" class="fm-btn fm-btn-secondary fm-btn-sm">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 12H5M12 19l-7-7 7-7"/>
+                        </svg>
+                        Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="fm-container fm-mt-lg">
+        <h1 class="fm-mb-lg">Admin Tools</h1>
+        
+        <div class="fm-grid fm-grid-2">
+            <!-- Database Migrations -->
+            <div class="fm-card">
+                <div class="fm-card-header">
+                    <h3 class="fm-card-title">Database Management</h3>
+                </div>
+                <div class="fm-card-body">
+                    <p class="fm-text-secondary fm-mb-lg">Manage database structure and run migrations.</p>
+                    <button class="fm-btn fm-btn-primary fm-btn-block" onclick="window.location.href='/admin-migrations.html'">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.5rem;">
+                            <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+                            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                            <line x1="12" y1="22.08" x2="12" y2="12"/>
+                        </svg>
+                        Run Database Migrations
+                    </button>
+                </div>
+            </div>
+
+            <!-- User Management (placeholder for future) -->
+            <div class="fm-card">
+                <div class="fm-card-header">
+                    <h3 class="fm-card-title">User Management</h3>
+                </div>
+                <div class="fm-card-body">
+                    <p class="fm-text-secondary fm-mb-lg">Manage user accounts and permissions.</p>
+                    <button class="fm-btn fm-btn-secondary fm-btn-block" disabled>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.5rem;">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="9" cy="7" r="4"></circle>
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                        </svg>
+                        Coming Soon
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="fm-card fm-mt-lg">
+            <div class="fm-card-header">
+                <h3 class="fm-card-title">System Status</h3>
+            </div>
+            <div class="fm-card-body">
+                <div id="system-stats" class="fm-stats-grid">
+                    <div class="fm-stat">
+                        <span class="fm-stat-label">Total Users</span>
+                        <span class="fm-stat-value" id="total-users">--</span>
+                    </div>
+                    <div class="fm-stat">
+                        <span class="fm-stat-label">Total Players</span>
+                        <span class="fm-stat-value" id="total-players">--</span>
+                    </div>
+                    <div class="fm-stat">
+                        <span class="fm-stat-label">Published Profiles</span>
+                        <span class="fm-stat-value" id="published-profiles">--</span>
+                    </div>
+                    <div class="fm-stat">
+                        <span class="fm-stat-label">Database Status</span>
+                        <span class="fm-stat-value" id="db-status">Checking...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check authentication
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user')) || null;
+
+        if (!token || !user) {
+            alert('Authentication required');
+            window.location.href = '/app';
+        }
+
+        // Navigation
+        document.getElementById('back-btn').addEventListener('click', () => {
+            window.location.href = '/app';
+        });
+
+        // Load system stats
+        async function loadSystemStats() {
+            try {
+                // This would normally fetch from an API endpoint
+                // For now, we'll just check migration status
+                const response = await fetch('/api/admin/migrations/status', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const status = await response.json();
+                    document.getElementById('db-status').textContent = 
+                        (status.names && status.search) ? 'Up to date' : 'Migrations needed';
+                    document.getElementById('db-status').style.color = 
+                        (status.names && status.search) ? 'var(--fm-success)' : 'var(--fm-warning)';
+                } else {
+                    document.getElementById('db-status').textContent = 'Access denied';
+                    document.getElementById('db-status').style.color = 'var(--fm-danger)';
+                }
+            } catch (error) {
+                document.getElementById('db-status').textContent = 'Error';
+                document.getElementById('db-status').style.color = 'var(--fm-danger)';
+            }
+        }
+
+        loadSystemStats();
+    </script>
+</body>
+</html>

@@ -342,7 +342,9 @@ class PlayerProfileApp {
         }
         
         // Add admin tools if admin
+        console.log('User role:', this.user.role);
         if (this.user.role === 'admin') {
+            console.log('Adding admin tools...');
             this.addAdminTools();
         }
     }
