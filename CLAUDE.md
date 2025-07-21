@@ -23,7 +23,7 @@ npm start
 
 ### Tech Stack
 - **Backend**: Node.js with Express.js, JWT authentication
-- **Database**: SQLite (development) / PostgreSQL (production) with automatic detection
+- **Database**: PostgreSQL (requires DATABASE_URL environment variable)
 - **Frontend**: Vanilla JavaScript with multi-page architecture (no build process)
 - **File Storage**: Images stored as base64 in database
 
@@ -99,7 +99,7 @@ Player data is stored as a JSON object with the following main sections:
    - Coaches/Scouts/Agents can view all published profiles
    - Admins have full access
 3. **Public Profiles**: When published, sensitive contact info is hidden from public view
-4. **Database Config**: Automatically uses SQLite for development, PostgreSQL if DATABASE_URL is set
+4. **Database Config**: Uses PostgreSQL exclusively (DATABASE_URL must be set)
 5. **Authentication**: All API requests except public endpoints require `Authorization: Bearer <token>` header
 
 ## Environment Variables
