@@ -811,6 +811,13 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
       
       // Repair any corrupted data
       player = repairPlayerData(player);
+      
+      // Remove large media data from search results to prevent quota errors
+      if (player.media && player.media.profilePhoto) {
+        // Keep a flag that photo exists but remove the actual data
+        player.media = { hasProfilePhoto: true };
+      }
+      
       return player;
     });
     

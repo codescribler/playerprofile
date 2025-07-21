@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clear Storage - Player Profile Manager</title>
+    <link rel="stylesheet" href="fm-style.css">
+    <link rel="icon" type="image/png" href="images/playerprofilemanagerlogo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="fm-container fm-mt-lg">
+        <div class="fm-card" style="max-width: 600px; margin: 0 auto;">
+            <div class="fm-card-header">
+                <h2 class="fm-card-title">Clear Browser Storage</h2>
+            </div>
+            <div class="fm-card-body">
+                <div class="fm-alert fm-alert-warning fm-mb-lg">
+                    <strong>Warning:</strong> This will clear all locally stored data including your login session.
+                </div>
+
+                <div id="storage-info" class="fm-mb-lg">
+                    <h3>Current Storage Usage:</h3>
+                    <div id="storage-details" class="fm-alert fm-alert-info">
+                        Calculating...
+                    </div>
+                </div>
+
+                <div class="fm-grid fm-grid-2 fm-gap-lg">
+                    <button id="clear-all-btn" class="fm-btn fm-btn-danger fm-btn-lg">
+                        Clear All Storage
+                    </button>
+                    <button id="clear-except-auth-btn" class="fm-btn fm-btn-warning fm-btn-lg">
+                        Clear Except Login
+                    </button>
+                </div>
+
+                <div class="fm-mt-lg">
+                    <button onclick="window.location.href='/app'" class="fm-btn fm-btn-secondary">
+                        Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Calculate storage usage
+        function calculateStorageUsage() {
+            let totalSize = 0;
+            const details = {};
+            
+            for (let key in localStorage) {
+                if (localStorage.hasOwnProperty(key)) {
+                    const value = localStorage.getItem(key);
+                    const size = new Blob([value]).size;
+                    totalSize += size;
+                    details[key] = size;
+                }
+            }
+            
+            return { totalSize, details };
+        }
+
+        // Format bytes to human readable
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Display storage info
+        function displayStorageInfo() {
+            const { totalSize, details } = calculateStorageUsage();
+            const detailsDiv = document.getElementById('storage-details');
+            
+            let html = `<p><strong>Total Size:</strong> ${formatBytes(totalSize)}</p>`;
+            html += '<p><strong>Items:</strong></p><ul>';
+            
+            for (let key in details) {
+                html += `<li>${key}: ${formatBytes(details[key])}</li>`;
+            }
+            html += '</ul>';
+            
+            detailsDiv.innerHTML = html;
+        }
+
+        // Clear all storage
+        document.getElementById('clear-all-btn').addEventListener('click', () => {
+            if (confirm('Are you sure? This will log you out and clear all data.')) {
+                localStorage.clear();
+                sessionStorage.clear();
+                alert('Storage cleared! Redirecting to login...');
+                window.location.href = '/app';
+            }
+        });
+
+        // Clear everything except auth
+        document.getElementById('clear-except-auth-btn').addEventListener('click', () => {
+            if (confirm('This will clear cached data but keep you logged in. Continue?')) {
+                const token = localStorage.getItem('token');
+                const user = localStorage.getItem('user');
+                
+                localStorage.clear();
+                sessionStorage.clear();
+                
+                if (token) localStorage.setItem('token', token);
+                if (user) localStorage.setItem('user', user);
+                
+                alert('Cache cleared! Refreshing...');
+                displayStorageInfo();
+            }
+        });
+
+        // Initial display
+        displayStorageInfo();
+    </script>
+</body>
+</html>

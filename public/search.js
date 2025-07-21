@@ -257,11 +257,17 @@ class PlayerSearch {
         // Get age
         const age = this.calculateAge(player.personalInfo?.dateOfBirth);
 
-        // Get photo or initials
+        // Get photo or initials - handle optimized search results
         let photoHtml = '';
         if (player.media?.profilePhoto) {
+            // Full photo data available
             photoHtml = `<img src="${player.media.profilePhoto}" alt="${displayName}" class="player-result-photo">`;
+        } else if (player.media?.hasProfilePhoto) {
+            // Photo exists but data excluded from search results
+            const initials = this.getInitials(firstName, lastName);
+            photoHtml = `<div class="player-result-photo profile-photo-placeholder has-photo">${initials}</div>`;
         } else {
+            // No photo
             const initials = this.getInitials(firstName, lastName);
             photoHtml = `<div class="player-result-photo profile-photo-placeholder">${initials}</div>`;
         }
@@ -403,10 +409,17 @@ class PlayerSearch {
     }
 
     showError(message) {
+        const isQuotaError = message.includes('quota') || message.includes('QuotaExceeded');
         document.getElementById('results-container').innerHTML = `
             <div class="no-results">
                 <h3>Error</h3>
                 <p>${message}</p>
+                ${isQuotaError ? `
+                    <div class="fm-mt-md">
+                        <p>This error usually means your browser storage is full.</p>
+                        <a href="/clear-storage.html" class="fm-btn fm-btn-warning fm-btn-sm">Clear Storage</a>
+                    </div>
+                ` : ''}
             </div>
         `;
         document.getElementById('results-count').textContent = 'Error';
