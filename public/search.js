@@ -155,26 +155,6 @@ class PlayerSearch {
 
         const searchParams = this.collectSearchParams();
         
-        // Test the search with test endpoint first
-        if (searchParams.preferredFoot) {
-            try {
-                const testUrl = `/api/players/search-test?preferredFoot=${searchParams.preferredFoot}`;
-                const testResponse = await fetch(testUrl, {
-                    headers: {
-                        'Authorization': `Bearer ${this.token}`
-                    }
-                });
-                if (testResponse.ok) {
-                    const testResults = await testResponse.json();
-                    console.log('Test query results:', testResults);
-                } else {
-                    console.error('Test endpoint failed:', testResponse.status);
-                }
-            } catch (e) {
-                console.error('Test error:', e);
-            }
-        }
-        
         try {
             const queryString = new URLSearchParams(searchParams).toString();
             

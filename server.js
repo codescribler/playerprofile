@@ -353,34 +353,72 @@ app.get('/api/players/search-test', authenticateToken, (req, res) => {
     });
   }
   
-  const results = {};
-  let completed = 0;
-  
-  testQueries.forEach((test, index) => {
-    db.all(test.query, test.params, (err, rows) => {
-      if (err) {
-        results[test.name] = { error: err.message, code: err.code };
-      } else {
-        results[test.name] = { success: true, count: rows.length };
-        // For data structure check, include the actual data
-        if (test.name === "Check data structure" && rows.length > 0) {
-          results[test.name].data = rows.map(r => ({ 
-            id: r.id, 
-            foot: r.foot, 
-            preview: r.data_preview 
-          }));
-        }
-        // For all foot values check
-        if (test.name === "All preferredFoot values" && rows.length > 0) {
-          results[test.name].values = rows.map(r => r.foot_value);
-        }
+  // Execute queries sequentially for better debugging
+  const executeQueries = async () => {
+    const results = { totalQueries: testQueries.length };
+    
+    for (const test of testQueries) {
+      try {
+        await new Promise((resolve, reject) => {
+          db.all(test.query, test.params, (err, rows) => {
+            if (err) {
+              results[test.name] = { error: err.message, code: err.code };
+            } else {
+              results[test.name] = { success: true, count: rows.length };
+              // For data structure check, include the actual data
+              if (test.name === "Check data structure" && rows.length > 0) {
+                results[test.name].data = rows.map(r => ({ 
+                  id: r.id, 
+                  foot: r.foot, 
+                  preview: r.data_preview 
+                }));
+              }
+              // For all foot values check
+              if (test.name === "All preferredFoot values" && rows.length > 0) {
+                results[test.name].values = rows.map(r => r.foot_value);
+              }
+            }
+            resolve();
+          });
+        });
+      } catch (e) {
+        results[test.name] = { error: 'Query failed: ' + e.message };
       }
-      completed++;
-      
-      if (completed === testQueries.length) {
-        res.json(results);
+    }
+    
+    return results;
+  };
+  
+  executeQueries().then(results => {
+    res.json(results);
+  }).catch(err => {
+    res.status(500).json({ error: 'Test execution failed', details: err.message });
+  });
+});
+
+// Simple endpoint to check preferredFoot values
+app.get('/api/debug/foot-values', authenticateToken, (req, res) => {
+  // Just get the first few players and show their preferredFoot values
+  db.all("SELECT id, data FROM players LIMIT 5", [], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    
+    const footValues = rows.map(row => {
+      try {
+        const player = JSON.parse(row.data);
+        return {
+          id: row.id,
+          preferredFoot: player.personalInfo?.preferredFoot,
+          hasPersonalInfo: !!player.personalInfo,
+          personalInfoKeys: player.personalInfo ? Object.keys(player.personalInfo) : []
+        };
+      } catch (e) {
+        return { id: row.id, error: 'JSON parse failed' };
       }
     });
+    
+    res.json(footValues);
   });
 });
 
@@ -466,12 +504,11 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
     positionList.forEach(pos => params.push(`%"position":"${pos}"%`));
   }
   
-  // Preferred foot filter for PostgreSQL - using case-insensitive text search
+  // Preferred foot filter for PostgreSQL
   if (preferredFoot) {
-    // Try case-insensitive text search
-    query += ` AND data::text ILIKE ?`;
-    // Also check for capitalized versions (Right, Left, Both)
-    params.push(`%"preferredFoot":"${preferredFoot}"%`);
+    // Use JSONB operator with case-insensitive comparison
+    query += ` AND LOWER(data->'personalInfo'->>'preferredFoot') = LOWER(?)`;
+    params.push(preferredFoot);
   }
   
   // Availability filter for PostgreSQL
@@ -499,17 +536,11 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
   const limitNum = parseInt(limit) || 50;
   query += ` LIMIT ${limitNum}`;
   
-  console.log('Search query:', query);
-  console.log('Search params:', params);
-  
   db.all(query, params, (err, rows) => {
     if (err) {
       console.error('Search error:', err);
-      console.error('Query was:', query);
-      console.error('Params were:', params);
       return res.status(500).json({ 
-        error: 'Database search error: ' + err.message,
-        code: err.code
+        error: 'Database search error: ' + err.message
       });
     }
     
