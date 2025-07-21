@@ -68,6 +68,7 @@ const upload = multer({
 });
 
 const db = require('./database-config');
+const isPostgres = !!process.env.DATABASE_URL;
 
 // Helper function to repair corrupted player data
 function repairPlayerData(player) {
@@ -868,8 +869,9 @@ app.post('/api/admin/migrations/:type', authenticateToken, async (req, res) => {
       // Run name migration
       log += 'Starting name migration...\n';
       
+      const columnName = isPostgres ? 'data' : 'player_data';
       const players = await new Promise((resolve, reject) => {
-        db.all('SELECT id, player_data FROM players', [], (err, rows) => {
+        db.all(`SELECT id, ${columnName} AS player_data FROM players`, [], (err, rows) => {
           if (err) reject(err);
           else resolve(rows);
         });
@@ -903,7 +905,7 @@ app.post('/api/admin/migrations/:type', authenticateToken, async (req, res) => {
             // Update the database
             await new Promise((resolve, reject) => {
               db.run(
-                'UPDATE players SET player_data = ? WHERE id = ?',
+                `UPDATE players SET ${columnName} = ? WHERE id = ?`,
                 [JSON.stringify(playerData), row.id],
                 (err) => {
                   if (err) reject(err);
@@ -985,8 +987,9 @@ app.post('/api/admin/migrations/:type', authenticateToken, async (req, res) => {
       });
 
       // Update player data
+      const columnName = isPostgres ? 'data' : 'player_data';
       const players = await new Promise((resolve, reject) => {
-        db.all('SELECT id, player_data FROM players', [], (err, rows) => {
+        db.all(`SELECT id, ${columnName} AS player_data FROM players`, [], (err, rows) => {
           if (err) reject(err);
           else resolve(rows);
         });
@@ -1049,7 +1052,7 @@ app.post('/api/admin/migrations/:type', authenticateToken, async (req, res) => {
           if (needsUpdate) {
             await new Promise((resolve, reject) => {
               db.run(
-                'UPDATE players SET player_data = ? WHERE id = ?',
+                `UPDATE players SET ${columnName} = ? WHERE id = ?`,
                 [JSON.stringify(playerData), row.id],
                 (err) => {
                   if (err) reject(err);
@@ -1139,10 +1142,11 @@ app.get('/api/admin/migrations/status', authenticateToken, (req, res) => {
   };
 
   // Check for firstName/lastName fields
-  db.get('SELECT player_data FROM players LIMIT 1', [], (err, row) => {
+  const columnName = isPostgres ? 'data' : 'player_data';
+  db.get(`SELECT ${columnName} FROM players LIMIT 1`, [], (err, row) => {
     if (row) {
       try {
-        const data = JSON.parse(row.player_data);
+        const data = JSON.parse(row[columnName]);
         if (data.personalInfo?.firstName || data.personalInfo?.lastName) {
           status.names = true;
         }
