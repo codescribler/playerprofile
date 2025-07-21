@@ -164,6 +164,15 @@ class PlayerSearch {
             }).catch(e => console.error('Structure check failed:', e));
         }
         
+        // Test minimal search for preferred foot
+        if (searchParams.preferredFoot) {
+            fetch(`/api/players/search-minimal?preferredFoot=${searchParams.preferredFoot}`, {
+                headers: { 'Authorization': `Bearer ${this.token}` }
+            }).then(r => r.json()).then(data => {
+                console.log('Minimal search test:', data);
+            }).catch(e => console.error('Minimal search failed:', e));
+        }
+        
         try {
             const queryString = new URLSearchParams(searchParams).toString();
             

@@ -308,6 +308,34 @@ app.get('/api/players', authenticateToken, (req, res) => {
   });
 });
 
+// Minimal test for preferred foot
+app.get('/api/players/search-minimal', authenticateToken, (req, res) => {
+  const { preferredFoot } = req.query;
+  
+  if (!preferredFoot) {
+    return res.json({ error: 'Please provide preferredFoot parameter' });
+  }
+  
+  // Try the simplest possible query
+  const query = "SELECT id, data->'personalInfo'->>'preferredFoot' as foot FROM players WHERE data->'personalInfo'->>'preferredFoot' = $1 LIMIT 2";
+  
+  db.all(query, [preferredFoot], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ 
+        error: err.message,
+        query: query,
+        param: preferredFoot
+      });
+    }
+    
+    res.json({
+      success: true,
+      count: rows.length,
+      results: rows
+    });
+  });
+});
+
 // Test search endpoint with minimal query
 app.get('/api/players/search-test', authenticateToken, (req, res) => {
   if (!['scout', 'coach', 'agent', 'admin'].includes(req.user.role)) {
@@ -539,8 +567,8 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
   
   // Preferred foot filter for PostgreSQL
   if (preferredFoot) {
-    // Use JSONB operator with case-insensitive comparison
-    query += ` AND LOWER(data->'personalInfo'->>'preferredFoot') = LOWER(?)`;
+    // Use direct comparison - we already fixed the case in the form
+    query += ` AND data->'personalInfo'->>'preferredFoot' = ?`;
     params.push(preferredFoot);
   }
   
@@ -569,11 +597,18 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
   const limitNum = parseInt(limit) || 50;
   query += ` LIMIT ${limitNum}`;
   
+  // Log the query for debugging
+  console.log('Executing search query:', query);
+  console.log('With params:', params);
+  
   db.all(query, params, (err, rows) => {
     if (err) {
       console.error('Search error:', err);
+      console.error('Failed query was:', query);
+      console.error('Failed params were:', params);
       return res.status(500).json({ 
-        error: 'Database search error: ' + err.message
+        error: 'Database search error: ' + err.message,
+        detail: err.detail || err.code
       });
     }
     
