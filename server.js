@@ -343,12 +343,12 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
       const currentYear = new Date().getFullYear();
       if (ageMin) {
         const maxBirthYear = currentYear - ageMin;
-        query += ` AND (p.data->>'personalInfo')::jsonb->>'dateOfBirth' <= ?`;
+        query += ` AND p.data->'personalInfo'->>'dateOfBirth' <= ?`;
         params.push(`${maxBirthYear}-12-31`);
       }
       if (ageMax) {
         const minBirthYear = currentYear - ageMax;
-        query += ` AND (p.data->>'personalInfo')::jsonb->>'dateOfBirth' >= ?`;
+        query += ` AND p.data->'personalInfo'->>'dateOfBirth' >= ?`;
         params.push(`${minBirthYear}-01-01`);
       }
     }
@@ -365,7 +365,7 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
     
     // Preferred foot filter for PostgreSQL
     if (preferredFoot) {
-      query += ` AND (p.data->>'personalInfo')::jsonb->>'preferredFoot' = ?`;
+      query += ` AND p.data->'personalInfo'->>'preferredFoot' = ?`;
       params.push(preferredFoot);
     }
     
@@ -373,7 +373,7 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
     if (availability) {
       const availabilityList = availability.split(',');
       const availabilityConditions = availabilityList.map(() => 
-        `(p.data->>'availability')::jsonb->>'status' = ?`
+        `p.data->'availability'->>'status' = ?`
       ).join(' OR ');
       query += ` AND (${availabilityConditions})`;
       availabilityList.forEach(status => params.push(status));
@@ -381,7 +381,7 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
     
     // Willing to relocate filter for PostgreSQL
     if (willingToRelocate === 'true') {
-      query += ` AND (p.data->>'availability')::jsonb->>'willingToRelocate' = 'true'`;
+      query += ` AND p.data->'availability'->>'willingToRelocate' = 'true'`;
     }
     
     // Add limit
