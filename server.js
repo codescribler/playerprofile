@@ -316,8 +316,8 @@ app.get('/api/players/search-minimal', authenticateToken, (req, res) => {
     return res.json({ error: 'Please provide preferredFoot parameter' });
   }
   
-  // Try the simplest possible query
-  const query = "SELECT id, data->'personalInfo'->>'preferredFoot' as foot FROM players WHERE data->'personalInfo'->>'preferredFoot' = $1 LIMIT 2";
+  // Try the simplest possible query - cast data to json first
+  const query = "SELECT id, (data::json->'personalInfo'->>'preferredFoot') as foot FROM players WHERE (data::json->'personalInfo'->>'preferredFoot') = $1 LIMIT 2";
   
   db.all(query, [preferredFoot], (err, rows) => {
     if (err) {
@@ -443,7 +443,9 @@ app.get('/api/debug/data-structure', authenticateToken, (req, res) => {
           playingInfo: {
             positions: player.playingInfo?.positions,
             positionsStructure: Array.isArray(player.playingInfo?.positions) ? 
-              player.playingInfo.positions.slice(0, 2) : 'not array'
+              player.playingInfo.positions.slice(0, 2) : 'not array',
+            // Show raw position data for debugging
+            rawPositions: JSON.stringify(player.playingInfo?.positions).substring(0, 100)
           }
         };
       } catch (e) {
@@ -532,30 +534,30 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
   let query = 'SELECT * FROM players WHERE 1=1';
   const params = [];
   
-  // Text search (first name, last name, or full name)
+  // Text search (first name, last name, or full name) - cast to JSON
   if (q) {
-    query += ` AND (data->'personalInfo'->>'firstName' ILIKE ? OR data->'personalInfo'->>'lastName' ILIKE ? OR data->'personalInfo'->>'fullName' ILIKE ?)`;
+    query += ` AND ((data::json->'personalInfo'->>'firstName') ILIKE ? OR (data::json->'personalInfo'->>'lastName') ILIKE ? OR (data::json->'personalInfo'->>'fullName') ILIKE ?)`;
     params.push(`%${q}%`, `%${q}%`, `%${q}%`);
   }
   
-  // Age range filter for PostgreSQL
+  // Age range filter for PostgreSQL - cast to JSON
   if (ageMin || ageMax) {
     const currentYear = new Date().getFullYear();
     if (ageMin) {
       // For minimum age, birth year must be <= (current year - min age)
       const maxBirthYear = currentYear - ageMin;
-      query += ` AND data->'personalInfo'->>'dateOfBirth' <= ?`;
+      query += ` AND (data::json->'personalInfo'->>'dateOfBirth') <= ?`;
       params.push(`${maxBirthYear}-12-31`);
     }
     if (ageMax) {
       // For maximum age, birth year must be >= (current year - max age - 1)
       const minBirthYear = currentYear - ageMax - 1;
-      query += ` AND data->'personalInfo'->>'dateOfBirth' >= ?`;
+      query += ` AND (data::json->'personalInfo'->>'dateOfBirth') >= ?`;
       params.push(`${minBirthYear}-01-01`);
     }
   }
   
-  // Positions filter for PostgreSQL
+  // Positions filter for PostgreSQL - use text search since positions is an array
   if (positions) {
     const positionList = positions.split(',');
     const positionConditions = positionList.map(() => 
@@ -565,31 +567,30 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
     positionList.forEach(pos => params.push(`%"position":"${pos}"%`));
   }
   
-  // Preferred foot filter for PostgreSQL
+  // Preferred foot filter for PostgreSQL - cast to JSON
   if (preferredFoot) {
-    // Use direct comparison - we already fixed the case in the form
-    query += ` AND data->'personalInfo'->>'preferredFoot' = ?`;
+    query += ` AND (data::json->'personalInfo'->>'preferredFoot') = ?`;
     params.push(preferredFoot);
   }
   
-  // Availability filter for PostgreSQL
+  // Availability filter for PostgreSQL - cast to JSON
   if (availability) {
     const availabilityList = availability.split(',');
     const availabilityConditions = availabilityList.map(() => 
-      `data->'availability'->>'status' = ?`
+      `(data::json->'availability'->>'status') = ?`
     ).join(' OR ');
     query += ` AND (${availabilityConditions})`;
     availabilityList.forEach(status => params.push(status));
   }
   
-  // Willing to relocate filter for PostgreSQL
+  // Willing to relocate filter for PostgreSQL - cast to JSON
   if (willingToRelocate === 'true') {
-    query += ` AND data->'availability'->>'willingToRelocate' = 'true'`;
+    query += ` AND (data::json->'availability'->>'willingToRelocate') = 'true'`;
   }
   
-  // Experience level filter
+  // Experience level filter - cast to JSON
   if (experienceLevel) {
-    query += ` AND data->'experience'->>'level' = ?`;
+    query += ` AND (data::json->'experience'->>'level') = ?`;
     params.push(experienceLevel);
   }
   
