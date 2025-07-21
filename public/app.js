@@ -1030,20 +1030,28 @@ class PlayerProfileApp {
             // Check if it's a base64 image or a file path
             if (photoUrl.startsWith('data:')) {
                 // It's a base64 image, use as-is
-                profilePhotoHtml = `<img src="${photoUrl}" alt="${player.personalInfo?.fullName || 'Player'}" class="profile-photo">`;
+                const firstName = player.personalInfo?.firstName || '';
+                const lastName = player.personalInfo?.lastName || '';
+                const displayName = `${firstName} ${lastName}`.trim() || 'Player';
+                profilePhotoHtml = `<img src="${photoUrl}" alt="${displayName}" class="profile-photo">`;
             } else if (photoUrl.startsWith('/uploads/')) {
                 // It's an old file path - show placeholder since files don't exist on Railway
-                const initials = player.personalInfo?.fullName ? 
-                    player.personalInfo.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'PP';
+                const firstInitial = player.personalInfo?.firstName ? player.personalInfo.firstName[0].toUpperCase() : 'P';
+                const lastInitial = player.personalInfo?.lastName ? player.personalInfo.lastName[0].toUpperCase() : 'P';
+                const initials = firstInitial + lastInitial;
                 profilePhotoHtml = `<div class="profile-photo-placeholder" title="Photo no longer available - please upload a new one">${initials}</div>`;
             } else {
                 // Unknown format, try to use it
-                profilePhotoHtml = `<img src="${photoUrl}" alt="${player.personalInfo?.fullName || 'Player'}" class="profile-photo">`;
+                const firstName = player.personalInfo?.firstName || '';
+                const lastName = player.personalInfo?.lastName || '';
+                const displayName = `${firstName} ${lastName}`.trim() || 'Player';
+                profilePhotoHtml = `<img src="${photoUrl}" alt="${displayName}" class="profile-photo">`;
             }
         } else {
             // Default placeholder with initials
-            const initials = player.personalInfo?.fullName ? 
-                player.personalInfo.fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) : 'PP';
+            const firstInitial = player.personalInfo?.firstName ? player.personalInfo.firstName[0].toUpperCase() : 'P';
+            const lastInitial = player.personalInfo?.lastName ? player.personalInfo.lastName[0].toUpperCase() : 'P';
+            const initials = firstInitial + lastInitial;
             profilePhotoHtml = `<div class="profile-photo-placeholder">${initials}</div>`;
         }
         
@@ -1086,7 +1094,7 @@ class PlayerProfileApp {
             ${messageBadgeHtml}
             <div class="fm-card-body fm-text-center">
                 ${profilePhotoHtml}
-                <h3 class="fm-card-title fm-mb-md">${player.personalInfo?.fullName || 'Unknown'}</h3>
+                <h3 class="fm-card-title fm-mb-md">${this.getPlayerDisplayName(player)}</h3>
                 
                 <div class="fm-stats-grid fm-mb-lg">
                     <div class="fm-stat">
@@ -1164,6 +1172,19 @@ class PlayerProfileApp {
             age--;
         }
         return age;
+    }
+
+    getPlayerDisplayName(player) {
+        const firstName = player.personalInfo?.firstName || '';
+        const lastName = player.personalInfo?.lastName || '';
+        const displayName = `${firstName} ${lastName}`.trim();
+        
+        // Fallback to fullName if firstName/lastName not available (for backward compatibility)
+        if (!displayName && player.personalInfo?.fullName) {
+            return player.personalInfo.fullName;
+        }
+        
+        return displayName || 'Unknown';
     }
 
     formatFootPreference(preferredFoot, weakFootStrength) {
