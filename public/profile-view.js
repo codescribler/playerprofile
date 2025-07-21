@@ -297,12 +297,8 @@ class ModernProfileView {
             photoWrapper.innerHTML = `<div class="profile-photo-placeholder">${initials}</div>`;
         }
 
-        // Basic info - Display first and last name
-        const firstName = player.personalInfo?.firstName || '';
-        const lastName = player.personalInfo?.lastName || '';
-        const displayName = `${firstName} ${lastName}`.trim() || 'Unknown Player';
-        
-        document.getElementById('player-name').textContent = displayName;
+        // Basic info - Display name is already set above
+        document.getElementById('player-name').textContent = displayName || 'Unknown Player';
         
         // Only show age if we have DOB
         const age = this.calculateAge(player.personalInfo?.dateOfBirth);
