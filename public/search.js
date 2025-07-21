@@ -213,6 +213,9 @@ class PlayerSearch {
             params.willingToRelocate = 'true';
         }
 
+        // Always include a limit for the search
+        params.limit = 50; // Default to 50 results for searches
+
         return params;
     }
 
