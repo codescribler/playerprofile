@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual Migration Helper - Player Profile Manager</title>
+    <link rel="stylesheet" href="fm-style.css">
+    <link rel="icon" type="image/png" href="images/playerprofilemanagerlogo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1rem;
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.875rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+            position: relative;
+        }
+        
+        .copy-btn {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            background: #007acc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+        
+        .copy-btn:hover {
+            background: #005a9e;
+        }
+        
+        .step {
+            background: var(--fm-surface);
+            border: 1px solid var(--fm-border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+        }
+        
+        .step-number {
+            display: inline-flex;
+            width: 30px;
+            height: 30px;
+            background: var(--fm-accent);
+            color: white;
+            border-radius: 50%;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="fm-nav">
+        <div class="fm-container">
+            <div class="fm-nav-container">
+                <div class="fm-nav-brand">
+                    <img src="images/playerprofilelogofull.png" alt="Player Profile Manager" style="height: 60px;">
+                </div>
+                <div class="fm-nav-actions">
+                    <button onclick="window.location.href='/app'" class="fm-btn fm-btn-secondary fm-btn-sm">
+                        Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="fm-container fm-mt-lg">
+        <h1 class="fm-mb-lg">Manual Migration Instructions</h1>
+        
+        <div class="fm-alert fm-alert-info fm-mb-lg">
+            <strong>Server Update Required:</strong> The automatic migration endpoints aren't available yet. 
+            Here's how to prepare your data manually until the server updates.
+        </div>
+
+        <div class="fm-card">
+            <div class="fm-card-header">
+                <h2 class="fm-card-title">Understanding the Changes</h2>
+            </div>
+            <div class="fm-card-body">
+                <p>The migrations make two important changes:</p>
+                <ol>
+                    <li><strong>Name Fields:</strong> Splits fullName into firstName and lastName</li>
+                    <li><strong>Search Fields:</strong> Adds location, availability, and experience data</li>
+                </ol>
+                <p class="fm-mt-md">Until the server restarts, here's what you can do:</p>
+            </div>
+        </div>
+
+        <div class="fm-card fm-mt-lg">
+            <div class="fm-card-header">
+                <h2 class="fm-card-title">Option 1: Wait for Server Update</h2>
+            </div>
+            <div class="fm-card-body">
+                <p>The easiest option is to wait for your server to restart/redeploy. This usually happens:</p>
+                <ul>
+                    <li>Automatically within a few minutes on platforms like Railway</li>
+                    <li>When you manually restart your local server</li>
+                    <li>After the next deployment</li>
+                </ul>
+                <p class="fm-mt-md">Once updated, go back to <a href="/admin-migrations.html">Admin Migrations</a> and run them normally.</p>
+            </div>
+        </div>
+
+        <div class="fm-card fm-mt-lg">
+            <div class="fm-card-header">
+                <h2 class="fm-card-title">Option 2: Manual Data Entry</h2>
+            </div>
+            <div class="fm-card-body">
+                <p>You can start using the new features immediately by entering data in the new format:</p>
+                
+                <div class="step">
+                    <h3><span class="step-number">1</span>For New Players</h3>
+                    <p>The player form will automatically use separate first/last name fields once the server updates.</p>
+                </div>
+                
+                <div class="step">
+                    <h3><span class="step-number">2</span>For Existing Players</h3>
+                    <p>Edit each player and manually split their name:</p>
+                    <ul>
+                        <li>If fullName is "John Smith", enter firstName: "John", lastName: "Smith"</li>
+                        <li>The form will handle this automatically after server update</li>
+                    </ul>
+                </div>
+                
+                <div class="step">
+                    <h3><span class="step-number">3</span>For Search Features</h3>
+                    <p>The search page is ready to use! It will work with any players that have location data.</p>
+                    <p><a href="/search.html" class="fm-btn fm-btn-primary fm-btn-sm fm-mt-md">Go to Search</a></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="fm-card fm-mt-lg">
+            <div class="fm-card-header">
+                <h2 class="fm-card-title">Option 3: Force Server Restart</h2>
+            </div>
+            <div class="fm-card-body">
+                <p>If you have access to your deployment platform:</p>
+                
+                <div class="step">
+                    <h3>For Railway/Heroku/Similar:</h3>
+                    <ol>
+                        <li>Go to your deployment dashboard</li>
+                        <li>Find the "Restart" or "Redeploy" button</li>
+                        <li>Click it to force a restart</li>
+                        <li>Wait 2-3 minutes for the restart to complete</li>
+                    </ol>
+                </div>
+                
+                <div class="step">
+                    <h3>For Local Development:</h3>
+                    <ol>
+                        <li>Stop your server (Ctrl+C in terminal)</li>
+                        <li>Run <code>npm start</code> again</li>
+                        <li>The new endpoints will be available immediately</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <div class="fm-card fm-mt-lg">
+            <div class="fm-card-header">
+                <h2 class="fm-card-title">Check Server Status</h2>
+            </div>
+            <div class="fm-card-body">
+                <p>Click below to check if the migration endpoints are available:</p>
+                <button id="check-status-btn" class="fm-btn fm-btn-primary fm-mt-md">
+                    Check Server Status
+                </button>
+                <div id="status-result" class="fm-mt-md"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Copied to clipboard!');
+            });
+        }
+
+        document.getElementById('check-status-btn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('status-result');
+            const token = localStorage.getItem('token');
+            
+            resultDiv.innerHTML = '<p>Checking server status...</p>';
+            
+            try {
+                const response = await fetch('/api/admin/migrations/status', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="fm-alert fm-alert-success">
+                            <strong>✓ Server is updated!</strong><br>
+                            Migration endpoints are available. 
+                            <a href="/admin-migrations.html">Go to migrations page</a>
+                        </div>
+                    `;
+                } else if (response.status === 404) {
+                    resultDiv.innerHTML = `
+                        <div class="fm-alert fm-alert-warning">
+                            <strong>Server not updated yet.</strong><br>
+                            The migration endpoints are not available. Please wait for server restart or use one of the options above.
+                        </div>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="fm-alert fm-alert-danger">
+                            <strong>Error checking status.</strong><br>
+                            ${response.status} - ${response.statusText}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="fm-alert fm-alert-danger">
+                        <strong>Connection error.</strong><br>
+                        Could not reach the server. ${error.message}
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>

@@ -190,6 +190,10 @@
                     }
                 });
 
+                if (response.status === 404) {
+                    throw new Error('Migration endpoints not available yet. Server needs to restart. Please see manual instructions.');
+                }
+
                 const data = await response.json();
 
                 if (response.ok) {
@@ -205,6 +209,11 @@
                 status.textContent = 'Error';
                 status.className = 'migration-status error';
                 log.textContent += `\nError: ${error.message}`;
+                
+                if (error.message.includes('not available yet')) {
+                    log.innerHTML += `\n\n<a href="/manual-migration.html" class="fm-btn fm-btn-primary fm-btn-sm">View Manual Instructions</a>`;
+                }
+                
                 button.disabled = false;
                 button.innerHTML = 'Retry Migration';
                 button.className = 'fm-btn fm-btn-danger';
