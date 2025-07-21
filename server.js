@@ -677,7 +677,7 @@ app.get('/api/players/search/quick', authenticateToken, (req, res) => {
   // Quick search across multiple fields
   let query = `
     SELECT * FROM players 
-    WHERE is_published = 1 
+    WHERE is_published = true 
     AND (
       (data::json->'personalInfo'->>'firstName') ILIKE ? 
       OR (data::json->'personalInfo'->>'lastName') ILIKE ? 
@@ -721,7 +721,7 @@ app.post('/api/players/search/advanced', authenticateToken, (req, res) => {
     return res.status(400).json({ error: 'Search criteria required' });
   }
 
-  let query = 'SELECT * FROM players WHERE is_published = 1';
+  let query = 'SELECT * FROM players WHERE is_published = true';
   const params = [];
 
   // Basic Information filters
@@ -773,11 +773,11 @@ app.post('/api/players/search/advanced', authenticateToken, (req, res) => {
   if (criteria.physical) {
     // Height range (always in cm)
     if (criteria.physical.heightMin) {
-      query += ` AND CAST((data::json->'physicalAttributes'->>'heightCm') AS INTEGER) >= ?`;
+      query += ` AND CAST((data::json->'personalInfo'->'height'->>'centimeters') AS FLOAT) >= ?`;
       params.push(criteria.physical.heightMin);
     }
     if (criteria.physical.heightMax) {
-      query += ` AND CAST((data::json->'physicalAttributes'->>'heightCm') AS INTEGER) <= ?`;
+      query += ` AND CAST((data::json->'personalInfo'->'height'->>'centimeters') AS FLOAT) <= ?`;
       params.push(criteria.physical.heightMax);
     }
 
@@ -789,11 +789,11 @@ app.post('/api/players/search/advanced', authenticateToken, (req, res) => {
 
     // Athletic performance
     if (criteria.physical.sprint10mMax) {
-      query += ` AND CAST((data::json->'athleticPerformance'->>'sprint10m') AS FLOAT) <= ?`;
+      query += ` AND CAST((data::json->'abilities'->'athletic'->>'sprint10m') AS FLOAT) <= ?`;
       params.push(criteria.physical.sprint10mMax);
     }
     if (criteria.physical.sprint30mMax) {
-      query += ` AND CAST((data::json->'athleticPerformance'->>'sprint30m') AS FLOAT) <= ?`;
+      query += ` AND CAST((data::json->'abilities'->'athletic'->>'sprint30m') AS FLOAT) <= ?`;
       params.push(criteria.physical.sprint30mMax);
     }
   }
@@ -828,7 +828,7 @@ app.post('/api/players/search/advanced', authenticateToken, (req, res) => {
     if (criteria.skills.technical) {
       Object.entries(criteria.skills.technical).forEach(([skill, minValue]) => {
         const skillPath = skill.replace(/_/g, '');
-        query += ` AND CAST((data::json->'technicalAbilities'->>'${skillPath}') AS INTEGER) >= ?`;
+        query += ` AND CAST((data::json->'abilities'->'technical'->'${skillPath}'->>'rating') AS INTEGER) >= ?`;
         params.push(minValue);
       });
     }
@@ -836,7 +836,7 @@ app.post('/api/players/search/advanced', authenticateToken, (req, res) => {
     // Physical attributes
     if (criteria.skills.physical) {
       Object.entries(criteria.skills.physical).forEach(([skill, minValue]) => {
-        query += ` AND CAST((data::json->'physicalAbilities'->>'${skill}') AS INTEGER) >= ?`;
+        query += ` AND CAST((data::json->'abilities'->'physical'->'${skill}'->>'rating') AS INTEGER) >= ?`;
         params.push(minValue);
       });
     }
@@ -845,7 +845,7 @@ app.post('/api/players/search/advanced', authenticateToken, (req, res) => {
     if (criteria.skills.mental) {
       Object.entries(criteria.skills.mental).forEach(([skill, minValue]) => {
         const skillPath = skill.replace(/_/g, '');
-        query += ` AND CAST((data::json->'mentalAbilities'->>'${skillPath}') AS INTEGER) >= ?`;
+        query += ` AND CAST((data::json->'abilities'->'mental'->'${skillPath}'->>'rating') AS INTEGER) >= ?`;
         params.push(minValue);
       });
     }
@@ -889,7 +889,7 @@ app.post('/api/search/save', authenticateToken, (req, res) => {
 
   const query = `
     INSERT INTO saved_searches (user_id, name, criteria, created_at)
-    VALUES (?, ?, ?, datetime('now'))
+    VALUES (?, ?, ?, CURRENT_TIMESTAMP)
   `;
 
   db.run(query, [req.user.id, name, JSON.stringify(criteria)], function(err) {
