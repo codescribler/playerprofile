@@ -1144,6 +1144,46 @@ app.get('/api/admin/migrations/status', authenticateToken, (req, res) => {
   });
 });
 
+// Development endpoints - REMOVE BEFORE PRODUCTION
+app.get('/api/dev/users', (req, res) => {
+  // No authentication required - development only
+  db.all(
+    'SELECT id, username, email, role, created_at FROM users ORDER BY id',
+    [],
+    (err, users) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.json(users);
+    }
+  );
+});
+
+app.delete('/api/dev/users/:id', (req, res) => {
+  // No authentication required - development only
+  const userId = parseInt(req.params.id);
+  
+  // First delete associated players data
+  db.run('DELETE FROM players WHERE user_id = ?', [userId], (err) => {
+    if (err) {
+      return res.status(500).json({ error: 'Failed to delete player data' });
+    }
+    
+    // Then delete the user
+    db.run('DELETE FROM users WHERE id = ?', [userId], function(err) {
+      if (err) {
+        return res.status(500).json({ error: 'Failed to delete user' });
+      }
+      
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      res.json({ message: 'User deleted successfully' });
+    });
+  });
+});
+
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {

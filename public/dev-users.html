@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DEV - User Management</title>
+    <link rel="stylesheet" href="fm-style.css">
+    <link rel="icon" type="image/png" href="images/playerprofilemanagerlogo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        
+        .user-table th,
+        .user-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--fm-border);
+        }
+        
+        .user-table th {
+            background: var(--fm-surface);
+            font-weight: 600;
+            color: var(--fm-text-secondary);
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        
+        .user-table tr:hover {
+            background: var(--fm-surface);
+        }
+        
+        .role-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .role-badge.admin {
+            background: var(--fm-danger-light);
+            color: var(--fm-danger);
+        }
+        
+        .role-badge.player {
+            background: var(--fm-accent-light);
+            color: var(--fm-accent);
+        }
+        
+        .role-badge.coach,
+        .role-badge.scout,
+        .role-badge.agent {
+            background: var(--fm-warning-light);
+            color: var(--fm-warning);
+        }
+        
+        .delete-btn {
+            padding: 0.25rem 0.75rem;
+            font-size: 0.875rem;
+        }
+        
+        .user-id {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.875rem;
+            color: var(--fm-text-secondary);
+        }
+    </style>
+</head>
+<body>
+    <nav class="fm-nav">
+        <div class="fm-container">
+            <div class="fm-nav-container">
+                <div class="fm-nav-brand">
+                    <img src="images/playerprofilelogofull.png" alt="Player Profile Manager" style="height: 60px;">
+                </div>
+                <div class="fm-nav-actions">
+                    <button onclick="window.location.href='/app'" class="fm-btn fm-btn-secondary fm-btn-sm">
+                        Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="fm-container fm-mt-lg">
+        <div class="fm-alert fm-alert-danger fm-mb-lg">
+            <h3 style="margin: 0 0 0.5rem 0;">⚠️ DEVELOPMENT ONLY</h3>
+            <p style="margin: 0;">This page provides unrestricted access to user management. It will be removed before production.</p>
+        </div>
+
+        <div class="fm-card">
+            <div class="fm-card-header">
+                <h1 class="fm-card-title">All Users</h1>
+            </div>
+            <div class="fm-card-body">
+                <div id="users-container">
+                    <p>Loading users...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadUsers() {
+            const container = document.getElementById('users-container');
+            
+            try {
+                const response = await fetch('/api/dev/users');
+                
+                if (!response.ok) {
+                    throw new Error('Failed to load users');
+                }
+                
+                const users = await response.json();
+                
+                if (users.length === 0) {
+                    container.innerHTML = '<p>No users found.</p>';
+                    return;
+                }
+                
+                container.innerHTML = `
+                    <table class="user-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Username</th>
+                                <th>Email</th>
+                                <th>Role</th>
+                                <th>Created</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${users.map(user => `
+                                <tr>
+                                    <td class="user-id">#${user.id}</td>
+                                    <td>${user.username}</td>
+                                    <td>${user.email}</td>
+                                    <td><span class="role-badge ${user.role}">${user.role}</span></td>
+                                    <td>${new Date(user.created_at).toLocaleDateString()}</td>
+                                    <td>
+                                        <button 
+                                            class="fm-btn fm-btn-danger fm-btn-sm delete-btn" 
+                                            onclick="deleteUser(${user.id}, '${user.username}')"
+                                        >
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    <p class="fm-text-secondary fm-mt-md">Total users: ${users.length}</p>
+                `;
+            } catch (error) {
+                container.innerHTML = `
+                    <div class="fm-alert fm-alert-danger">
+                        <p>Error loading users: ${error.message}</p>
+                    </div>
+                `;
+            }
+        }
+
+        async function deleteUser(userId, username) {
+            if (!confirm(`Are you sure you want to delete user "${username}" (ID: ${userId})?\n\nThis action cannot be undone!`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/dev/users/${userId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to delete user');
+                }
+                
+                alert('User deleted successfully');
+                loadUsers(); // Reload the list
+            } catch (error) {
+                alert('Error deleting user: ' + error.message);
+            }
+        }
+
+        // Load users on page load
+        loadUsers();
+    </script>
+</body>
+</html>
