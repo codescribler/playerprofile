@@ -330,13 +330,49 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
     limit = 50
   } = req.query;
 
-  // Start with published players only
+  // Use correct column name based on database type
+  const dataColumn = isPostgres ? 'data' : 'player_data';
+  
+  // For PostgreSQL, use simplified query without filters for now
+  if (isPostgres) {
+    let query = 'SELECT p.* FROM players p';
+    const params = [];
+    
+    // Add limit
+    query += ' LIMIT ?';
+    params.push(parseInt(limit));
+    
+    db.all(query, params, (err, rows) => {
+      if (err) {
+        console.error('Search error:', err);
+        return res.status(500).json({ error: 'Error searching players: ' + err.message });
+      }
+      
+      let players = rows.map(row => {
+        let player = JSON.parse(row.data);
+        player.id = row.id;
+        player.playerId = row.id;
+        
+        // Remove large media data
+        if (player.media && player.media.profilePhoto) {
+          player.media = { hasProfilePhoto: true };
+        }
+        
+        return player;
+      });
+      
+      res.json(players);
+    });
+    return;
+  }
+  
+  // SQLite query with full filtering support
   let query = 'SELECT p.*, pl.latitude, pl.longitude, pl.city FROM players p LEFT JOIN player_locations pl ON p.id = pl.player_id WHERE p.is_published = 1';
   const params = [];
   
   // Text search (first name, last name, or full name)
   if (q) {
-    query += ' AND (json_extract(p.player_data, "$.personalInfo.firstName") LIKE ? OR json_extract(p.player_data, "$.personalInfo.lastName") LIKE ? OR json_extract(p.player_data, "$.personalInfo.fullName") LIKE ?)';
+    query += ` AND (json_extract(p.${dataColumn}, "$.personalInfo.firstName") LIKE ? OR json_extract(p.${dataColumn}, "$.personalInfo.lastName") LIKE ? OR json_extract(p.${dataColumn}, "$.personalInfo.fullName") LIKE ?)`;
     params.push(`%${q}%`, `%${q}%`, `%${q}%`);
   }
   
@@ -345,12 +381,12 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
     const currentYear = new Date().getFullYear();
     if (ageMin) {
       const maxBirthYear = currentYear - ageMin;
-      query += ' AND json_extract(p.player_data, "$.personalInfo.dateOfBirth") <= ?';
+      query += ` AND json_extract(p.${dataColumn}, "$.personalInfo.dateOfBirth") <= ?`;
       params.push(`${maxBirthYear}-12-31`);
     }
     if (ageMax) {
       const minBirthYear = currentYear - ageMax;
-      query += ' AND json_extract(p.player_data, "$.personalInfo.dateOfBirth") >= ?';
+      query += ` AND json_extract(p.${dataColumn}, "$.personalInfo.dateOfBirth") >= ?`;
       params.push(`${minBirthYear}-01-01`);
     }
   }
@@ -359,7 +395,7 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
   if (positions) {
     const positionList = positions.split(',');
     const positionConditions = positionList.map(() => 
-      'json_extract(p.player_data, "$.playingInfo.positions") LIKE ?'
+      `json_extract(p.${dataColumn}, "$.playingInfo.positions") LIKE ?`
     ).join(' OR ');
     query += ` AND (${positionConditions})`;
     positionList.forEach(pos => params.push(`%"${pos}"%`));
@@ -367,7 +403,7 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
   
   // Preferred foot filter
   if (preferredFoot) {
-    query += ' AND json_extract(p.player_data, "$.personalInfo.preferredFoot") = ?';
+    query += ` AND json_extract(p.${dataColumn}, "$.personalInfo.preferredFoot") = ?`;
     params.push(preferredFoot);
   }
   
@@ -375,7 +411,7 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
   if (availability) {
     const availabilityList = availability.split(',');
     const availabilityConditions = availabilityList.map(() => 
-      'json_extract(p.player_data, "$.availability.status") = ?'
+      `json_extract(p.${dataColumn}, "$.availability.status") = ?`
     ).join(' OR ');
     query += ` AND (${availabilityConditions})`;
     availabilityList.forEach(status => params.push(status));
@@ -383,12 +419,12 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
   
   // Willing to relocate filter
   if (willingToRelocate === 'true') {
-    query += ' AND json_extract(p.player_data, "$.availability.willingToRelocate") = 1';
+    query += ` AND json_extract(p.${dataColumn}, "$.availability.willingToRelocate") = 1`;
   }
   
   // Experience level filter
   if (experienceLevel) {
-    query += ' AND json_extract(p.player_data, "$.experience.level") = ?';
+    query += ` AND json_extract(p.${dataColumn}, "$.experience.level") = ?`;
     params.push(experienceLevel);
   }
   
@@ -403,7 +439,7 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
     }
     
     let players = rows.map(row => {
-      let player = JSON.parse(row.player_data);
+      let player = JSON.parse(row[dataColumn] || row.data || row.player_data);
       // Include the player ID in the response
       player.id = row.id;
       player.playerId = row.id;
