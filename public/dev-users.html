@@ -146,6 +146,15 @@
                                     <td><span class="role-badge ${user.role}">${user.role}</span></td>
                                     <td>${new Date(user.created_at).toLocaleDateString()}</td>
                                     <td>
+                                        ${user.role !== 'admin' ? `
+                                            <button 
+                                                class="fm-btn fm-btn-primary fm-btn-sm" 
+                                                onclick="makeAdmin(${user.id}, '${user.username}')"
+                                                style="margin-right: 0.5rem;"
+                                            >
+                                                Make Admin
+                                            </button>
+                                        ` : ''}
                                         <button 
                                             class="fm-btn fm-btn-danger fm-btn-sm delete-btn" 
                                             onclick="deleteUser(${user.id}, '${user.username}')"
@@ -165,6 +174,28 @@
                         <p>Error loading users: ${error.message}</p>
                     </div>
                 `;
+            }
+        }
+
+        async function makeAdmin(userId, username) {
+            if (!confirm(`Make user "${username}" (ID: ${userId}) an admin?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/dev/users/${userId}/make-admin`, {
+                    method: 'POST'
+                });
+                
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to make admin');
+                }
+                
+                alert('User is now an admin!');
+                loadUsers(); // Reload the list
+            } catch (error) {
+                alert('Error making admin: ' + error.message);
             }
         }
 

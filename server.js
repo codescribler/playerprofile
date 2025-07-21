@@ -1184,6 +1184,27 @@ app.delete('/api/dev/users/:id', (req, res) => {
   });
 });
 
+app.post('/api/dev/users/:id/make-admin', (req, res) => {
+  // No authentication required - development only
+  const userId = parseInt(req.params.id);
+  
+  db.run(
+    'UPDATE users SET role = ? WHERE id = ?',
+    ['admin', userId],
+    function(err) {
+      if (err) {
+        return res.status(500).json({ error: 'Failed to update user role' });
+      }
+      
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'User not found' });
+      }
+      
+      res.json({ message: 'User is now an admin' });
+    }
+  );
+});
+
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
