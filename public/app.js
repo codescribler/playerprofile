@@ -323,6 +323,23 @@ class PlayerProfileApp {
         document.getElementById('register-btn').style.display = 'none';
         document.getElementById('logout-btn').style.display = 'inline-block';
         document.getElementById('main-content').style.display = 'block';
+        
+        // Show/hide buttons based on user role
+        const allowedSearchRoles = ['scout', 'coach', 'agent', 'admin'];
+        const searchBtn = document.getElementById('advanced-search-btn');
+        const createBtn = document.getElementById('create-player-btn');
+        
+        if (allowedSearchRoles.includes(this.user.role)) {
+            searchBtn.style.display = 'inline-flex';
+            searchBtn.addEventListener('click', () => {
+                window.location.href = '/search.html';
+            });
+        }
+        
+        // Hide create button for non-players
+        if (this.user.role !== 'player' && this.user.role !== 'admin') {
+            createBtn.style.display = 'none';
+        }
     }
 
     showModal(modalId) {

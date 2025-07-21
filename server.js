@@ -698,48 +698,160 @@ app.post('/api/players/:id/media/upload', authenticateToken, (req, res) => {
   });
 });
 
+// Enhanced search endpoint with location, filters, etc.
 app.get('/api/players/search', authenticateToken, (req, res) => {
-  const { q, position, nationality } = req.query;
-  let query = 'SELECT * FROM players WHERE 1=1';
+  // Check if user has permission to search
+  const allowedRoles = ['scout', 'coach', 'agent', 'admin'];
+  if (!allowedRoles.includes(req.user.role)) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  const {
+    q, // text search
+    latitude, longitude, radius, // location search
+    ageMin, ageMax, // age range
+    positions, // comma-separated positions
+    preferredFoot,
+    availability, // comma-separated availability statuses
+    willingToRelocate,
+    experienceLevel,
+    limit = 50
+  } = req.query;
+
+  // Start with published players only
+  let query = 'SELECT p.*, pl.latitude, pl.longitude, pl.city FROM players p LEFT JOIN player_locations pl ON p.id = pl.player_id WHERE p.is_published = 1';
   const params = [];
   
-  if (req.user.role === 'player') {
-    query += ' AND user_id = ?';
-    params.push(req.user.id);
-  }
-  
+  // Text search (first name, last name, or full name)
   if (q) {
-    query += ' AND json_extract(data, "$.personalInfo.fullName") LIKE ?';
-    params.push(`%${q}%`);
+    query += ' AND (json_extract(p.player_data, "$.personalInfo.firstName") LIKE ? OR json_extract(p.player_data, "$.personalInfo.lastName") LIKE ? OR json_extract(p.player_data, "$.personalInfo.fullName") LIKE ?)';
+    params.push(`%${q}%`, `%${q}%`, `%${q}%`);
   }
   
-  if (position) {
-    query += ' AND json_extract(data, "$.playingInfo.primaryPosition") = ?';
-    params.push(position);
+  // Age range filter
+  if (ageMin || ageMax) {
+    const currentYear = new Date().getFullYear();
+    if (ageMin) {
+      const maxBirthYear = currentYear - ageMin;
+      query += ' AND json_extract(p.player_data, "$.personalInfo.dateOfBirth") <= ?';
+      params.push(`${maxBirthYear}-12-31`);
+    }
+    if (ageMax) {
+      const minBirthYear = currentYear - ageMax;
+      query += ' AND json_extract(p.player_data, "$.personalInfo.dateOfBirth") >= ?';
+      params.push(`${minBirthYear}-01-01`);
+    }
   }
   
-  if (nationality) {
-    query += ' AND json_extract(data, "$.personalInfo.nationality") = ?';
-    params.push(nationality);
+  // Positions filter
+  if (positions) {
+    const positionList = positions.split(',');
+    const positionConditions = positionList.map(() => 
+      'json_extract(p.player_data, "$.playingInfo.positions") LIKE ?'
+    ).join(' OR ');
+    query += ` AND (${positionConditions})`;
+    positionList.forEach(pos => params.push(`%"${pos}"%`));
   }
+  
+  // Preferred foot filter
+  if (preferredFoot) {
+    query += ' AND json_extract(p.player_data, "$.personalInfo.preferredFoot") = ?';
+    params.push(preferredFoot);
+  }
+  
+  // Availability filter
+  if (availability) {
+    const availabilityList = availability.split(',');
+    const availabilityConditions = availabilityList.map(() => 
+      'json_extract(p.player_data, "$.availability.status") = ?'
+    ).join(' OR ');
+    query += ` AND (${availabilityConditions})`;
+    availabilityList.forEach(status => params.push(status));
+  }
+  
+  // Willing to relocate filter
+  if (willingToRelocate === 'true') {
+    query += ' AND json_extract(p.player_data, "$.availability.willingToRelocate") = 1';
+  }
+  
+  // Experience level filter
+  if (experienceLevel) {
+    query += ' AND json_extract(p.player_data, "$.experience.level") = ?';
+    params.push(experienceLevel);
+  }
+  
+  // Add limit
+  query += ' LIMIT ?';
+  params.push(parseInt(limit));
   
   db.all(query, params, (err, rows) => {
     if (err) {
+      console.error('Search error:', err);
       return res.status(500).json({ error: 'Error searching players' });
     }
     
-    const players = rows.map(row => {
-      let player = JSON.parse(row.data);
+    let players = rows.map(row => {
+      let player = JSON.parse(row.player_data);
       // Include the player ID in the response
       player.id = row.id;
       player.playerId = row.id;
+      
+      // Add location data if available
+      if (row.latitude && row.longitude) {
+        player.location = {
+          ...player.location,
+          coordinates: {
+            latitude: row.latitude,
+            longitude: row.longitude
+          },
+          city: row.city || player.location?.city
+        };
+      }
+      
       // Repair any corrupted data
       player = repairPlayerData(player);
       return player;
     });
+    
+    // Calculate distances if location search
+    if (latitude && longitude && radius > 0) {
+      const searchLat = parseFloat(latitude);
+      const searchLng = parseFloat(longitude);
+      const maxDistance = parseFloat(radius);
+      
+      players = players.map(player => {
+        if (player.location?.coordinates?.latitude && player.location?.coordinates?.longitude) {
+          const distance = calculateDistance(
+            searchLat, searchLng,
+            player.location.coordinates.latitude,
+            player.location.coordinates.longitude
+          );
+          player.distance = distance;
+          return player;
+        }
+        return player;
+      }).filter(player => !player.distance || player.distance <= maxDistance);
+      
+      // Sort by distance
+      players.sort((a, b) => (a.distance || 999) - (b.distance || 999));
+    }
+    
     res.json(players);
   });
 });
+
+// Utility function to calculate distance between two coordinates (in miles)
+function calculateDistance(lat1, lon1, lat2, lon2) {
+  const R = 3959; // Radius of the Earth in miles
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
 
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {

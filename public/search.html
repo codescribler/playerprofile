@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Players - Player Profile Manager</title>
+    <link rel="stylesheet" href="fm-style.css">
+    <link rel="icon" type="image/png" href="images/playerprofilemanagerlogo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .search-container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: var(--spacing-lg);
+            min-height: calc(100vh - 80px);
+        }
+        
+        .search-filters {
+            background: var(--fm-surface);
+            padding: var(--spacing-lg);
+            border-radius: var(--radius-lg);
+            height: fit-content;
+            position: sticky;
+            top: var(--spacing-lg);
+        }
+        
+        .search-results {
+            padding: var(--spacing-lg);
+        }
+        
+        .filter-section {
+            margin-bottom: var(--spacing-xl);
+            padding-bottom: var(--spacing-lg);
+            border-bottom: 1px solid var(--fm-border);
+        }
+        
+        .filter-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        
+        .filter-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-md);
+            color: var(--fm-text-primary);
+        }
+        
+        .location-search {
+            display: grid;
+            gap: var(--spacing-md);
+        }
+        
+        .postcode-group {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: var(--spacing-sm);
+            align-items: end;
+        }
+        
+        .range-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-sm);
+            align-items: center;
+        }
+        
+        .range-inputs input {
+            font-size: 0.875rem;
+        }
+        
+        .results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .results-count {
+            font-size: 1.125rem;
+            font-weight: 500;
+            color: var(--fm-text-primary);
+        }
+        
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: var(--spacing-lg);
+        }
+        
+        .player-result-card {
+            background: var(--fm-surface);
+            border: 1px solid var(--fm-border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            transition: all var(--transition-fast);
+            cursor: pointer;
+        }
+        
+        .player-result-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+            border-color: var(--fm-accent);
+        }
+        
+        .player-result-header {
+            display: flex;
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .player-result-photo {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            background: var(--fm-background);
+        }
+        
+        .player-result-info {
+            flex: 1;
+        }
+        
+        .player-result-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: var(--fm-text-primary);
+        }
+        
+        .player-result-location {
+            font-size: 0.875rem;
+            color: var(--fm-text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .player-result-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .player-result-stat {
+            font-size: 0.875rem;
+        }
+        
+        .stat-label {
+            color: var(--fm-text-secondary);
+        }
+        
+        .stat-value {
+            color: var(--fm-text-primary);
+            font-weight: 500;
+        }
+        
+        .player-result-badges {
+            display: flex;
+            gap: var(--spacing-sm);
+            flex-wrap: wrap;
+        }
+        
+        .result-badge {
+            padding: 0.25rem 0.75rem;
+            background: var(--fm-background);
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--fm-text-secondary);
+        }
+        
+        .result-badge.primary {
+            background: var(--fm-accent);
+            color: white;
+        }
+        
+        .filter-checkbox-group {
+            display: grid;
+            gap: var(--spacing-sm);
+        }
+        
+        .filter-checkbox {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+        
+        .filter-checkbox input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .filter-checkbox label {
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+        
+        .advanced-filters {
+            margin-top: var(--spacing-md);
+        }
+        
+        .toggle-advanced {
+            width: 100%;
+            padding: var(--spacing-sm);
+            background: transparent;
+            border: 1px solid var(--fm-border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 0.875rem;
+            color: var(--fm-text-secondary);
+            transition: all var(--transition-fast);
+        }
+        
+        .toggle-advanced:hover {
+            background: var(--fm-background);
+            color: var(--fm-text-primary);
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: var(--spacing-xxl);
+            color: var(--fm-text-secondary);
+        }
+        
+        .no-results svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: var(--spacing-lg);
+            opacity: 0.3;
+        }
+        
+        /* Loading state */
+        .search-loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+        }
+        
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 3px solid var(--fm-border);
+            border-top-color: var(--fm-accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 768px) {
+            .search-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-filters {
+                position: relative;
+                top: auto;
+                margin-bottom: var(--spacing-lg);
+            }
+            
+            .results-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="fm-nav">
+        <div class="fm-container">
+            <div class="fm-nav-container">
+                <div class="fm-nav-brand">
+                    <img src="images/playerprofilelogofull.png" alt="Player Profile Manager" style="height: 60px;">
+                </div>
+                <div class="fm-nav-actions">
+                    <button id="back-btn" class="fm-btn fm-btn-secondary fm-btn-sm">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 12H5M12 19l-7-7 7-7"/>
+                        </svg>
+                        Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="fm-container fm-mt-lg">
+        <h1 class="fm-mb-lg">Search Players</h1>
+        
+        <div class="search-container">
+            <!-- Search Filters -->
+            <aside class="search-filters">
+                <form id="search-form">
+                    <!-- Location Filter -->
+                    <div class="filter-section">
+                        <h3 class="filter-title">Location</h3>
+                        <div class="location-search">
+                            <div class="postcode-group">
+                                <div class="fm-form-group">
+                                    <label for="postcode" class="fm-label">UK Postcode</label>
+                                    <input type="text" id="postcode" class="fm-input" placeholder="e.g. SW1A 1AA">
+                                </div>
+                                <button type="button" id="clear-postcode" class="fm-btn fm-btn-secondary fm-btn-sm">Clear</button>
+                            </div>
+                            <div class="fm-form-group">
+                                <label for="radius" class="fm-label">Within (miles)</label>
+                                <select id="radius" class="fm-select">
+                                    <option value="10">10 miles</option>
+                                    <option value="25" selected>25 miles</option>
+                                    <option value="50">50 miles</option>
+                                    <option value="100">100 miles</option>
+                                    <option value="200">200 miles</option>
+                                    <option value="0">Nationwide</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Basic Filters -->
+                    <div class="filter-section">
+                        <h3 class="filter-title">Basic Filters</h3>
+                        
+                        <!-- Age Range -->
+                        <div class="fm-form-group">
+                            <label class="fm-label">Age Range</label>
+                            <div class="range-inputs">
+                                <input type="number" id="age-min" class="fm-input" placeholder="Min" min="16" max="45">
+                                <input type="number" id="age-max" class="fm-input" placeholder="Max" min="16" max="45">
+                            </div>
+                        </div>
+
+                        <!-- Positions -->
+                        <div class="fm-form-group">
+                            <label class="fm-label">Positions</label>
+                            <div class="filter-checkbox-group">
+                                <div class="filter-checkbox">
+                                    <input type="checkbox" id="pos-gk" value="GK">
+                                    <label for="pos-gk">Goalkeeper</label>
+                                </div>
+                                <div class="filter-checkbox">
+                                    <input type="checkbox" id="pos-def" value="DEF">
+                                    <label for="pos-def">Defender</label>
+                                </div>
+                                <div class="filter-checkbox">
+                                    <input type="checkbox" id="pos-mid" value="MID">
+                                    <label for="pos-mid">Midfielder</label>
+                                </div>
+                                <div class="filter-checkbox">
+                                    <input type="checkbox" id="pos-att" value="ATT">
+                                    <label for="pos-att">Attacker</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preferred Foot -->
+                        <div class="fm-form-group">
+                            <label for="preferred-foot" class="fm-label">Preferred Foot</label>
+                            <select id="preferred-foot" class="fm-select">
+                                <option value="">Any</option>
+                                <option value="left">Left</option>
+                                <option value="right">Right</option>
+                                <option value="both">Both</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Availability -->
+                    <div class="filter-section">
+                        <h3 class="filter-title">Availability</h3>
+                        <div class="filter-checkbox-group">
+                            <div class="filter-checkbox">
+                                <input type="checkbox" id="actively-looking" value="actively_looking">
+                                <label for="actively-looking">Actively Looking</label>
+                            </div>
+                            <div class="filter-checkbox">
+                                <input type="checkbox" id="open-to-offers" value="open_to_offers">
+                                <label for="open-to-offers">Open to Offers</label>
+                            </div>
+                            <div class="filter-checkbox">
+                                <input type="checkbox" id="willing-relocate" value="willing_relocate">
+                                <label for="willing-relocate">Willing to Relocate</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Advanced Filters -->
+                    <div class="filter-section">
+                        <button type="button" class="toggle-advanced" id="toggle-advanced">
+                            Show Advanced Filters
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-left: 0.5rem;">
+                                <polyline points="6 9 12 15 18 9"></polyline>
+                            </svg>
+                        </button>
+                        <div class="advanced-filters" id="advanced-filters" style="display: none;">
+                            <!-- Will add more advanced filters here -->
+                        </div>
+                    </div>
+
+                    <!-- Search Button -->
+                    <button type="submit" class="fm-btn fm-btn-primary fm-btn-block">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        Search Players
+                    </button>
+                </form>
+            </aside>
+
+            <!-- Search Results -->
+            <main class="search-results">
+                <div class="results-header">
+                    <div class="results-count" id="results-count">
+                        Search for players to see results
+                    </div>
+                    <select id="sort-by" class="fm-select" style="width: auto;">
+                        <option value="relevance">Most Relevant</option>
+                        <option value="distance">Nearest First</option>
+                        <option value="rating">Highest Rated</option>
+                        <option value="age-asc">Youngest First</option>
+                        <option value="age-desc">Oldest First</option>
+                    </select>
+                </div>
+
+                <div id="results-container">
+                    <!-- Results will be populated here -->
+                    <div class="no-results">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <path d="m21 21-4.35-4.35"></path>
+                        </svg>
+                        <h3>Start Your Search</h3>
+                        <p>Use the filters on the left to find players that match your criteria</p>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="search.js"></script>
+</body>
+</html>
