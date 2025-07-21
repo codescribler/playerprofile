@@ -261,13 +261,9 @@ class ModernProfileView {
 
     displayPlayerData(player) {
         // Set page title with first and last name
-        const fullName = player.personalInfo?.fullName || 'Player';
-        const nameParts = fullName.trim().split(/\s+/);
-        let displayName = fullName;
-        
-        if (nameParts.length > 1) {
-            displayName = `${nameParts[0]} ${nameParts[nameParts.length - 1]}`;
-        }
+        const firstName = player.personalInfo?.firstName || '';
+        const lastName = player.personalInfo?.lastName || '';
+        const displayName = `${firstName} ${lastName}`.trim() || 'Player';
         
         document.title = `${displayName} - Profile`;
 
@@ -290,22 +286,21 @@ class ModernProfileView {
     displayHeader(player) {
         // Profile photo
         const photoWrapper = document.getElementById('profile-photo-wrapper');
+        const firstName = player.personalInfo?.firstName || '';
+        const lastName = player.personalInfo?.lastName || '';
+        const displayName = `${firstName} ${lastName}`.trim();
+        
         if (player.media?.profilePhoto) {
-            photoWrapper.innerHTML = `<img src="${player.media.profilePhoto}" alt="${player.personalInfo?.fullName}" class="profile-photo">`;
+            photoWrapper.innerHTML = `<img src="${player.media.profilePhoto}" alt="${displayName}" class="profile-photo">`;
         } else {
-            const initials = this.getInitials(player.personalInfo?.fullName);
+            const initials = this.getInitials(firstName, lastName);
             photoWrapper.innerHTML = `<div class="profile-photo-placeholder">${initials}</div>`;
         }
 
-        // Basic info - Display first and last name only
-        const fullName = player.personalInfo?.fullName || 'Unknown Player';
-        const nameParts = fullName.trim().split(/\s+/);
-        let displayName = fullName;
-        
-        if (nameParts.length > 1) {
-            // Show first name and last name
-            displayName = `${nameParts[0]} ${nameParts[nameParts.length - 1]}`;
-        }
+        // Basic info - Display first and last name
+        const firstName = player.personalInfo?.firstName || '';
+        const lastName = player.personalInfo?.lastName || '';
+        const displayName = `${firstName} ${lastName}`.trim() || 'Unknown Player';
         
         document.getElementById('player-name').textContent = displayName;
         
@@ -819,9 +814,10 @@ class ModernProfileView {
         return age;
     }
 
-    getInitials(fullName) {
-        if (!fullName) return 'PP';
-        return fullName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+    getInitials(firstName, lastName) {
+        const firstInitial = firstName ? firstName[0].toUpperCase() : 'P';
+        const lastInitial = lastName ? lastName[0].toUpperCase() : 'P';
+        return firstInitial + lastInitial;
     }
 
     getPositionDisplay(playingInfo) {

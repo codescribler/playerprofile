@@ -234,7 +234,8 @@ class PlayerForm {
 
     populateForm(player) {
         // Personal Information
-        document.getElementById('fullName').value = player.personalInfo?.fullName || '';
+        document.getElementById('firstName').value = player.personalInfo?.firstName || '';
+        document.getElementById('lastName').value = player.personalInfo?.lastName || '';
         document.getElementById('dateOfBirth').value = player.personalInfo?.dateOfBirth || '';
         document.getElementById('heightCm').value = player.personalInfo?.height?.centimeters || '';
         document.getElementById('weightKg').value = player.personalInfo?.weight?.kilograms || '';
@@ -603,7 +604,8 @@ class PlayerForm {
 
         const formData = {
             personalInfo: {
-                fullName: document.getElementById('fullName').value,
+                firstName: document.getElementById('firstName').value,
+                lastName: document.getElementById('lastName').value,
                 dateOfBirth: document.getElementById('dateOfBirth').value,
                 height: {
                     centimeters: Math.round((parseFloat(document.getElementById('heightCm').value) || 0) * 10) / 10,
