@@ -1,29 +1,37 @@
 // Migration script to convert fullName to firstName and lastName
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
+const { Pool } = require('pg');
 
-const dbPath = path.join(__dirname, '..', 'football-profile.db');
-const db = new sqlite3.Database(dbPath);
+if (!process.env.DATABASE_URL) {
+  console.error('ERROR: DATABASE_URL environment variable is required');
+  process.exit(1);
+}
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
 
 console.log('Starting name migration...');
 
-db.all('SELECT id, player_data FROM players', [], (err, rows) => {
+pool.query('SELECT id, data FROM players', [], async (err, result) => {
     if (err) {
         console.error('Error reading players:', err);
+        pool.end();
         return;
     }
 
+    const rows = result.rows;
     let updated = 0;
     let alreadyMigrated = 0;
     
-    rows.forEach(row => {
+    for (const row of rows) {
         try {
-            const playerData = JSON.parse(row.player_data);
+            const playerData = JSON.parse(row.data);
             
             // Check if already migrated
             if (playerData.personalInfo?.firstName && playerData.personalInfo?.lastName) {
                 alreadyMigrated++;
-                return;
+                continue;
             }
             
             // Migrate fullName to firstName and lastName
@@ -49,29 +57,23 @@ db.all('SELECT id, player_data FROM players', [], (err, rows) => {
                 // delete playerData.personalInfo.fullName;
                 
                 // Update the database
-                db.run(
-                    'UPDATE players SET player_data = ? WHERE id = ?',
-                    [JSON.stringify(playerData), row.id],
-                    (err) => {
-                        if (err) {
-                            console.error(`Error updating player ${row.id}:`, err);
-                        } else {
-                            console.log(`Updated player ${row.id}: ${playerData.personalInfo.firstName} ${playerData.personalInfo.lastName}`);
-                            updated++;
-                        }
-                    }
+                await pool.query(
+                    'UPDATE players SET data = $1 WHERE id = $2',
+                    [JSON.stringify(playerData), row.id]
                 );
+                
+                console.log(`Updated player ${row.id}: ${playerData.personalInfo.firstName} ${playerData.personalInfo.lastName}`);
+                updated++;
             }
         } catch (e) {
             console.error(`Error processing player ${row.id}:`, e);
         }
-    });
+    }
     
-    setTimeout(() => {
-        console.log(`\nMigration complete!`);
-        console.log(`Updated: ${updated} players`);
-        console.log(`Already migrated: ${alreadyMigrated} players`);
-        console.log(`Total processed: ${rows.length} players`);
-        db.close();
-    }, 2000);
+    console.log(`\nMigration complete!`);
+    console.log(`Updated: ${updated} players`);
+    console.log(`Already migrated: ${alreadyMigrated} players`);
+    console.log(`Total processed: ${rows.length} players`);
+    
+    pool.end();
 });

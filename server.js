@@ -68,7 +68,6 @@ const upload = multer({
 });
 
 const db = require('./database-config');
-const isPostgres = !!process.env.DATABASE_URL;
 
 // Helper function to repair corrupted player data
 function repairPlayerData(player) {
@@ -186,7 +185,7 @@ app.post('/api/register', async (req, res) => {
       function(err) {
         if (err) {
           console.error('Database error:', err);
-          if (err.code === 'SQLITE_CONSTRAINT_UNIQUE' || err.message.includes('UNIQUE constraint failed')) {
+          if (err.message.includes('duplicate key value') || err.message.includes('violates unique constraint')) {
             return res.status(400).json({ error: 'Username or email already exists' });
           }
           return res.status(500).json({ error: 'Error creating user: ' + err.message });
@@ -330,150 +329,65 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
     limit = 50
   } = req.query;
 
-  // Use correct column name based on database type
-  const dataColumn = isPostgres ? 'data' : 'player_data';
-  
-  // For PostgreSQL, use query with all basic filters
-  if (isPostgres) {
-    // Note: PostgreSQL doesn't have is_published column, so we'll skip that check
-    let query = 'SELECT p.* FROM players p WHERE 1=1';
-    const params = [];
-    
-    // Age range filter for PostgreSQL
-    if (ageMin || ageMax) {
-      const currentYear = new Date().getFullYear();
-      if (ageMin) {
-        const maxBirthYear = currentYear - ageMin;
-        query += ` AND p.data->'personalInfo'->>'dateOfBirth' <= ?`;
-        params.push(`${maxBirthYear}-12-31`);
-      }
-      if (ageMax) {
-        const minBirthYear = currentYear - ageMax;
-        query += ` AND p.data->'personalInfo'->>'dateOfBirth' >= ?`;
-        params.push(`${minBirthYear}-01-01`);
-      }
-    }
-    
-    // Positions filter for PostgreSQL
-    if (positions) {
-      const positionList = positions.split(',');
-      const positionConditions = positionList.map(() => 
-        `p.data::text LIKE ?`
-      ).join(' OR ');
-      query += ` AND (${positionConditions})`;
-      positionList.forEach(pos => params.push(`%"position":"${pos}"%`));
-    }
-    
-    // Preferred foot filter for PostgreSQL
-    if (preferredFoot) {
-      query += ` AND p.data->'personalInfo'->>'preferredFoot' = ?`;
-      params.push(preferredFoot);
-    }
-    
-    // Availability filter for PostgreSQL
-    if (availability) {
-      const availabilityList = availability.split(',');
-      const availabilityConditions = availabilityList.map(() => 
-        `p.data->'availability'->>'status' = ?`
-      ).join(' OR ');
-      query += ` AND (${availabilityConditions})`;
-      availabilityList.forEach(status => params.push(status));
-    }
-    
-    // Willing to relocate filter for PostgreSQL
-    if (willingToRelocate === 'true') {
-      query += ` AND p.data->'availability'->>'willingToRelocate' = 'true'`;
-    }
-    
-    // Add limit
-    query += ' LIMIT ?';
-    params.push(parseInt(limit));
-    
-    db.all(query, params, (err, rows) => {
-      if (err) {
-        console.error('PostgreSQL Search error:', err);
-        return res.status(500).json({ 
-          error: 'Error searching players: ' + err.message
-        });
-      }
-      
-      let players = rows.map(row => {
-        let player = JSON.parse(row.data);
-        player.id = row.id;
-        player.playerId = row.id;
-        
-        // Remove large media data
-        if (player.media && player.media.profilePhoto) {
-          player.media = { hasProfilePhoto: true };
-        }
-        
-        return player;
-      });
-      
-      res.json(players);
-    });
-    return;
-  }
-  
-  // SQLite query with full filtering support
-  let query = 'SELECT p.*, pl.latitude, pl.longitude, pl.city FROM players p LEFT JOIN player_locations pl ON p.id = pl.player_id WHERE p.is_published = 1';
+  // PostgreSQL query with all basic filters
+  let query = 'SELECT p.*, pl.latitude, pl.longitude, pl.city FROM players p LEFT JOIN player_locations pl ON p.id = pl.player_id WHERE p.is_published = TRUE';
   const params = [];
   
   // Text search (first name, last name, or full name)
   if (q) {
-    query += ` AND (json_extract(p.${dataColumn}, "$.personalInfo.firstName") LIKE ? OR json_extract(p.${dataColumn}, "$.personalInfo.lastName") LIKE ? OR json_extract(p.${dataColumn}, "$.personalInfo.fullName") LIKE ?)`;
+    query += ` AND (p.data->'personalInfo'->>'firstName' ILIKE ? OR p.data->'personalInfo'->>'lastName' ILIKE ? OR p.data->'personalInfo'->>'fullName' ILIKE ?)`;
     params.push(`%${q}%`, `%${q}%`, `%${q}%`);
   }
   
-  // Age range filter
+  // Age range filter for PostgreSQL
   if (ageMin || ageMax) {
     const currentYear = new Date().getFullYear();
     if (ageMin) {
       const maxBirthYear = currentYear - ageMin;
-      query += ` AND json_extract(p.${dataColumn}, "$.personalInfo.dateOfBirth") <= ?`;
+      query += ` AND p.data->'personalInfo'->>'dateOfBirth' <= ?`;
       params.push(`${maxBirthYear}-12-31`);
     }
     if (ageMax) {
       const minBirthYear = currentYear - ageMax;
-      query += ` AND json_extract(p.${dataColumn}, "$.personalInfo.dateOfBirth") >= ?`;
+      query += ` AND p.data->'personalInfo'->>'dateOfBirth' >= ?`;
       params.push(`${minBirthYear}-01-01`);
     }
   }
   
-  // Positions filter
+  // Positions filter for PostgreSQL
   if (positions) {
     const positionList = positions.split(',');
     const positionConditions = positionList.map(() => 
-      `json_extract(p.${dataColumn}, "$.playingInfo.positions") LIKE ?`
+      `p.data::text LIKE ?`
     ).join(' OR ');
     query += ` AND (${positionConditions})`;
-    positionList.forEach(pos => params.push(`%"${pos}"%`));
+    positionList.forEach(pos => params.push(`%"position":"${pos}"%`));
   }
   
-  // Preferred foot filter
+  // Preferred foot filter for PostgreSQL
   if (preferredFoot) {
-    query += ` AND json_extract(p.${dataColumn}, "$.personalInfo.preferredFoot") = ?`;
+    query += ` AND p.data->'personalInfo'->>'preferredFoot' = ?`;
     params.push(preferredFoot);
   }
   
-  // Availability filter
+  // Availability filter for PostgreSQL
   if (availability) {
     const availabilityList = availability.split(',');
     const availabilityConditions = availabilityList.map(() => 
-      `json_extract(p.${dataColumn}, "$.availability.status") = ?`
+      `p.data->'availability'->>'status' = ?`
     ).join(' OR ');
     query += ` AND (${availabilityConditions})`;
     availabilityList.forEach(status => params.push(status));
   }
   
-  // Willing to relocate filter
+  // Willing to relocate filter for PostgreSQL
   if (willingToRelocate === 'true') {
-    query += ` AND json_extract(p.${dataColumn}, "$.availability.willingToRelocate") = 1`;
+    query += ` AND p.data->'availability'->>'willingToRelocate' = 'true'`;
   }
   
   // Experience level filter
   if (experienceLevel) {
-    query += ` AND json_extract(p.${dataColumn}, "$.experience.level") = ?`;
+    query += ` AND p.data->'experience'->>'level' = ?`;
     params.push(experienceLevel);
   }
   
@@ -488,7 +402,7 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
     }
     
     let players = rows.map(row => {
-      let player = JSON.parse(row[dataColumn] || row.data || row.player_data);
+      let player = JSON.parse(row.data);
       // Include the player ID in the response
       player.id = row.id;
       player.playerId = row.id;
@@ -846,7 +760,7 @@ app.get('/api/players/:id/messages', authenticateToken, (req, res) => {
 // Mark message as read
 app.post('/api/messages/:id/read', authenticateToken, (req, res) => {
   db.run(
-    'UPDATE messages SET read = TRUE WHERE id = ?',
+    'UPDATE messages SET is_read = TRUE WHERE id = ?',
     [req.params.id],
     function(err) {
       if (err) {
@@ -862,7 +776,7 @@ app.get('/api/players/unread-counts', authenticateToken, (req, res) => {
   db.all(
     `SELECT p.id as player_id, COUNT(m.id) as unread_count 
      FROM players p 
-     LEFT JOIN messages m ON p.id = m.player_id AND m.read = FALSE 
+     LEFT JOIN messages m ON p.id = m.player_id AND m.is_read = FALSE 
      WHERE p.user_id = ? OR ? = \'admin\'
      GROUP BY p.id`,
     [req.user.id, req.user.role],
@@ -962,9 +876,8 @@ app.post('/api/admin/migrations/:type', authenticateToken, async (req, res) => {
       // Run name migration
       log += 'Starting name migration...\n';
       
-      const columnName = isPostgres ? 'data' : 'player_data';
       const players = await new Promise((resolve, reject) => {
-        db.all(`SELECT id, ${columnName} AS player_data FROM players`, [], (err, rows) => {
+        db.all(`SELECT id, data FROM players`, [], (err, rows) => {
           if (err) reject(err);
           else resolve(rows);
         });
@@ -975,7 +888,7 @@ app.post('/api/admin/migrations/:type', authenticateToken, async (req, res) => {
 
       for (const row of players) {
         try {
-          const playerData = JSON.parse(row.player_data);
+          const playerData = JSON.parse(row.data);
           
           // Check if already migrated
           if (playerData.personalInfo?.firstName && playerData.personalInfo?.lastName) {
@@ -998,7 +911,7 @@ app.post('/api/admin/migrations/:type', authenticateToken, async (req, res) => {
             // Update the database
             await new Promise((resolve, reject) => {
               db.run(
-                `UPDATE players SET ${columnName} = ? WHERE id = ?`,
+                `UPDATE players SET data = ? WHERE id = ?`,
                 [JSON.stringify(playerData), row.id],
                 (err) => {
                   if (err) reject(err);
@@ -1025,8 +938,7 @@ app.post('/api/admin/migrations/:type', authenticateToken, async (req, res) => {
       log += 'Starting search fields migration...\n';
       
       // Create player_locations table
-      // Use database-agnostic syntax that works in both SQLite and PostgreSQL
-      const createTableSQL = isPostgres ? `
+      const createTableSQL = `
         CREATE TABLE IF NOT EXISTS player_locations (
           id SERIAL PRIMARY KEY,
           player_id VARCHAR(255) NOT NULL,
@@ -1038,21 +950,6 @@ app.post('/api/admin/migrations/:type', authenticateToken, async (req, res) => {
           country VARCHAR(100),
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
-          UNIQUE(player_id)
-        )
-      ` : `
-        CREATE TABLE IF NOT EXISTS player_locations (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          player_id INTEGER NOT NULL,
-          postcode VARCHAR(10),
-          latitude DECIMAL(10, 8),
-          longitude DECIMAL(11, 8),
-          city VARCHAR(100),
-          county VARCHAR(100),
-          country VARCHAR(100),
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
           UNIQUE(player_id)
         )
@@ -1080,9 +977,8 @@ app.post('/api/admin/migrations/:type', authenticateToken, async (req, res) => {
       });
 
       // Update player data
-      const columnName = isPostgres ? 'data' : 'player_data';
       const players = await new Promise((resolve, reject) => {
-        db.all(`SELECT id, ${columnName} AS player_data FROM players`, [], (err, rows) => {
+        db.all(`SELECT id, data FROM players`, [], (err, rows) => {
           if (err) reject(err);
           else resolve(rows);
         });
@@ -1092,7 +988,7 @@ app.post('/api/admin/migrations/:type', authenticateToken, async (req, res) => {
 
       for (const row of players) {
         try {
-          const playerData = JSON.parse(row.player_data);
+          const playerData = JSON.parse(row.data);
           let needsUpdate = false;
           
           // Add location field if missing
@@ -1145,7 +1041,7 @@ app.post('/api/admin/migrations/:type', authenticateToken, async (req, res) => {
           if (needsUpdate) {
             await new Promise((resolve, reject) => {
               db.run(
-                `UPDATE players SET ${columnName} = ? WHERE id = ?`,
+                `UPDATE players SET data = ? WHERE id = ?`,
                 [JSON.stringify(playerData), row.id],
                 (err) => {
                   if (err) reject(err);
@@ -1235,11 +1131,10 @@ app.get('/api/admin/migrations/status', authenticateToken, (req, res) => {
   };
 
   // Check for firstName/lastName fields
-  const columnName = isPostgres ? 'data' : 'player_data';
-  db.get(`SELECT ${columnName} FROM players LIMIT 1`, [], (err, row) => {
+  db.get(`SELECT data FROM players LIMIT 1`, [], (err, row) => {
     if (row) {
       try {
-        const data = JSON.parse(row[columnName]);
+        const data = JSON.parse(row.data);
         if (data.personalInfo?.firstName || data.personalInfo?.lastName) {
           status.names = true;
         }
@@ -1250,12 +1145,10 @@ app.get('/api/admin/migrations/status', authenticateToken, (req, res) => {
     }
 
     // Check for player_locations table
-    const tableCheckSQL = isPostgres 
-      ? "SELECT to_regclass('public.player_locations') AS exists"
-      : "SELECT name FROM sqlite_master WHERE type='table' AND name='player_locations'";
+    const tableCheckSQL = "SELECT to_regclass('public.player_locations') AS exists";
     
     db.get(tableCheckSQL, [], (err, row) => {
-      if (row && (isPostgres ? row.exists : row)) {
+      if (row && row.exists) {
         status.search = true;
       }
       res.json(status);
