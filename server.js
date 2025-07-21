@@ -333,10 +333,25 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
   // Use correct column name based on database type
   const dataColumn = isPostgres ? 'data' : 'player_data';
   
-  // For PostgreSQL, use simplified query with basic filters
+  // For PostgreSQL, use query with all basic filters
   if (isPostgres) {
     let query = 'SELECT p.* FROM players p WHERE 1=1';
     const params = [];
+    
+    // Age range filter for PostgreSQL
+    if (ageMin || ageMax) {
+      const currentYear = new Date().getFullYear();
+      if (ageMin) {
+        const maxBirthYear = currentYear - ageMin;
+        query += ` AND (p.data->>'personalInfo')::jsonb->>'dateOfBirth' <= ?`;
+        params.push(`${maxBirthYear}-12-31`);
+      }
+      if (ageMax) {
+        const minBirthYear = currentYear - ageMax;
+        query += ` AND (p.data->>'personalInfo')::jsonb->>'dateOfBirth' >= ?`;
+        params.push(`${minBirthYear}-01-01`);
+      }
+    }
     
     // Positions filter for PostgreSQL
     if (positions) {
@@ -348,9 +363,33 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
       positionList.forEach(pos => params.push(`%"position":"${pos}"%`));
     }
     
+    // Preferred foot filter for PostgreSQL
+    if (preferredFoot) {
+      query += ` AND (p.data->>'personalInfo')::jsonb->>'preferredFoot' = ?`;
+      params.push(preferredFoot);
+    }
+    
+    // Availability filter for PostgreSQL
+    if (availability) {
+      const availabilityList = availability.split(',');
+      const availabilityConditions = availabilityList.map(() => 
+        `(p.data->>'availability')::jsonb->>'status' = ?`
+      ).join(' OR ');
+      query += ` AND (${availabilityConditions})`;
+      availabilityList.forEach(status => params.push(status));
+    }
+    
+    // Willing to relocate filter for PostgreSQL
+    if (willingToRelocate === 'true') {
+      query += ` AND (p.data->>'availability')::jsonb->>'willingToRelocate' = 'true'`;
+    }
+    
     // Add limit
     query += ' LIMIT ?';
     params.push(parseInt(limit));
+    
+    console.log('PostgreSQL search query:', query);
+    console.log('PostgreSQL search params:', params);
     
     db.all(query, params, (err, rows) => {
       if (err) {

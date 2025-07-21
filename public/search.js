@@ -34,11 +34,9 @@ class PlayerSearch {
 
         // Search form
         const searchForm = document.getElementById('search-form');
-        console.log('Search form element:', searchForm);
         
         searchForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            console.log('Search form submitted!');
             this.performSearch();
         });
 
@@ -153,32 +151,25 @@ class PlayerSearch {
     }
 
     async performSearch() {
-        console.log('performSearch called');
         this.showLoading();
 
         const searchParams = this.collectSearchParams();
-        console.log('Search params:', searchParams);
         
         try {
             const queryString = new URLSearchParams(searchParams).toString();
-            console.log('Search URL:', `/api/players/search?${queryString}`);
             
             const response = await fetch(`/api/players/search?${queryString}`, {
                 headers: {
                     'Authorization': `Bearer ${this.token}`
                 }
             });
-
-            console.log('Response status:', response.status);
             
             if (response.ok) {
                 const players = await response.json();
-                console.log('Search results:', players);
                 this.searchResults = players;
                 this.displayResults(players);
             } else {
                 const errorText = await response.text();
-                console.error('Search error response:', errorText);
                 throw new Error(`Search failed with status ${response.status}`);
             }
         } catch (error) {
