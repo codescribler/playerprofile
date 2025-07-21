@@ -130,31 +130,21 @@ class PlayerSearch {
         // Load some initial results to show
         this.showLoading();
         try {
-            let response = await fetch('/api/players/search?limit=12', {
+            const response = await fetch('/api/players/search?limit=12', {
                 headers: {
                     'Authorization': `Bearer ${this.token}`
                 }
             });
 
-            // Fallback to regular players endpoint if search endpoint not available yet
-            if (response.status === 404) {
-                console.log('Search endpoint not available yet, using fallback');
-                response = await fetch('/api/players', {
-                    headers: {
-                        'Authorization': `Bearer ${this.token}`
-                    }
-                });
-            }
-
             if (response.ok) {
                 const players = await response.json();
-                // Limit to 12 if using fallback
-                const limitedPlayers = players.slice(0, 12);
-                this.displayResults(limitedPlayers);
+                this.displayResults(players);
+            } else {
+                throw new Error(`Search endpoint returned ${response.status}`);
             }
         } catch (error) {
             console.error('Error loading initial results:', error);
-            this.showNoResults();
+            this.showError('Failed to load search results. Please try refreshing the page.');
         }
     }
 
@@ -165,49 +155,18 @@ class PlayerSearch {
         
         try {
             const queryString = new URLSearchParams(searchParams).toString();
-            let response = await fetch(`/api/players/search?${queryString}`, {
+            const response = await fetch(`/api/players/search?${queryString}`, {
                 headers: {
                     'Authorization': `Bearer ${this.token}`
                 }
             });
-
-            // Fallback to regular players endpoint if search endpoint not available
-            if (response.status === 404) {
-                console.log('Search endpoint not available, using basic search');
-                response = await fetch('/api/players', {
-                    headers: {
-                        'Authorization': `Bearer ${this.token}`
-                    }
-                });
-                
-                if (response.ok) {
-                    // Apply basic client-side filtering for fallback
-                    let players = await response.json();
-                    
-                    // Basic text search if provided
-                    if (searchParams.q) {
-                        const query = searchParams.q.toLowerCase();
-                        players = players.filter(p => {
-                            const firstName = (p.personalInfo?.firstName || '').toLowerCase();
-                            const lastName = (p.personalInfo?.lastName || '').toLowerCase();
-                            const fullName = (p.personalInfo?.fullName || '').toLowerCase();
-                            return firstName.includes(query) || lastName.includes(query) || fullName.includes(query);
-                        });
-                    }
-                    
-                    this.searchResults = players;
-                    this.displayResults(players);
-                    this.showMessage('Note: Advanced search features will be available once the server updates.', 'info');
-                    return;
-                }
-            }
 
             if (response.ok) {
                 const players = await response.json();
                 this.searchResults = players;
                 this.displayResults(players);
             } else {
-                throw new Error('Search failed');
+                throw new Error(`Search failed with status ${response.status}`);
             }
         } catch (error) {
             console.error('Error performing search:', error);
