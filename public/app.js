@@ -340,6 +340,11 @@ class PlayerProfileApp {
         if (this.user.role !== 'player' && this.user.role !== 'admin') {
             createBtn.style.display = 'none';
         }
+        
+        // Add admin tools if admin
+        if (this.user.role === 'admin') {
+            this.addAdminTools();
+        }
     }
 
     showModal(modalId) {
@@ -1377,6 +1382,31 @@ class PlayerProfileApp {
         setTimeout(() => {
             messageDiv.remove();
         }, 5000);
+    }
+
+    addAdminTools() {
+        // Add admin tools section after the search bar
+        const searchContainer = document.querySelector('#main-content .fm-card .fm-card-body > div');
+        
+        const adminTools = document.createElement('div');
+        adminTools.className = 'fm-mt-lg';
+        adminTools.style.borderTop = '1px solid var(--fm-border)';
+        adminTools.style.paddingTop = 'var(--spacing-lg)';
+        adminTools.innerHTML = `
+            <h3 class="fm-mb-md" style="color: var(--fm-text-secondary); font-size: 0.875rem; text-transform: uppercase; letter-spacing: 0.5px;">Admin Tools</h3>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button class="fm-btn fm-btn-secondary" onclick="window.location.href='/admin-migrations.html'">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.5rem;">
+                        <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                        <line x1="12" y1="22.08" x2="12" y2="12"/>
+                    </svg>
+                    Database Migrations
+                </button>
+            </div>
+        `;
+        
+        searchContainer.parentNode.appendChild(adminTools);
     }
 
     formatPositionName(position) {

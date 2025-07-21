@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Database Migrations</title>
+    <link rel="stylesheet" href="fm-style.css">
+    <link rel="icon" type="image/png" href="images/playerprofilemanagerlogo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        .migration-item {
+            background: var(--fm-surface);
+            border: 1px solid var(--fm-border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .migration-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+        }
+        
+        .migration-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--fm-text-primary);
+        }
+        
+        .migration-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .migration-status.pending {
+            background: var(--fm-warning-light);
+            color: var(--fm-warning);
+        }
+        
+        .migration-status.completed {
+            background: var(--fm-success-light);
+            color: var(--fm-success);
+        }
+        
+        .migration-status.error {
+            background: var(--fm-danger-light);
+            color: var(--fm-danger);
+        }
+        
+        .migration-description {
+            color: var(--fm-text-secondary);
+            margin-bottom: var(--spacing-md);
+            line-height: 1.5;
+        }
+        
+        .migration-log {
+            background: var(--fm-background);
+            border: 1px solid var(--fm-border);
+            border-radius: var(--radius-sm);
+            padding: var(--spacing-md);
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.875rem;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: var(--spacing-md);
+            white-space: pre-wrap;
+        }
+        
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--fm-border);
+            border-top-color: var(--fm-accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: var(--spacing-sm);
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="fm-nav">
+        <div class="fm-container">
+            <div class="fm-nav-container">
+                <div class="fm-nav-brand">
+                    <img src="images/playerprofilelogofull.png" alt="Player Profile Manager" style="height: 60px;">
+                </div>
+                <div class="fm-nav-actions">
+                    <button id="back-btn" class="fm-btn fm-btn-secondary fm-btn-sm">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 12H5M12 19l-7-7 7-7"/>
+                        </svg>
+                        Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="fm-container fm-mt-lg">
+        <div class="fm-card">
+            <div class="fm-card-header">
+                <h1 class="fm-card-title">Database Migrations</h1>
+            </div>
+            <div class="fm-card-body">
+                <div class="fm-alert fm-alert-warning fm-mb-lg">
+                    <strong>⚠️ Important:</strong> Migrations modify your database structure. Always backup your data before running migrations.
+                </div>
+
+                <div id="migrations-container">
+                    <!-- Migration 1: Name Fields -->
+                    <div class="migration-item">
+                        <div class="migration-header">
+                            <h3 class="migration-name">Convert Full Name to First/Last Name</h3>
+                            <span class="migration-status pending" id="status-names">Pending</span>
+                        </div>
+                        <p class="migration-description">
+                            Splits existing fullName fields into separate firstName and lastName fields for better search and display functionality.
+                        </p>
+                        <button class="fm-btn fm-btn-primary" id="run-names-migration" onclick="runMigration('names')">
+                            Run Migration
+                        </button>
+                        <div class="migration-log" id="log-names" style="display: none;"></div>
+                    </div>
+
+                    <!-- Migration 2: Search Fields -->
+                    <div class="migration-item">
+                        <div class="migration-header">
+                            <h3 class="migration-name">Add Search & Location Fields</h3>
+                            <span class="migration-status pending" id="status-search">Pending</span>
+                        </div>
+                        <p class="migration-description">
+                            Adds location data, availability status, experience levels, and search optimization fields. Creates player_locations table for geographic searches.
+                        </p>
+                        <button class="fm-btn fm-btn-primary" id="run-search-migration" onclick="runMigration('search')">
+                            Run Migration
+                        </button>
+                        <div class="migration-log" id="log-search" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check authentication
+        const token = localStorage.getItem('token');
+        const user = JSON.parse(localStorage.getItem('user')) || null;
+
+        if (!token || !user || user.role !== 'admin') {
+            alert('Admin access required');
+            window.location.href = '/app';
+        }
+
+        // Navigation
+        document.getElementById('back-btn').addEventListener('click', () => {
+            window.location.href = '/app';
+        });
+
+        async function runMigration(type) {
+            const button = document.getElementById(`run-${type}-migration`);
+            const status = document.getElementById(`status-${type}`);
+            const log = document.getElementById(`log-${type}`);
+            
+            // Update UI
+            button.disabled = true;
+            button.innerHTML = 'Running...<span class="loading-spinner"></span>';
+            status.textContent = 'Running';
+            status.className = 'migration-status pending';
+            log.style.display = 'block';
+            log.textContent = 'Starting migration...\n';
+
+            try {
+                const response = await fetch(`/api/admin/migrations/${type}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    status.textContent = 'Completed';
+                    status.className = 'migration-status completed';
+                    log.textContent += data.log || 'Migration completed successfully';
+                    button.innerHTML = '✓ Completed';
+                    button.className = 'fm-btn fm-btn-success';
+                } else {
+                    throw new Error(data.error || 'Migration failed');
+                }
+            } catch (error) {
+                status.textContent = 'Error';
+                status.className = 'migration-status error';
+                log.textContent += `\nError: ${error.message}`;
+                button.disabled = false;
+                button.innerHTML = 'Retry Migration';
+                button.className = 'fm-btn fm-btn-danger';
+            }
+        }
+
+        // Check migration status on load
+        async function checkMigrationStatus() {
+            try {
+                const response = await fetch('/api/admin/migrations/status', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const statuses = await response.json();
+                    
+                    // Update UI based on status
+                    Object.keys(statuses).forEach(migration => {
+                        const statusEl = document.getElementById(`status-${migration}`);
+                        const buttonEl = document.getElementById(`run-${migration}-migration`);
+                        
+                        if (statuses[migration]) {
+                            statusEl.textContent = 'Completed';
+                            statusEl.className = 'migration-status completed';
+                            buttonEl.innerHTML = '✓ Completed';
+                            buttonEl.className = 'fm-btn fm-btn-success';
+                            buttonEl.disabled = true;
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error checking migration status:', error);
+            }
+        }
+
+        checkMigrationStatus();
+    </script>
+</body>
+</html>

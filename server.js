@@ -853,6 +853,253 @@ function calculateDistance(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
+// Admin migration endpoints
+app.post('/api/admin/migrations/:type', authenticateToken, async (req, res) => {
+  // Check admin access
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+
+  const { type } = req.params;
+  let log = '';
+
+  try {
+    if (type === 'names') {
+      // Run name migration
+      log += 'Starting name migration...\n';
+      
+      const players = await new Promise((resolve, reject) => {
+        db.all('SELECT id, player_data FROM players', [], (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        });
+      });
+
+      let updated = 0;
+      let alreadyMigrated = 0;
+
+      for (const row of players) {
+        try {
+          const playerData = JSON.parse(row.player_data);
+          
+          // Check if already migrated
+          if (playerData.personalInfo?.firstName && playerData.personalInfo?.lastName) {
+            alreadyMigrated++;
+            continue;
+          }
+          
+          // Migrate fullName to firstName and lastName
+          if (playerData.personalInfo?.fullName) {
+            const nameParts = playerData.personalInfo.fullName.trim().split(/\s+/);
+            
+            if (nameParts.length === 1) {
+              playerData.personalInfo.firstName = '';
+              playerData.personalInfo.lastName = nameParts[0];
+            } else {
+              playerData.personalInfo.firstName = nameParts[0];
+              playerData.personalInfo.lastName = nameParts[nameParts.length - 1];
+            }
+            
+            // Update the database
+            await new Promise((resolve, reject) => {
+              db.run(
+                'UPDATE players SET player_data = ? WHERE id = ?',
+                [JSON.stringify(playerData), row.id],
+                (err) => {
+                  if (err) reject(err);
+                  else {
+                    updated++;
+                    resolve();
+                  }
+                }
+              );
+            });
+          }
+        } catch (e) {
+          log += `Error processing player ${row.id}: ${e.message}\n`;
+        }
+      }
+
+      log += `\nMigration complete!\n`;
+      log += `Updated: ${updated} players\n`;
+      log += `Already migrated: ${alreadyMigrated} players\n`;
+      log += `Total processed: ${players.length} players`;
+
+    } else if (type === 'search') {
+      // Run search fields migration
+      log += 'Starting search fields migration...\n';
+      
+      // Create player_locations table
+      await new Promise((resolve, reject) => {
+        db.run(`
+          CREATE TABLE IF NOT EXISTS player_locations (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            player_id INTEGER NOT NULL,
+            postcode VARCHAR(10),
+            latitude DECIMAL(10, 8),
+            longitude DECIMAL(11, 8),
+            city VARCHAR(100),
+            county VARCHAR(100),
+            country VARCHAR(100),
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
+            UNIQUE(player_id)
+          )
+        `, (err) => {
+          if (err) reject(err);
+          else {
+            log += '✓ Created player_locations table\n';
+            resolve();
+          }
+        });
+      });
+
+      // Create indexes
+      await new Promise((resolve, reject) => {
+        db.run('CREATE INDEX IF NOT EXISTS idx_location_coords ON player_locations(latitude, longitude)', (err) => {
+          if (err) reject(err);
+          else {
+            log += '✓ Created coordinates index\n';
+            resolve();
+          }
+        });
+      });
+
+      // Update player data
+      const players = await new Promise((resolve, reject) => {
+        db.all('SELECT id, player_data FROM players', [], (err, rows) => {
+          if (err) reject(err);
+          else resolve(rows);
+        });
+      });
+
+      let updated = 0;
+
+      for (const row of players) {
+        try {
+          const playerData = JSON.parse(row.player_data);
+          let needsUpdate = false;
+          
+          // Add location field if missing
+          if (!playerData.location) {
+            playerData.location = {
+              postcode: '',
+              city: '',
+              county: '',
+              country: 'England',
+              coordinates: { latitude: null, longitude: null }
+            };
+            needsUpdate = true;
+          }
+          
+          // Add availability field if missing
+          if (!playerData.availability) {
+            playerData.availability = {
+              status: 'not_looking',
+              availableFrom: null,
+              willingToRelocate: false,
+              preferredLocations: [],
+              travelRadius: 25
+            };
+            needsUpdate = true;
+          }
+          
+          // Add experience field if missing
+          if (!playerData.experience) {
+            playerData.experience = {
+              level: 'amateur',
+              yearsPlaying: 0,
+              highestLevel: '',
+              achievements: { caps: 0, goals: 0, assists: 0, cleanSheets: 0 }
+            };
+            needsUpdate = true;
+          }
+          
+          // Add searchProfile field if missing
+          if (!playerData.searchProfile) {
+            playerData.searchProfile = {
+              keywords: [],
+              languages: ['English'],
+              availability: 'not_specified',
+              minimumSalary: null,
+              contractType: []
+            };
+            needsUpdate = true;
+          }
+          
+          if (needsUpdate) {
+            await new Promise((resolve, reject) => {
+              db.run(
+                'UPDATE players SET player_data = ? WHERE id = ?',
+                [JSON.stringify(playerData), row.id],
+                (err) => {
+                  if (err) reject(err);
+                  else {
+                    updated++;
+                    resolve();
+                  }
+                }
+              );
+            });
+          }
+        } catch (e) {
+          log += `Error processing player ${row.id}: ${e.message}\n`;
+        }
+      }
+
+      log += `\nMigration complete!\n`;
+      log += `Updated: ${updated} players with new search fields\n`;
+      log += `Total processed: ${players.length} players`;
+
+    } else {
+      return res.status(400).json({ error: 'Unknown migration type' });
+    }
+
+    res.json({ success: true, log });
+
+  } catch (error) {
+    console.error('Migration error:', error);
+    res.status(500).json({ error: error.message, log });
+  }
+});
+
+// Check migration status
+app.get('/api/admin/migrations/status', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin access required' });
+  }
+
+  // Check if migrations have been run by looking for evidence
+  const status = {
+    names: false,
+    search: false
+  };
+
+  // Check for firstName/lastName fields
+  db.get('SELECT player_data FROM players LIMIT 1', [], (err, row) => {
+    if (row) {
+      try {
+        const data = JSON.parse(row.player_data);
+        if (data.personalInfo?.firstName || data.personalInfo?.lastName) {
+          status.names = true;
+        }
+        if (data.location || data.availability || data.experience) {
+          status.search = true;
+        }
+      } catch (e) {}
+    }
+
+    // Check for player_locations table
+    db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='player_locations'", [], (err, row) => {
+      if (row) {
+        status.search = true;
+      }
+      res.json(status);
+    });
+  });
+});
+
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {
