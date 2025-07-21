@@ -125,6 +125,9 @@
                     return;
                 }
                 
+                // Store users globally for button handlers
+                window.usersData = users;
+                
                 container.innerHTML = `
                     <table class="user-table">
                         <thead>
@@ -138,7 +141,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            ${users.map(user => `
+                            ${users.map((user, index) => `
                                 <tr>
                                     <td class="user-id">#${user.id}</td>
                                     <td>${user.username}</td>
@@ -149,7 +152,7 @@
                                         ${user.role !== 'admin' ? `
                                             <button 
                                                 class="fm-btn fm-btn-primary fm-btn-sm" 
-                                                onclick="makeAdmin(${user.id}, '${user.username.replace(/'/g, "\\'")}')"
+                                                onclick="makeAdminByIndex(${index})"
                                                 style="margin-right: 0.5rem;"
                                             >
                                                 Make Admin
@@ -157,7 +160,7 @@
                                         ` : ''}
                                         <button 
                                             class="fm-btn fm-btn-danger fm-btn-sm delete-btn" 
-                                            onclick="deleteUser(${user.id}, '${user.username.replace(/'/g, "\\'")}')"
+                                            onclick="deleteUserByIndex(${index})"
                                         >
                                             Delete
                                         </button>
@@ -174,6 +177,20 @@
                         <p>Error loading users: ${error.message}</p>
                     </div>
                 `;
+            }
+        }
+
+        function makeAdminByIndex(index) {
+            const user = window.usersData[index];
+            if (user) {
+                makeAdmin(user.id, user.username);
+            }
+        }
+        
+        function deleteUserByIndex(index) {
+            const user = window.usersData[index];
+            if (user) {
+                deleteUser(user.id, user.username);
             }
         }
 
