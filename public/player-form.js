@@ -44,6 +44,12 @@ class PlayerForm {
         if (removePhotoBtn) {
             removePhotoBtn.addEventListener('click', () => this.removeProfilePhoto());
         }
+
+        // Postcode lookup button
+        const lookupBtn = document.getElementById('lookup-postcode');
+        if (lookupBtn) {
+            lookupBtn.addEventListener('click', () => this.lookupPostcode());
+        }
         
         // Representative team selects
         document.getElementById('districtTeam').addEventListener('change', (e) => {
@@ -308,6 +314,28 @@ class PlayerForm {
         document.getElementById('playingStyleSummary').value = player.playingStyle?.summary || '';
         document.getElementById('strengths').value = (player.playingStyle?.strengths || []).join('\n') || '';
         document.getElementById('weaknesses').value = (player.playingStyle?.weaknesses || []).join('\n') || '';
+        
+        // Location & Availability
+        if (player.location) {
+            document.getElementById('postcode').value = player.location.postcode || '';
+            document.getElementById('city').value = player.location.city || '';
+            document.getElementById('county').value = player.location.county || '';
+            document.getElementById('country').value = player.location.country || 'England';
+            
+            // Store coordinates if available
+            if (player.location.coordinates) {
+                const postcodeInput = document.getElementById('postcode');
+                postcodeInput.dataset.latitude = player.location.coordinates.latitude || '';
+                postcodeInput.dataset.longitude = player.location.coordinates.longitude || '';
+            }
+        }
+        
+        if (player.availability) {
+            document.getElementById('availability-status').value = player.availability.status || 'not_looking';
+            document.getElementById('willing-to-relocate').checked = player.availability.willingToRelocate || false;
+            document.getElementById('preferred-locations').value = (player.availability.preferredLocations || []).join(', ');
+            document.getElementById('travel-radius').value = player.availability.travelRadius || 25;
+        }
         
         // Abilities
         this.populateAbilities(player.abilities);
@@ -694,6 +722,22 @@ class PlayerForm {
                 summary: document.getElementById('playingStyleSummary').value,
                 strengths: strengths,
                 weaknesses: weaknesses
+            },
+            location: {
+                postcode: document.getElementById('postcode').value,
+                city: document.getElementById('city').value,
+                county: document.getElementById('county').value,
+                country: document.getElementById('country').value,
+                coordinates: {
+                    latitude: parseFloat(document.getElementById('postcode').dataset.latitude) || null,
+                    longitude: parseFloat(document.getElementById('postcode').dataset.longitude) || null
+                }
+            },
+            availability: {
+                status: document.getElementById('availability-status').value,
+                willingToRelocate: document.getElementById('willing-to-relocate').checked,
+                preferredLocations: document.getElementById('preferred-locations').value.split(',').map(l => l.trim()).filter(l => l),
+                travelRadius: parseInt(document.getElementById('travel-radius').value) || 25
             }
         };
 
@@ -882,6 +926,48 @@ class PlayerForm {
         } catch (error) {
             console.error('Error updating player photo:', error);
             this.showMessage('Failed to update player photo. Please try again.', 'error');
+        }
+    }
+
+    async lookupPostcode() {
+        const postcodeInput = document.getElementById('postcode');
+        const postcode = postcodeInput.value.trim();
+        
+        if (!postcode) {
+            this.showMessage('Please enter a postcode', 'error');
+            return;
+        }
+        
+        const lookupBtn = document.getElementById('lookup-postcode');
+        lookupBtn.disabled = true;
+        lookupBtn.textContent = 'Looking up...';
+        
+        try {
+            const response = await fetch(`https://api.postcodes.io/postcodes/${encodeURIComponent(postcode)}`);
+            const data = await response.json();
+            
+            if (response.ok && data.status === 200) {
+                const result = data.result;
+                
+                // Store coordinates as data attributes
+                postcodeInput.dataset.latitude = result.latitude;
+                postcodeInput.dataset.longitude = result.longitude;
+                
+                // Fill in the location fields
+                document.getElementById('city').value = result.admin_district || result.parliamentary_constituency || '';
+                document.getElementById('county').value = result.admin_county || result.region || '';
+                document.getElementById('country').value = result.country;
+                
+                this.showMessage('Location found!', 'success');
+            } else {
+                this.showMessage('Postcode not found. Please check and try again.', 'error');
+            }
+        } catch (error) {
+            console.error('Postcode lookup error:', error);
+            this.showMessage('Error looking up postcode. Please try again.', 'error');
+        } finally {
+            lookupBtn.disabled = false;
+            lookupBtn.textContent = 'Lookup';
         }
     }
 
