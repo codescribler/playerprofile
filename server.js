@@ -396,6 +396,37 @@ app.get('/api/players/search-test', authenticateToken, (req, res) => {
   });
 });
 
+// Comprehensive data structure check
+app.get('/api/debug/data-structure', authenticateToken, (req, res) => {
+  db.all("SELECT id, data FROM players LIMIT 2", [], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message });
+    }
+    
+    const structures = rows.map(row => {
+      try {
+        const player = JSON.parse(row.data);
+        return {
+          id: row.id,
+          personalInfo: {
+            dateOfBirth: player.personalInfo?.dateOfBirth,
+            preferredFoot: player.personalInfo?.preferredFoot
+          },
+          playingInfo: {
+            positions: player.playingInfo?.positions,
+            positionsStructure: Array.isArray(player.playingInfo?.positions) ? 
+              player.playingInfo.positions.slice(0, 2) : 'not array'
+          }
+        };
+      } catch (e) {
+        return { id: row.id, error: 'JSON parse failed' };
+      }
+    });
+    
+    res.json(structures);
+  });
+});
+
 // Simple endpoint to check preferredFoot values
 app.get('/api/debug/foot-values', authenticateToken, (req, res) => {
   // Just get the first few players and show their preferredFoot values
@@ -483,12 +514,14 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
   if (ageMin || ageMax) {
     const currentYear = new Date().getFullYear();
     if (ageMin) {
+      // For minimum age, birth year must be <= (current year - min age)
       const maxBirthYear = currentYear - ageMin;
       query += ` AND data->'personalInfo'->>'dateOfBirth' <= ?`;
       params.push(`${maxBirthYear}-12-31`);
     }
     if (ageMax) {
-      const minBirthYear = currentYear - ageMax;
+      // For maximum age, birth year must be >= (current year - max age - 1)
+      const minBirthYear = currentYear - ageMax - 1;
       query += ` AND data->'personalInfo'->>'dateOfBirth' >= ?`;
       params.push(`${minBirthYear}-01-01`);
     }

@@ -155,6 +155,15 @@ class PlayerSearch {
 
         const searchParams = this.collectSearchParams();
         
+        // Quick data structure check for debugging
+        if (this.user.role === 'admin' && (searchParams.positions || searchParams.ageMin || searchParams.ageMax)) {
+            fetch('/api/debug/data-structure', {
+                headers: { 'Authorization': `Bearer ${this.token}` }
+            }).then(r => r.json()).then(data => {
+                console.log('Data structure check:', data);
+            }).catch(e => console.error('Structure check failed:', e));
+        }
+        
         try {
             const queryString = new URLSearchParams(searchParams).toString();
             
