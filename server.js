@@ -335,6 +335,7 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
   
   // For PostgreSQL, use query with all basic filters
   if (isPostgres) {
+    // Note: PostgreSQL doesn't have is_published column, so we'll skip that check
     let query = 'SELECT p.* FROM players p WHERE 1=1';
     const params = [];
     
@@ -388,13 +389,12 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
     query += ' LIMIT ?';
     params.push(parseInt(limit));
     
-    console.log('PostgreSQL search query:', query);
-    console.log('PostgreSQL search params:', params);
-    
     db.all(query, params, (err, rows) => {
       if (err) {
-        console.error('Search error:', err);
-        return res.status(500).json({ error: 'Error searching players: ' + err.message });
+        console.error('PostgreSQL Search error:', err);
+        return res.status(500).json({ 
+          error: 'Error searching players: ' + err.message
+        });
       }
       
       let players = rows.map(row => {
