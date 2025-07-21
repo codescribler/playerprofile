@@ -1161,7 +1161,7 @@ app.get('/api/dev/users', (req, res) => {
 
 app.delete('/api/dev/users/:id', (req, res) => {
   // No authentication required - development only
-  const userId = parseInt(req.params.id);
+  const userId = req.params.id; // Handle both string and numeric IDs
   
   // First delete associated players data
   db.run('DELETE FROM players WHERE user_id = ?', [userId], (err) => {
@@ -1186,15 +1186,20 @@ app.delete('/api/dev/users/:id', (req, res) => {
 
 app.post('/api/dev/users/:id/make-admin', (req, res) => {
   // No authentication required - development only
-  const userId = parseInt(req.params.id);
+  const userId = req.params.id; // Handle both string and numeric IDs
+  
+  console.log('Making admin - User ID:', userId); // Debug log
   
   db.run(
     'UPDATE users SET role = ? WHERE id = ?',
     ['admin', userId],
     function(err) {
       if (err) {
+        console.error('Database error:', err);
         return res.status(500).json({ error: 'Failed to update user role' });
       }
+      
+      console.log('Changes made:', this.changes); // Debug log
       
       if (this.changes === 0) {
         return res.status(404).json({ error: 'User not found' });
