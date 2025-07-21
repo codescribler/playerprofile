@@ -308,6 +308,32 @@ app.get('/api/players', authenticateToken, (req, res) => {
   });
 });
 
+// Debug endpoint to check database structure
+app.get('/api/debug/check-db', authenticateToken, (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Admin only' });
+  }
+  
+  // Check what columns exist in players table
+  db.all("SELECT column_name FROM information_schema.columns WHERE table_name = 'players'", [], (err, cols) => {
+    if (err) {
+      return res.json({ 
+        error: 'Failed to check columns',
+        details: err.message,
+        suggestion: 'Try simple query instead'
+      });
+    }
+    
+    // Try a simple query
+    db.all("SELECT id, data FROM players LIMIT 1", [], (err2, rows) => {
+      res.json({
+        columns: cols,
+        sampleQuery: err2 ? { error: err2.message } : { success: true, rowCount: rows.length }
+      });
+    });
+  });
+});
+
 // Enhanced search endpoint with location, filters, etc.
 // MUST be defined before /api/players/:id to avoid route conflicts
 app.get('/api/players/search', authenticateToken, (req, res) => {
@@ -329,14 +355,13 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
     limit = 50
   } = req.query;
 
-  // PostgreSQL query with all basic filters
-  // Simplified query without JOIN to player_locations table (which may not exist yet)
-  let query = 'SELECT p.* FROM players p WHERE 1=1';
+  // Start with the simplest possible query
+  let query = 'SELECT * FROM players WHERE 1=1';
   const params = [];
   
   // Text search (first name, last name, or full name)
   if (q) {
-    query += ` AND (p.data->'personalInfo'->>'firstName' ILIKE ? OR p.data->'personalInfo'->>'lastName' ILIKE ? OR p.data->'personalInfo'->>'fullName' ILIKE ?)`;
+    query += ` AND (data->'personalInfo'->>'firstName' ILIKE ? OR data->'personalInfo'->>'lastName' ILIKE ? OR data->'personalInfo'->>'fullName' ILIKE ?)`;
     params.push(`%${q}%`, `%${q}%`, `%${q}%`);
   }
   
@@ -345,12 +370,12 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
     const currentYear = new Date().getFullYear();
     if (ageMin) {
       const maxBirthYear = currentYear - ageMin;
-      query += ` AND p.data->'personalInfo'->>'dateOfBirth' <= ?`;
+      query += ` AND data->'personalInfo'->>'dateOfBirth' <= ?`;
       params.push(`${maxBirthYear}-12-31`);
     }
     if (ageMax) {
       const minBirthYear = currentYear - ageMax;
-      query += ` AND p.data->'personalInfo'->>'dateOfBirth' >= ?`;
+      query += ` AND data->'personalInfo'->>'dateOfBirth' >= ?`;
       params.push(`${minBirthYear}-01-01`);
     }
   }
@@ -359,7 +384,7 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
   if (positions) {
     const positionList = positions.split(',');
     const positionConditions = positionList.map(() => 
-      `p.data::text LIKE ?`
+      `data::text LIKE ?`
     ).join(' OR ');
     query += ` AND (${positionConditions})`;
     positionList.forEach(pos => params.push(`%"position":"${pos}"%`));
@@ -367,7 +392,7 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
   
   // Preferred foot filter for PostgreSQL
   if (preferredFoot) {
-    query += ` AND p.data->'personalInfo'->>'preferredFoot' = ?`;
+    query += ` AND data->'personalInfo'->>'preferredFoot' = ?`;
     params.push(preferredFoot);
   }
   
@@ -375,7 +400,7 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
   if (availability) {
     const availabilityList = availability.split(',');
     const availabilityConditions = availabilityList.map(() => 
-      `p.data->'availability'->>'status' = ?`
+      `data->'availability'->>'status' = ?`
     ).join(' OR ');
     query += ` AND (${availabilityConditions})`;
     availabilityList.forEach(status => params.push(status));
@@ -383,12 +408,12 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
   
   // Willing to relocate filter for PostgreSQL
   if (willingToRelocate === 'true') {
-    query += ` AND p.data->'availability'->>'willingToRelocate' = 'true'`;
+    query += ` AND data->'availability'->>'willingToRelocate' = 'true'`;
   }
   
   // Experience level filter
   if (experienceLevel) {
-    query += ` AND p.data->'experience'->>'level' = ?`;
+    query += ` AND data->'experience'->>'level' = ?`;
     params.push(experienceLevel);
   }
   
