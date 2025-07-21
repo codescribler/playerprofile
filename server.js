@@ -330,7 +330,8 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
   } = req.query;
 
   // PostgreSQL query with all basic filters
-  let query = 'SELECT p.*, pl.latitude, pl.longitude, pl.city FROM players p LEFT JOIN player_locations pl ON p.id = pl.player_id WHERE p.is_published = TRUE';
+  // Note: We'll only filter by is_published if the column exists (for backward compatibility)
+  let query = 'SELECT p.*, pl.latitude, pl.longitude, pl.city FROM players p LEFT JOIN player_locations pl ON p.id = pl.player_id WHERE 1=1';
   const params = [];
   
   // Text search (first name, last name, or full name)

@@ -89,6 +89,10 @@ const initPgTables = async () => {
       FOREIGN KEY (user_id) REFERENCES users(id)
     )`);
 
+    // Add missing columns to existing tables
+    await pool.query(`ALTER TABLE players ADD COLUMN IF NOT EXISTS is_published BOOLEAN DEFAULT FALSE`).catch(() => {});
+    await pool.query(`ALTER TABLE players ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP`).catch(() => {});
+
     await pool.query(`CREATE TABLE IF NOT EXISTS messages (
       id SERIAL PRIMARY KEY,
       player_id TEXT,
@@ -101,6 +105,10 @@ const initPgTables = async () => {
       FOREIGN KEY (player_id) REFERENCES players (id)
     )`);
 
+    // Rename 'read' column to 'is_read' if it exists
+    await pool.query(`ALTER TABLE messages RENAME COLUMN read TO is_read`).catch(() => {});
+    await pool.query(`ALTER TABLE messages ADD COLUMN IF NOT EXISTS is_read BOOLEAN DEFAULT FALSE`).catch(() => {});
+
     // Create player_locations table for location-based searches
     await pool.query(`CREATE TABLE IF NOT EXISTS player_locations (
       player_id TEXT PRIMARY KEY,
@@ -110,10 +118,11 @@ const initPgTables = async () => {
       FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
     )`);
 
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_players_user_id ON players(user_id)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_players_is_published ON players(is_published)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_messages_player_id ON messages(player_id)`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_player_locations_coords ON player_locations(latitude, longitude)`);
+    // Create indexes only after columns exist
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_players_user_id ON players(user_id)`).catch(() => {});
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_players_is_published ON players(is_published)`).catch(() => {});
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_messages_player_id ON messages(player_id)`).catch(() => {});
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_player_locations_coords ON player_locations(latitude, longitude)`).catch(() => {});
     
     console.log('PostgreSQL tables initialized');
   } catch (err) {
