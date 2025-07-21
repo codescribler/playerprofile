@@ -314,29 +314,47 @@ app.get('/api/players/search-test', authenticateToken, (req, res) => {
     return res.status(403).json({ error: 'Access denied' });
   }
   
-  // Just try to get first 5 players
-  db.all("SELECT id, data FROM players LIMIT 5", [], (err, rows) => {
-    if (err) {
-      return res.status(500).json({ 
-        error: 'Basic query failed',
-        details: err.message,
-        code: err.code
-      });
+  const { preferredFoot } = req.query;
+  
+  // Test different query approaches
+  let testQueries = [
+    {
+      name: "Basic select",
+      query: "SELECT id, data FROM players LIMIT 2",
+      params: []
+    },
+    {
+      name: "Simple JSON extract",
+      query: "SELECT id, data, data::json->'personalInfo' as pinfo FROM players LIMIT 2",
+      params: []
     }
-    
-    try {
-      const players = rows.map(row => {
-        const player = JSON.parse(row.data);
-        player.id = row.id;
-        return player;
-      });
-      res.json({ success: true, count: players.length, players });
-    } catch (parseErr) {
-      res.status(500).json({ 
-        error: 'JSON parse failed',
-        details: parseErr.message
-      });
-    }
+  ];
+  
+  if (preferredFoot) {
+    testQueries.push({
+      name: "Preferred foot with JSONB",
+      query: "SELECT id, data FROM players WHERE data::jsonb->'personalInfo'->>'preferredFoot' = $1 LIMIT 2",
+      params: [preferredFoot]
+    });
+    testQueries.push({
+      name: "Preferred foot with text search",
+      query: "SELECT id, data FROM players WHERE data::text LIKE $1 LIMIT 2",
+      params: [`%"preferredFoot":"${preferredFoot}"%`]
+    });
+  }
+  
+  const results = {};
+  let completed = 0;
+  
+  testQueries.forEach((test, index) => {
+    db.all(test.query, test.params, (err, rows) => {
+      results[test.name] = err ? { error: err.message, code: err.code } : { success: true, count: rows.length };
+      completed++;
+      
+      if (completed === testQueries.length) {
+        res.json(results);
+      }
+    });
   });
 });
 
@@ -422,10 +440,11 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
     positionList.forEach(pos => params.push(`%"position":"${pos}"%`));
   }
   
-  // Preferred foot filter for PostgreSQL
+  // Preferred foot filter for PostgreSQL - using text search as fallback
   if (preferredFoot) {
-    query += ` AND data->'personalInfo'->>'preferredFoot' = ?`;
-    params.push(preferredFoot);
+    // Try simple text search instead of JSON operators
+    query += ` AND data::text LIKE ?`;
+    params.push(`%"preferredFoot":"${preferredFoot}"%`);
   }
   
   // Availability filter for PostgreSQL
