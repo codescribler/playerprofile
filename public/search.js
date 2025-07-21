@@ -161,17 +161,24 @@ class PlayerSearch {
         
         try {
             const queryString = new URLSearchParams(searchParams).toString();
+            console.log('Search URL:', `/api/players/search?${queryString}`);
+            
             const response = await fetch(`/api/players/search?${queryString}`, {
                 headers: {
                     'Authorization': `Bearer ${this.token}`
                 }
             });
 
+            console.log('Response status:', response.status);
+            
             if (response.ok) {
                 const players = await response.json();
+                console.log('Search results:', players);
                 this.searchResults = players;
                 this.displayResults(players);
             } else {
+                const errorText = await response.text();
+                console.error('Search error response:', errorText);
                 throw new Error(`Search failed with status ${response.status}`);
             }
         } catch (error) {

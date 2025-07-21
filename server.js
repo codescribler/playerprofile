@@ -333,10 +333,20 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
   // Use correct column name based on database type
   const dataColumn = isPostgres ? 'data' : 'player_data';
   
-  // For PostgreSQL, use simplified query without filters for now
+  // For PostgreSQL, use simplified query with basic filters
   if (isPostgres) {
-    let query = 'SELECT p.* FROM players p';
+    let query = 'SELECT p.* FROM players p WHERE 1=1';
     const params = [];
+    
+    // Positions filter for PostgreSQL
+    if (positions) {
+      const positionList = positions.split(',');
+      const positionConditions = positionList.map(() => 
+        `p.data::text LIKE ?`
+      ).join(' OR ');
+      query += ` AND (${positionConditions})`;
+      positionList.forEach(pos => params.push(`%"position":"${pos}"%`));
+    }
     
     // Add limit
     query += ' LIMIT ?';
