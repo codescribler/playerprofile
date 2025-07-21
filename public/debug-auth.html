@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Authentication - Player Profile Manager</title>
+    <link rel="stylesheet" href="fm-style.css">
+    <link rel="icon" type="image/png" href="images/playerprofilemanagerlogo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="fm-container fm-mt-lg">
+        <div class="fm-card" style="max-width: 800px; margin: 0 auto;">
+            <div class="fm-card-header">
+                <h2 class="fm-card-title">Authentication Debug Info</h2>
+            </div>
+            <div class="fm-card-body">
+                <h3>Local Storage Data:</h3>
+                <div id="local-storage-info" class="fm-alert fm-alert-info fm-mb-lg">
+                    <pre id="local-data" style="white-space: pre-wrap; word-break: break-all;"></pre>
+                </div>
+
+                <h3>Server Token Check:</h3>
+                <div id="server-check" class="fm-alert fm-alert-info fm-mb-lg">
+                    <p>Checking...</p>
+                </div>
+
+                <h3>Fix Options:</h3>
+                <div class="fm-grid fm-grid-2 fm-gap-lg">
+                    <div class="fm-card">
+                        <div class="fm-card-header">
+                            <h4 class="fm-card-title">Option 1: Re-login</h4>
+                        </div>
+                        <div class="fm-card-body">
+                            <p>Clear everything and login again to get a fresh token.</p>
+                            <button id="logout-btn" class="fm-btn fm-btn-danger fm-btn-block">
+                                Logout & Clear Session
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="fm-card">
+                        <div class="fm-card-header">
+                            <h4 class="fm-card-title">Option 2: Force Admin in DB</h4>
+                        </div>
+                        <div class="fm-card-body">
+                            <p>Try to force update your role in the database.</p>
+                            <button id="force-admin-btn" class="fm-btn fm-btn-primary fm-btn-block">
+                                Force Admin Update
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="fm-mt-lg">
+                    <button onclick="window.location.href='/app'" class="fm-btn fm-btn-secondary">
+                        Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Show local storage data
+        const user = JSON.parse(localStorage.getItem('user')) || null;
+        const token = localStorage.getItem('token');
+        
+        document.getElementById('local-data').textContent = JSON.stringify({
+            user: user,
+            token: token ? `${token.substring(0, 20)}...` : null
+        }, null, 2);
+
+        // Check server authentication
+        async function checkServerAuth() {
+            const serverDiv = document.getElementById('server-check');
+            
+            if (!token) {
+                serverDiv.innerHTML = '<p style="color: var(--fm-danger);">No token found in localStorage</p>';
+                return;
+            }
+
+            try {
+                // First check if token is valid
+                const response = await fetch('/api/players', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.status === 401) {
+                    serverDiv.innerHTML = '<p style="color: var(--fm-danger);">Token is invalid or expired. You need to login again.</p>';
+                    return;
+                }
+
+                // Try to decode the token to see what it contains
+                try {
+                    const tokenParts = token.split('.');
+                    if (tokenParts.length === 3) {
+                        const payload = JSON.parse(atob(tokenParts[1]));
+                        serverDiv.innerHTML = `
+                            <p><strong>Token is valid!</strong></p>
+                            <p>Token payload:</p>
+                            <pre>${JSON.stringify(payload, null, 2)}</pre>
+                            <p style="color: ${payload.role === 'admin' ? 'var(--fm-success)' : 'var(--fm-danger)'};">
+                                Server sees role as: <strong>${payload.role}</strong>
+                            </p>
+                        `;
+                    }
+                } catch (e) {
+                    serverDiv.innerHTML = '<p>Token is valid but couldn\'t decode it</p>';
+                }
+
+            } catch (error) {
+                serverDiv.innerHTML = `<p style="color: var(--fm-danger);">Error checking server: ${error.message}</p>`;
+            }
+        }
+
+        checkServerAuth();
+
+        // Logout button
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            alert('Logged out! Redirecting to login...');
+            window.location.href = '/app';
+        });
+
+        // Force admin button
+        document.getElementById('force-admin-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('force-admin-btn');
+            btn.disabled = true;
+            btn.textContent = 'Updating...';
+
+            try {
+                const response = await fetch('/api/request-admin', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (response.ok) {
+                    alert('Success! Please logout and login again to get a new token with admin role.');
+                    window.location.href = '/app';
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + error.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+
+            btn.disabled = false;
+            btn.textContent = 'Force Admin Update';
+        });
+    </script>
+</body>
+</html>
