@@ -930,23 +930,41 @@ app.post('/api/admin/migrations/:type', authenticateToken, async (req, res) => {
       log += 'Starting search fields migration...\n';
       
       // Create player_locations table
+      // Use database-agnostic syntax that works in both SQLite and PostgreSQL
+      const createTableSQL = isPostgres ? `
+        CREATE TABLE IF NOT EXISTS player_locations (
+          id SERIAL PRIMARY KEY,
+          player_id VARCHAR(255) NOT NULL,
+          postcode VARCHAR(10),
+          latitude DECIMAL(10, 8),
+          longitude DECIMAL(11, 8),
+          city VARCHAR(100),
+          county VARCHAR(100),
+          country VARCHAR(100),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
+          UNIQUE(player_id)
+        )
+      ` : `
+        CREATE TABLE IF NOT EXISTS player_locations (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          player_id INTEGER NOT NULL,
+          postcode VARCHAR(10),
+          latitude DECIMAL(10, 8),
+          longitude DECIMAL(11, 8),
+          city VARCHAR(100),
+          county VARCHAR(100),
+          country VARCHAR(100),
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
+          UNIQUE(player_id)
+        )
+      `;
+      
       await new Promise((resolve, reject) => {
-        db.run(`
-          CREATE TABLE IF NOT EXISTS player_locations (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            player_id INTEGER NOT NULL,
-            postcode VARCHAR(10),
-            latitude DECIMAL(10, 8),
-            longitude DECIMAL(11, 8),
-            city VARCHAR(100),
-            county VARCHAR(100),
-            country VARCHAR(100),
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
-            UNIQUE(player_id)
-          )
-        `, (err) => {
+        db.run(createTableSQL, (err) => {
           if (err) reject(err);
           else {
             log += '✓ Created player_locations table\n';
@@ -1135,8 +1153,12 @@ app.get('/api/admin/migrations/status', authenticateToken, (req, res) => {
     }
 
     // Check for player_locations table
-    db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='player_locations'", [], (err, row) => {
-      if (row) {
+    const tableCheckSQL = isPostgres 
+      ? "SELECT to_regclass('public.player_locations') AS exists"
+      : "SELECT name FROM sqlite_master WHERE type='table' AND name='player_locations'";
+    
+    db.get(tableCheckSQL, [], (err, row) => {
+      if (row && (isPostgres ? row.exists : row)) {
         status.search = true;
       }
       res.json(status);
