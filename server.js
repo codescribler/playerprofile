@@ -330,8 +330,8 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
   } = req.query;
 
   // PostgreSQL query with all basic filters
-  // Note: We'll only filter by is_published if the column exists (for backward compatibility)
-  let query = 'SELECT p.*, pl.latitude, pl.longitude, pl.city FROM players p LEFT JOIN player_locations pl ON p.id = pl.player_id WHERE 1=1';
+  // Simplified query without JOIN to player_locations table (which may not exist yet)
+  let query = 'SELECT p.* FROM players p WHERE 1=1';
   const params = [];
   
   // Text search (first name, last name, or full name)
@@ -396,10 +396,18 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
   query += ' LIMIT ?';
   params.push(parseInt(limit));
   
+  console.log('Search query:', query);
+  console.log('Search params:', params);
+  
   db.all(query, params, (err, rows) => {
     if (err) {
       console.error('Search error:', err);
-      return res.status(500).json({ error: 'Error searching players' });
+      console.error('Query was:', query);
+      console.error('Params were:', params);
+      return res.status(500).json({ 
+        error: 'Database search error: ' + err.message,
+        code: err.code
+      });
     }
     
     let players = rows.map(row => {
@@ -408,17 +416,7 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
       player.id = row.id;
       player.playerId = row.id;
       
-      // Add location data if available
-      if (row.latitude && row.longitude) {
-        player.location = {
-          ...player.location,
-          coordinates: {
-            latitude: row.latitude,
-            longitude: row.longitude
-          },
-          city: row.city || player.location?.city
-        };
-      }
+      // Location data would come from player.location in the JSON if available
       
       // Repair any corrupted data
       player = repairPlayerData(player);
