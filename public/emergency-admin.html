@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Admin Access - Player Profile Manager</title>
+    <link rel="stylesheet" href="fm-style.css">
+    <link rel="icon" type="image/png" href="images/playerprofilemanagerlogo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="fm-container fm-mt-lg">
+        <div class="fm-card" style="max-width: 600px; margin: 0 auto;">
+            <div class="fm-card-header">
+                <h2 class="fm-card-title">Emergency Admin Access</h2>
+            </div>
+            <div class="fm-card-body">
+                <div class="fm-alert fm-alert-warning fm-mb-lg">
+                    <strong>⚠️ Temporary Solution:</strong> Since the server endpoint isn't available yet, 
+                    this page will temporarily grant you admin access in your browser session.
+                </div>
+
+                <div id="current-status" class="fm-mb-lg">
+                    <!-- Status will be shown here -->
+                </div>
+
+                <button id="grant-admin-btn" class="fm-btn fm-btn-primary fm-btn-lg fm-btn-block">
+                    Grant Temporary Admin Access
+                </button>
+
+                <div class="fm-mt-lg">
+                    <p class="fm-text-secondary">
+                        <strong>Note:</strong> This is a temporary fix. The proper solution is to:
+                    </p>
+                    <ol class="fm-text-secondary">
+                        <li>Restart your server to load the new endpoints</li>
+                        <li>Or wait for the deployment to update</li>
+                        <li>Then use /fix-admin.html to permanently update your role</li>
+                    </ol>
+                </div>
+
+                <div class="fm-mt-lg">
+                    <button onclick="window.location.href='/app'" class="fm-btn fm-btn-secondary">
+                        Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check current user
+        const user = JSON.parse(localStorage.getItem('user')) || null;
+        const statusDiv = document.getElementById('current-status');
+        
+        function updateStatus() {
+            const currentUser = JSON.parse(localStorage.getItem('user')) || null;
+            if (!currentUser) {
+                statusDiv.innerHTML = `
+                    <div class="fm-alert fm-alert-danger">
+                        <p><strong>Error:</strong> Not logged in</p>
+                        <p>Please <a href="/app">login first</a></p>
+                    </div>
+                `;
+                document.getElementById('grant-admin-btn').disabled = true;
+            } else {
+                statusDiv.innerHTML = `
+                    <div class="fm-alert fm-alert-info">
+                        <p><strong>Current User:</strong> ${currentUser.username}</p>
+                        <p><strong>Current Role:</strong> <span style="color: ${currentUser.role === 'admin' ? 'var(--fm-success)' : 'var(--fm-danger)'};">${currentUser.role}</span></p>
+                        ${currentUser.role === 'admin' ? '<p style="color: var(--fm-success); font-weight: bold;">✓ You have admin access!</p>' : ''}
+                    </div>
+                `;
+                
+                if (currentUser.role === 'admin') {
+                    document.getElementById('grant-admin-btn').textContent = '✓ Admin Access Granted';
+                    document.getElementById('grant-admin-btn').disabled = true;
+                    document.getElementById('grant-admin-btn').className = 'fm-btn fm-btn-success fm-btn-lg fm-btn-block';
+                }
+            }
+        }
+        
+        updateStatus();
+        
+        // Handle admin grant
+        document.getElementById('grant-admin-btn').addEventListener('click', () => {
+            if (!user) {
+                alert('Please login first');
+                return;
+            }
+            
+            // Update the user object
+            const updatedUser = { ...user, role: 'admin' };
+            
+            // Save to localStorage
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            
+            // Update status
+            updateStatus();
+            
+            // Show success message
+            const successMsg = document.createElement('div');
+            successMsg.className = 'fm-alert fm-alert-success fm-mt-lg';
+            successMsg.innerHTML = `
+                <p><strong>✓ Success!</strong> Temporary admin access granted.</p>
+                <p>You can now:</p>
+                <ul>
+                    <li>Access <a href="/admin-tools.html">Admin Tools</a></li>
+                    <li>Run <a href="/admin-migrations.html">Database Migrations</a></li>
+                    <li>Use <a href="/search.html">Advanced Search</a> features</li>
+                </ul>
+                <p class="fm-mt-md"><strong>Remember:</strong> This is temporary. To make it permanent, restart your server and use /fix-admin.html</p>
+            `;
+            statusDiv.after(successMsg);
+        });
+    </script>
+</body>
+</html>
