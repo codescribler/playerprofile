@@ -308,6 +308,38 @@ app.get('/api/players', authenticateToken, (req, res) => {
   });
 });
 
+// Test search endpoint with minimal query
+app.get('/api/players/search-test', authenticateToken, (req, res) => {
+  if (!['scout', 'coach', 'agent', 'admin'].includes(req.user.role)) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+  
+  // Just try to get first 5 players
+  db.all("SELECT id, data FROM players LIMIT 5", [], (err, rows) => {
+    if (err) {
+      return res.status(500).json({ 
+        error: 'Basic query failed',
+        details: err.message,
+        code: err.code
+      });
+    }
+    
+    try {
+      const players = rows.map(row => {
+        const player = JSON.parse(row.data);
+        player.id = row.id;
+        return player;
+      });
+      res.json({ success: true, count: players.length, players });
+    } catch (parseErr) {
+      res.status(500).json({ 
+        error: 'JSON parse failed',
+        details: parseErr.message
+      });
+    }
+  });
+});
+
 // Debug endpoint to check database structure
 app.get('/api/debug/check-db', authenticateToken, (req, res) => {
   if (req.user.role !== 'admin') {
@@ -417,9 +449,9 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
     params.push(experienceLevel);
   }
   
-  // Add limit
-  query += ' LIMIT ?';
-  params.push(parseInt(limit));
+  // Add limit - PostgreSQL needs the LIMIT as part of the query, not as parameter
+  const limitNum = parseInt(limit) || 50;
+  query += ` LIMIT ${limitNum}`;
   
   console.log('Search query:', query);
   console.log('Search params:', params);
