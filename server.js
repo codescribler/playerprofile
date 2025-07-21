@@ -325,12 +325,22 @@ app.get('/api/players/search-test', authenticateToken, (req, res) => {
     },
     {
       name: "Simple JSON extract",
-      query: "SELECT id, data, data::json->'personalInfo' as pinfo FROM players LIMIT 2",
+      query: "SELECT id, data::json->'personalInfo' as pinfo FROM players LIMIT 2",
+      params: []
+    },
+    {
+      name: "Check data structure",
+      query: "SELECT id, data::json->'personalInfo'->>'preferredFoot' as foot, substring(data from 1 for 200) as data_preview FROM players LIMIT 2",
       params: []
     }
   ];
   
   if (preferredFoot) {
+    testQueries.push({
+      name: "All preferredFoot values",
+      query: "SELECT DISTINCT data::json->'personalInfo'->>'preferredFoot' as foot_value FROM players WHERE data::json->'personalInfo'->>'preferredFoot' IS NOT NULL",
+      params: []
+    });
     testQueries.push({
       name: "Preferred foot with JSONB",
       query: "SELECT id, data FROM players WHERE data::jsonb->'personalInfo'->>'preferredFoot' = $1 LIMIT 2",
@@ -348,7 +358,23 @@ app.get('/api/players/search-test', authenticateToken, (req, res) => {
   
   testQueries.forEach((test, index) => {
     db.all(test.query, test.params, (err, rows) => {
-      results[test.name] = err ? { error: err.message, code: err.code } : { success: true, count: rows.length };
+      if (err) {
+        results[test.name] = { error: err.message, code: err.code };
+      } else {
+        results[test.name] = { success: true, count: rows.length };
+        // For data structure check, include the actual data
+        if (test.name === "Check data structure" && rows.length > 0) {
+          results[test.name].data = rows.map(r => ({ 
+            id: r.id, 
+            foot: r.foot, 
+            preview: r.data_preview 
+          }));
+        }
+        // For all foot values check
+        if (test.name === "All preferredFoot values" && rows.length > 0) {
+          results[test.name].values = rows.map(r => r.foot_value);
+        }
+      }
       completed++;
       
       if (completed === testQueries.length) {
@@ -440,10 +466,11 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
     positionList.forEach(pos => params.push(`%"position":"${pos}"%`));
   }
   
-  // Preferred foot filter for PostgreSQL - using text search as fallback
+  // Preferred foot filter for PostgreSQL - using case-insensitive text search
   if (preferredFoot) {
-    // Try simple text search instead of JSON operators
-    query += ` AND data::text LIKE ?`;
+    // Try case-insensitive text search
+    query += ` AND data::text ILIKE ?`;
+    // Also check for capitalized versions (Right, Left, Both)
     params.push(`%"preferredFoot":"${preferredFoot}"%`);
   }
   
