@@ -33,8 +33,12 @@ class PlayerSearch {
         });
 
         // Search form
-        document.getElementById('search-form').addEventListener('submit', (e) => {
+        const searchForm = document.getElementById('search-form');
+        console.log('Search form element:', searchForm);
+        
+        searchForm.addEventListener('submit', (e) => {
             e.preventDefault();
+            console.log('Search form submitted!');
             this.performSearch();
         });
 
@@ -149,9 +153,11 @@ class PlayerSearch {
     }
 
     async performSearch() {
+        console.log('performSearch called');
         this.showLoading();
 
         const searchParams = this.collectSearchParams();
+        console.log('Search params:', searchParams);
         
         try {
             const queryString = new URLSearchParams(searchParams).toString();
