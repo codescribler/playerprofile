@@ -130,15 +130,27 @@ class PlayerSearch {
         // Load some initial results to show
         this.showLoading();
         try {
-            const response = await fetch('/api/players/search?limit=12', {
+            let response = await fetch('/api/players/search?limit=12', {
                 headers: {
                     'Authorization': `Bearer ${this.token}`
                 }
             });
 
+            // Fallback to regular players endpoint if search endpoint not available yet
+            if (response.status === 404) {
+                console.log('Search endpoint not available yet, using fallback');
+                response = await fetch('/api/players', {
+                    headers: {
+                        'Authorization': `Bearer ${this.token}`
+                    }
+                });
+            }
+
             if (response.ok) {
                 const players = await response.json();
-                this.displayResults(players);
+                // Limit to 12 if using fallback
+                const limitedPlayers = players.slice(0, 12);
+                this.displayResults(limitedPlayers);
             }
         } catch (error) {
             console.error('Error loading initial results:', error);
@@ -153,11 +165,42 @@ class PlayerSearch {
         
         try {
             const queryString = new URLSearchParams(searchParams).toString();
-            const response = await fetch(`/api/players/search?${queryString}`, {
+            let response = await fetch(`/api/players/search?${queryString}`, {
                 headers: {
                     'Authorization': `Bearer ${this.token}`
                 }
             });
+
+            // Fallback to regular players endpoint if search endpoint not available
+            if (response.status === 404) {
+                console.log('Search endpoint not available, using basic search');
+                response = await fetch('/api/players', {
+                    headers: {
+                        'Authorization': `Bearer ${this.token}`
+                    }
+                });
+                
+                if (response.ok) {
+                    // Apply basic client-side filtering for fallback
+                    let players = await response.json();
+                    
+                    // Basic text search if provided
+                    if (searchParams.q) {
+                        const query = searchParams.q.toLowerCase();
+                        players = players.filter(p => {
+                            const firstName = (p.personalInfo?.firstName || '').toLowerCase();
+                            const lastName = (p.personalInfo?.lastName || '').toLowerCase();
+                            const fullName = (p.personalInfo?.fullName || '').toLowerCase();
+                            return firstName.includes(query) || lastName.includes(query) || fullName.includes(query);
+                        });
+                    }
+                    
+                    this.searchResults = players;
+                    this.displayResults(players);
+                    this.showMessage('Note: Advanced search features will be available once the server updates.', 'info');
+                    return;
+                }
+            }
 
             if (response.ok) {
                 const players = await response.json();
@@ -406,6 +449,14 @@ class PlayerSearch {
             </div>
         `;
         document.getElementById('results-count').textContent = 'No results';
+    }
+
+    showMessage(message, type = 'info') {
+        const container = document.getElementById('results-container');
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `fm-alert fm-alert-${type} fm-mb-md`;
+        messageDiv.textContent = message;
+        container.insertBefore(messageDiv, container.firstChild);
     }
 
     showError(message) {
