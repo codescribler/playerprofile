@@ -1064,6 +1064,37 @@ app.post('/api/admin/migrations/:type', authenticateToken, async (req, res) => {
   }
 });
 
+// Request admin access (for first user only)
+app.post('/api/request-admin', authenticateToken, (req, res) => {
+  // Check if this is the first user (ID = 1) or the only user
+  db.get('SELECT COUNT(*) as count FROM users', [], (err, result) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    // If only one user exists, or if this is user ID 1, grant admin
+    if (result.count === 1 || req.user.id === 1) {
+      db.run(
+        'UPDATE users SET role = ? WHERE id = ?',
+        ['admin', req.user.id],
+        (err) => {
+          if (err) {
+            return res.status(500).json({ error: 'Failed to update role' });
+          }
+          
+          res.json({ 
+            success: true, 
+            message: 'Admin access granted',
+            role: 'admin'
+          });
+        }
+      );
+    } else {
+      res.status(403).json({ error: 'Admin access can only be granted to the first user' });
+    }
+  });
+});
+
 // Check migration status
 app.get('/api/admin/migrations/status', authenticateToken, (req, res) => {
   if (req.user.role !== 'admin') {
