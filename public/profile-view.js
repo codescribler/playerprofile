@@ -260,8 +260,16 @@ class ModernProfileView {
     }
 
     displayPlayerData(player) {
-        // Set page title
-        document.title = `${player.personalInfo?.fullName || 'Player'} - Profile`;
+        // Set page title with first and last name
+        const fullName = player.personalInfo?.fullName || 'Player';
+        const nameParts = fullName.trim().split(/\s+/);
+        let displayName = fullName;
+        
+        if (nameParts.length > 1) {
+            displayName = `${nameParts[0]} ${nameParts[nameParts.length - 1]}`;
+        }
+        
+        document.title = `${displayName} - Profile`;
 
         // Header information
         this.displayHeader(player);
@@ -289,8 +297,17 @@ class ModernProfileView {
             photoWrapper.innerHTML = `<div class="profile-photo-placeholder">${initials}</div>`;
         }
 
-        // Basic info
-        document.getElementById('player-name').textContent = player.personalInfo?.fullName || 'Unknown Player';
+        // Basic info - Display first and last name only
+        const fullName = player.personalInfo?.fullName || 'Unknown Player';
+        const nameParts = fullName.trim().split(/\s+/);
+        let displayName = fullName;
+        
+        if (nameParts.length > 1) {
+            // Show first name and last name
+            displayName = `${nameParts[0]} ${nameParts[nameParts.length - 1]}`;
+        }
+        
+        document.getElementById('player-name').textContent = displayName;
         
         // Only show age if we have DOB
         const age = this.calculateAge(player.personalInfo?.dateOfBirth);
