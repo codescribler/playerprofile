@@ -44,6 +44,18 @@ db.serialize(() => {
   db.run(`CREATE INDEX IF NOT EXISTS idx_players_position ON players(json_extract(data, '$.playingInfo.primaryPosition'))`);
   
   db.run(`CREATE INDEX IF NOT EXISTS idx_messages_player_id ON messages(player_id)`);
+
+  // Create saved searches table
+  db.run(`CREATE TABLE IF NOT EXISTS saved_searches (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id TEXT NOT NULL,
+    name TEXT NOT NULL,
+    criteria TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  )`);
+
+  db.run(`CREATE INDEX IF NOT EXISTS idx_saved_searches_user_id ON saved_searches(user_id)`);
 });
 
 module.exports = db;

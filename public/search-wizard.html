@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Wizard - Player Profile Manager</title>
+    <link rel="stylesheet" href="fm-style.css">
+    <link rel="stylesheet" href="search-wizard.css">
+    <link rel="icon" type="image/png" href="images/playerprofilemanagerlogo.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="fm-container fm-container-lg">
+        <!-- Header -->
+        <div class="search-wizard-header">
+            <div class="header-content">
+                <button id="back-btn" class="fm-btn fm-btn-secondary">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"></path>
+                    </svg>
+                    Back
+                </button>
+                <h1 class="wizard-title">Player Search Wizard</h1>
+                <div class="header-actions">
+                    <button id="save-search-btn" class="fm-btn fm-btn-outline" title="Save this search">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        Save Search
+                    </button>
+                    <button id="load-search-btn" class="fm-btn fm-btn-outline" title="Load saved search">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"></path>
+                            <polyline points="7 10 12 15 17 10"></polyline>
+                            <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        Load Search
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step Indicator -->
+        <div class="step-indicator">
+            <div class="step active" data-step="type">
+                <div class="step-number">1</div>
+                <div class="step-label">Search Type</div>
+            </div>
+            <div class="step" data-step="basic">
+                <div class="step-number">2</div>
+                <div class="step-label">Basic Info</div>
+            </div>
+            <div class="step" data-step="physical">
+                <div class="step-number">3</div>
+                <div class="step-label">Physical</div>
+            </div>
+            <div class="step" data-step="playing">
+                <div class="step-number">4</div>
+                <div class="step-label">Playing</div>
+            </div>
+            <div class="step" data-step="skills">
+                <div class="step-number">5</div>
+                <div class="step-label">Skills</div>
+            </div>
+            <div class="step" data-step="preview">
+                <div class="step-number">6</div>
+                <div class="step-label">Preview</div>
+            </div>
+        </div>
+
+        <!-- Wizard Content -->
+        <div class="wizard-content">
+            <!-- Step 1: Search Type -->
+            <div class="wizard-step active" id="step-type">
+                <h2 class="step-title">Choose Your Search Type</h2>
+                <div class="search-type-grid">
+                    <div class="search-type-card" data-type="quick">
+                        <div class="type-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                        </div>
+                        <h3>Quick Search</h3>
+                        <p>Simple text search across key player fields</p>
+                    </div>
+                    <div class="search-type-card" data-type="wizard">
+                        <div class="type-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        </div>
+                        <h3>Advanced Wizard</h3>
+                        <p>Build complex searches with multiple filters</p>
+                    </div>
+                    <div class="search-type-card" data-type="template">
+                        <div class="type-icon">
+                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                <line x1="9" y1="9" x2="15" y2="9"></line>
+                                <line x1="9" y1="13" x2="15" y2="13"></line>
+                                <line x1="9" y1="17" x2="11" y2="17"></line>
+                            </svg>
+                        </div>
+                        <h3>Search Templates</h3>
+                        <p>Use pre-built searches for common needs</p>
+                    </div>
+                </div>
+
+                <!-- Quick Search Panel -->
+                <div class="quick-search-panel" id="quick-search-panel" style="display: none;">
+                    <div class="fm-form-group">
+                        <label for="quick-search-input" class="fm-label">Search for players</label>
+                        <input type="text" id="quick-search-input" class="fm-input fm-input-lg" 
+                               placeholder="Enter name, position, location, or any keyword...">
+                        <p class="fm-help-text">Search across names, positions, locations, and descriptions</p>
+                    </div>
+                    <button id="quick-search-btn" class="fm-btn fm-btn-primary fm-btn-lg">
+                        Search Players
+                    </button>
+                </div>
+
+                <!-- Templates Panel -->
+                <div class="templates-panel" id="templates-panel" style="display: none;">
+                    <h3>Popular Search Templates</h3>
+                    <div class="template-grid">
+                        <div class="template-card" data-template="young-strikers">
+                            <h4>Young Strikers</h4>
+                            <p>Fast strikers under 21 with good finishing</p>
+                        </div>
+                        <div class="template-card" data-template="tall-defenders">
+                            <h4>Tall Defenders</h4>
+                            <p>Centre-backs over 6ft with strong heading</p>
+                        </div>
+                        <div class="template-card" data-template="creative-midfielders">
+                            <h4>Creative Midfielders</h4>
+                            <p>Playmakers with high passing and vision</p>
+                        </div>
+                        <div class="template-card" data-template="athletic-wingers">
+                            <h4>Athletic Wingers</h4>
+                            <p>Fast wingers with good dribbling skills</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Basic Information -->
+            <div class="wizard-step" id="step-basic">
+                <h2 class="step-title">Basic Information</h2>
+                <div class="filter-sections">
+                    <!-- Name Search -->
+                    <div class="filter-section">
+                        <h3>Name</h3>
+                        <div class="fm-form-group">
+                            <input type="text" id="search-name" class="fm-input" placeholder="Search by name...">
+                        </div>
+                    </div>
+
+                    <!-- Age Range -->
+                    <div class="filter-section">
+                        <h3>Age Range</h3>
+                        <div class="range-slider-container">
+                            <div class="range-values">
+                                <span id="age-min-display">16</span> - <span id="age-max-display">45</span> years
+                            </div>
+                            <div class="dual-range-slider">
+                                <input type="range" id="age-min-slider" min="16" max="45" value="16" class="range-slider">
+                                <input type="range" id="age-max-slider" min="16" max="45" value="45" class="range-slider">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nationality -->
+                    <div class="filter-section">
+                        <h3>Nationality</h3>
+                        <div class="fm-form-group">
+                            <select id="search-nationality" class="fm-select">
+                                <option value="">Any Nationality</option>
+                                <option value="England">England</option>
+                                <option value="Scotland">Scotland</option>
+                                <option value="Wales">Wales</option>
+                                <option value="Northern Ireland">Northern Ireland</option>
+                                <option value="Ireland">Ireland</option>
+                                <option value="France">France</option>
+                                <option value="Germany">Germany</option>
+                                <option value="Spain">Spain</option>
+                                <option value="Italy">Italy</option>
+                                <option value="Portugal">Portugal</option>
+                                <option value="Netherlands">Netherlands</option>
+                                <option value="Belgium">Belgium</option>
+                                <option value="Brazil">Brazil</option>
+                                <option value="Argentina">Argentina</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Location -->
+                    <div class="filter-section">
+                        <h3>Location</h3>
+                        <div class="location-filters">
+                            <div class="fm-form-group">
+                                <label for="search-postcode" class="fm-label">Postcode</label>
+                                <input type="text" id="search-postcode" class="fm-input" placeholder="e.g. SW1A 1AA">
+                            </div>
+                            <div class="fm-form-group">
+                                <label for="search-radius" class="fm-label">Within</label>
+                                <select id="search-radius" class="fm-select">
+                                    <option value="10">10 miles</option>
+                                    <option value="25" selected>25 miles</option>
+                                    <option value="50">50 miles</option>
+                                    <option value="100">100 miles</option>
+                                    <option value="0">Any distance</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Availability -->
+                    <div class="filter-section">
+                        <h3>Availability</h3>
+                        <div class="availability-options">
+                            <label class="fm-checkbox">
+                                <input type="checkbox" id="status-actively-looking" value="actively_looking">
+                                <span>Actively Looking</span>
+                            </label>
+                            <label class="fm-checkbox">
+                                <input type="checkbox" id="status-open-to-offers" value="open_to_offers">
+                                <span>Open to Offers</span>
+                            </label>
+                            <label class="fm-checkbox">
+                                <input type="checkbox" id="willing-relocate">
+                                <span>Willing to Relocate</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: Physical Profile -->
+            <div class="wizard-step" id="step-physical">
+                <h2 class="step-title">Physical Profile</h2>
+                <div class="filter-sections">
+                    <!-- Height -->
+                    <div class="filter-section">
+                        <h3>Height Range</h3>
+                        <div class="unit-toggle">
+                            <label class="fm-radio">
+                                <input type="radio" name="height-unit" value="cm" checked>
+                                <span>Centimeters</span>
+                            </label>
+                            <label class="fm-radio">
+                                <input type="radio" name="height-unit" value="ft">
+                                <span>Feet/Inches</span>
+                            </label>
+                        </div>
+                        <div class="range-slider-container" id="height-cm-container">
+                            <div class="range-values">
+                                <span id="height-min-cm-display">150</span> - <span id="height-max-cm-display">210</span> cm
+                            </div>
+                            <div class="dual-range-slider">
+                                <input type="range" id="height-min-cm" min="150" max="210" value="150" class="range-slider">
+                                <input type="range" id="height-max-cm" min="150" max="210" value="210" class="range-slider">
+                            </div>
+                        </div>
+                        <div class="range-inputs" id="height-ft-container" style="display: none;">
+                            <div class="fm-form-group">
+                                <label>Min Height</label>
+                                <div class="height-inputs">
+                                    <input type="number" id="height-min-ft" min="4" max="7" placeholder="Feet" class="fm-input">
+                                    <input type="number" id="height-min-in" min="0" max="11" placeholder="Inches" class="fm-input">
+                                </div>
+                            </div>
+                            <div class="fm-form-group">
+                                <label>Max Height</label>
+                                <div class="height-inputs">
+                                    <input type="number" id="height-max-ft" min="4" max="7" placeholder="Feet" class="fm-input">
+                                    <input type="number" id="height-max-in" min="0" max="11" placeholder="Inches" class="fm-input">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Preferred Foot -->
+                    <div class="filter-section">
+                        <h3>Preferred Foot</h3>
+                        <div class="fm-form-group">
+                            <select id="search-preferred-foot" class="fm-select">
+                                <option value="">Any</option>
+                                <option value="Left">Left</option>
+                                <option value="Right">Right</option>
+                                <option value="Both">Both</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Weak Foot Strength -->
+                    <div class="filter-section">
+                        <h3>Minimum Weak Foot Strength</h3>
+                        <div class="range-slider-container">
+                            <div class="range-values">
+                                <span id="weak-foot-display">0</span>%
+                            </div>
+                            <input type="range" id="weak-foot-min" min="0" max="100" value="0" class="range-slider">
+                        </div>
+                    </div>
+
+                    <!-- Athletic Performance -->
+                    <div class="filter-section">
+                        <h3>Athletic Performance</h3>
+                        <div class="athletic-filters">
+                            <div class="fm-form-group">
+                                <label class="fm-label">10m Sprint (max seconds)</label>
+                                <input type="number" id="sprint-10m-max" class="fm-input" step="0.1" placeholder="e.g. 2.0">
+                            </div>
+                            <div class="fm-form-group">
+                                <label class="fm-label">30m Sprint (max seconds)</label>
+                                <input type="number" id="sprint-30m-max" class="fm-input" step="0.1" placeholder="e.g. 4.5">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 4: Playing Profile -->
+            <div class="wizard-step" id="step-playing">
+                <h2 class="step-title">Playing Profile</h2>
+                <div class="filter-sections">
+                    <!-- Position Selector -->
+                    <div class="filter-section">
+                        <h3>Positions</h3>
+                        <div class="position-selector">
+                            <div class="pitch-diagram">
+                                <!-- SVG Football Pitch -->
+                                <svg viewBox="0 0 300 200" class="football-pitch">
+                                    <!-- Pitch outline -->
+                                    <rect x="10" y="10" width="280" height="180" fill="#2e7d32" stroke="white" stroke-width="2"/>
+                                    <!-- Center circle -->
+                                    <circle cx="150" cy="100" r="30" fill="none" stroke="white" stroke-width="2"/>
+                                    <!-- Center line -->
+                                    <line x1="150" y1="10" x2="150" y2="190" stroke="white" stroke-width="2"/>
+                                    <!-- Penalty areas -->
+                                    <rect x="10" y="60" width="40" height="80" fill="none" stroke="white" stroke-width="2"/>
+                                    <rect x="250" y="60" width="40" height="80" fill="none" stroke="white" stroke-width="2"/>
+                                    <!-- Goal areas -->
+                                    <rect x="10" y="80" width="20" height="40" fill="none" stroke="white" stroke-width="2"/>
+                                    <rect x="270" y="80" width="20" height="40" fill="none" stroke="white" stroke-width="2"/>
+                                    
+                                    <!-- Position markers -->
+                                    <!-- Goalkeeper -->
+                                    <g class="position-marker" data-position="GK">
+                                        <circle cx="30" cy="100" r="12" fill="white" stroke="#333" stroke-width="2"/>
+                                        <text x="30" y="105" text-anchor="middle" font-size="10" font-weight="bold">GK</text>
+                                    </g>
+                                    
+                                    <!-- Defenders -->
+                                    <g class="position-marker" data-position="LB">
+                                        <circle cx="70" cy="40" r="12" fill="white" stroke="#333" stroke-width="2"/>
+                                        <text x="70" y="45" text-anchor="middle" font-size="10" font-weight="bold">LB</text>
+                                    </g>
+                                    <g class="position-marker" data-position="CB">
+                                        <circle cx="70" cy="85" r="12" fill="white" stroke="#333" stroke-width="2"/>
+                                        <text x="70" y="90" text-anchor="middle" font-size="10" font-weight="bold">CB</text>
+                                    </g>
+                                    <g class="position-marker" data-position="CB">
+                                        <circle cx="70" cy="115" r="12" fill="white" stroke="#333" stroke-width="2"/>
+                                        <text x="70" y="120" text-anchor="middle" font-size="10" font-weight="bold">CB</text>
+                                    </g>
+                                    <g class="position-marker" data-position="RB">
+                                        <circle cx="70" cy="160" r="12" fill="white" stroke="#333" stroke-width="2"/>
+                                        <text x="70" y="165" text-anchor="middle" font-size="10" font-weight="bold">RB</text>
+                                    </g>
+                                    
+                                    <!-- Midfielders -->
+                                    <g class="position-marker" data-position="DM">
+                                        <circle cx="120" cy="100" r="12" fill="white" stroke="#333" stroke-width="2"/>
+                                        <text x="120" y="105" text-anchor="middle" font-size="10" font-weight="bold">DM</text>
+                                    </g>
+                                    <g class="position-marker" data-position="CM">
+                                        <circle cx="150" cy="70" r="12" fill="white" stroke="#333" stroke-width="2"/>
+                                        <text x="150" y="75" text-anchor="middle" font-size="10" font-weight="bold">CM</text>
+                                    </g>
+                                    <g class="position-marker" data-position="CM">
+                                        <circle cx="150" cy="130" r="12" fill="white" stroke="#333" stroke-width="2"/>
+                                        <text x="150" y="135" text-anchor="middle" font-size="10" font-weight="bold">CM</text>
+                                    </g>
+                                    <g class="position-marker" data-position="AM">
+                                        <circle cx="180" cy="100" r="12" fill="white" stroke="#333" stroke-width="2"/>
+                                        <text x="180" y="105" text-anchor="middle" font-size="10" font-weight="bold">AM</text>
+                                    </g>
+                                    
+                                    <!-- Forwards -->
+                                    <g class="position-marker" data-position="LW">
+                                        <circle cx="220" cy="50" r="12" fill="white" stroke="#333" stroke-width="2"/>
+                                        <text x="220" y="55" text-anchor="middle" font-size="10" font-weight="bold">LW</text>
+                                    </g>
+                                    <g class="position-marker" data-position="ST">
+                                        <circle cx="230" cy="100" r="12" fill="white" stroke="#333" stroke-width="2"/>
+                                        <text x="230" y="105" text-anchor="middle" font-size="10" font-weight="bold">ST</text>
+                                    </g>
+                                    <g class="position-marker" data-position="RW">
+                                        <circle cx="220" cy="150" r="12" fill="white" stroke="#333" stroke-width="2"/>
+                                        <text x="220" y="155" text-anchor="middle" font-size="10" font-weight="bold">RW</text>
+                                    </g>
+                                </svg>
+                            </div>
+                            <div class="selected-positions">
+                                <h4>Selected Positions:</h4>
+                                <div id="selected-positions-list" class="position-tags">
+                                    <!-- Selected positions will appear here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Experience -->
+                    <div class="filter-section">
+                        <h3>Experience</h3>
+                        <div class="fm-form-group">
+                            <label class="fm-label">Minimum Years Playing</label>
+                            <input type="number" id="years-playing-min" class="fm-input" min="0" placeholder="e.g. 3">
+                        </div>
+                    </div>
+
+                    <!-- Team Level -->
+                    <div class="filter-section">
+                        <h3>Team Level</h3>
+                        <div class="fm-form-group">
+                            <input type="text" id="search-league" class="fm-input" placeholder="League or team level...">
+                        </div>
+                    </div>
+
+                    <!-- Representative Teams -->
+                    <div class="filter-section">
+                        <h3>Representative Experience</h3>
+                        <div class="rep-team-options">
+                            <label class="fm-checkbox">
+                                <input type="checkbox" id="rep-district">
+                                <span>District Level</span>
+                            </label>
+                            <label class="fm-checkbox">
+                                <input type="checkbox" id="rep-county">
+                                <span>County Level</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 5: Skills & Abilities -->
+            <div class="wizard-step" id="step-skills">
+                <h2 class="step-title">Skills & Abilities</h2>
+                <div class="skills-container">
+                    <!-- Technical Skills -->
+                    <div class="skills-section">
+                        <h3>Technical Skills (Minimum Rating)</h3>
+                        <div class="skills-grid">
+                            <div class="skill-filter">
+                                <label>Ball Control</label>
+                                <input type="range" id="skill-ball-control" min="0" max="10" value="0" class="skill-slider">
+                                <span class="skill-value">0</span>
+                            </div>
+                            <div class="skill-filter">
+                                <label>Passing</label>
+                                <input type="range" id="skill-passing" min="0" max="10" value="0" class="skill-slider">
+                                <span class="skill-value">0</span>
+                            </div>
+                            <div class="skill-filter">
+                                <label>Shooting</label>
+                                <input type="range" id="skill-shooting" min="0" max="10" value="0" class="skill-slider">
+                                <span class="skill-value">0</span>
+                            </div>
+                            <div class="skill-filter">
+                                <label>Dribbling</label>
+                                <input type="range" id="skill-dribbling" min="0" max="10" value="0" class="skill-slider">
+                                <span class="skill-value">0</span>
+                            </div>
+                            <div class="skill-filter">
+                                <label>First Touch</label>
+                                <input type="range" id="skill-first-touch" min="0" max="10" value="0" class="skill-slider">
+                                <span class="skill-value">0</span>
+                            </div>
+                            <div class="skill-filter">
+                                <label>Heading</label>
+                                <input type="range" id="skill-heading" min="0" max="10" value="0" class="skill-slider">
+                                <span class="skill-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Physical Attributes -->
+                    <div class="skills-section">
+                        <h3>Physical Attributes (Minimum Rating)</h3>
+                        <div class="skills-grid">
+                            <div class="skill-filter">
+                                <label>Pace</label>
+                                <input type="range" id="skill-pace" min="0" max="10" value="0" class="skill-slider">
+                                <span class="skill-value">0</span>
+                            </div>
+                            <div class="skill-filter">
+                                <label>Strength</label>
+                                <input type="range" id="skill-strength" min="0" max="10" value="0" class="skill-slider">
+                                <span class="skill-value">0</span>
+                            </div>
+                            <div class="skill-filter">
+                                <label>Stamina</label>
+                                <input type="range" id="skill-stamina" min="0" max="10" value="0" class="skill-slider">
+                                <span class="skill-value">0</span>
+                            </div>
+                            <div class="skill-filter">
+                                <label>Agility</label>
+                                <input type="range" id="skill-agility" min="0" max="10" value="0" class="skill-slider">
+                                <span class="skill-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Mental Attributes -->
+                    <div class="skills-section">
+                        <h3>Mental Attributes (Minimum Rating)</h3>
+                        <div class="skills-grid">
+                            <div class="skill-filter">
+                                <label>Decision Making</label>
+                                <input type="range" id="skill-decision-making" min="0" max="10" value="0" class="skill-slider">
+                                <span class="skill-value">0</span>
+                            </div>
+                            <div class="skill-filter">
+                                <label>Leadership</label>
+                                <input type="range" id="skill-leadership" min="0" max="10" value="0" class="skill-slider">
+                                <span class="skill-value">0</span>
+                            </div>
+                            <div class="skill-filter">
+                                <label>Concentration</label>
+                                <input type="range" id="skill-concentration" min="0" max="10" value="0" class="skill-slider">
+                                <span class="skill-value">0</span>
+                            </div>
+                            <div class="skill-filter">
+                                <label>Communication</label>
+                                <input type="range" id="skill-communication" min="0" max="10" value="0" class="skill-slider">
+                                <span class="skill-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 6: Preview & Search -->
+            <div class="wizard-step" id="step-preview">
+                <h2 class="step-title">Search Preview</h2>
+                <div class="preview-container">
+                    <div class="preview-summary" id="preview-summary">
+                        <!-- Dynamic preview will be generated here -->
+                    </div>
+                    <div class="preview-actions">
+                        <div class="fm-form-group">
+                            <label for="search-name-save" class="fm-label">Save this search as:</label>
+                            <input type="text" id="search-name-save" class="fm-input" placeholder="e.g. Fast Wingers Under 21">
+                        </div>
+                        <div class="preview-buttons">
+                            <button id="save-and-search-btn" class="fm-btn fm-btn-outline">
+                                Save & Search
+                            </button>
+                            <button id="search-now-btn" class="fm-btn fm-btn-primary fm-btn-lg">
+                                Search Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="wizard-navigation">
+            <button id="prev-btn" class="fm-btn fm-btn-secondary" disabled>
+                Previous
+            </button>
+            <button id="next-btn" class="fm-btn fm-btn-primary">
+                Next
+            </button>
+        </div>
+
+        <!-- Results Modal -->
+        <div id="search-results-modal" class="wizard-modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Search Results</h2>
+                    <button class="modal-close" id="close-results">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="results-container">
+                        <!-- Results will be displayed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Saved Searches Modal -->
+        <div id="saved-searches-modal" class="wizard-modal" style="display: none;">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Saved Searches</h2>
+                    <button class="modal-close" id="close-saved">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="saved-searches-list">
+                        <!-- Saved searches will be listed here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="search-wizard.js"></script>
+</body>
+</html>

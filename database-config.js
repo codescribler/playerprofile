@@ -118,11 +118,22 @@ const initPgTables = async () => {
       FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE
     )`);
 
+    // Create saved searches table
+    await pool.query(`CREATE TABLE IF NOT EXISTS saved_searches (
+      id SERIAL PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      criteria TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )`);
+
     // Create indexes only after columns exist
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_players_user_id ON players(user_id)`).catch(() => {});
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_players_is_published ON players(is_published)`).catch(() => {});
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_messages_player_id ON messages(player_id)`).catch(() => {});
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_player_locations_coords ON player_locations(latitude, longitude)`).catch(() => {});
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_saved_searches_user_id ON saved_searches(user_id)`).catch(() => {});
     
     console.log('PostgreSQL tables initialized');
   } catch (err) {

@@ -660,6 +660,304 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
   });
 });
 
+// Quick search endpoint for search wizard
+app.get('/api/players/search/quick', authenticateToken, (req, res) => {
+  // Check if user has permission to search
+  const allowedRoles = ['scout', 'coach', 'agent', 'admin'];
+  if (!allowedRoles.includes(req.user.role)) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  const { q } = req.query;
+  
+  if (!q || q.trim().length < 2) {
+    return res.status(400).json({ error: 'Search query must be at least 2 characters' });
+  }
+
+  // Quick search across multiple fields
+  let query = `
+    SELECT * FROM players 
+    WHERE is_published = 1 
+    AND (
+      (data::json->'personalInfo'->>'firstName') ILIKE ? 
+      OR (data::json->'personalInfo'->>'lastName') ILIKE ? 
+      OR (data::json->'personalInfo'->>'fullName') ILIKE ?
+      OR (data::json->'location'->>'city') ILIKE ?
+      OR data::text ILIKE ?
+    ) 
+    LIMIT 20
+  `;
+  
+  const searchTerm = `%${q}%`;
+  const params = [searchTerm, searchTerm, searchTerm, searchTerm, searchTerm];
+
+  db.all(query, params, (err, rows) => {
+    if (err) {
+      console.error('Quick search error:', err);
+      return res.status(500).json({ error: 'Search failed' });
+    }
+
+    const players = rows.map(row => {
+      const player = JSON.parse(row.data);
+      player.id = row.id;
+      return player;
+    });
+
+    res.json(players);
+  });
+});
+
+// Advanced search endpoint for search wizard
+app.post('/api/players/search/advanced', authenticateToken, (req, res) => {
+  // Check if user has permission to search
+  const allowedRoles = ['scout', 'coach', 'agent', 'admin'];
+  if (!allowedRoles.includes(req.user.role)) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  const { criteria } = req.body;
+  
+  if (!criteria) {
+    return res.status(400).json({ error: 'Search criteria required' });
+  }
+
+  let query = 'SELECT * FROM players WHERE is_published = 1';
+  const params = [];
+
+  // Basic Information filters
+  if (criteria.basic) {
+    // Name search
+    if (criteria.basic.name) {
+      query += ` AND ((data::json->'personalInfo'->>'firstName') ILIKE ? OR (data::json->'personalInfo'->>'lastName') ILIKE ? OR (data::json->'personalInfo'->>'fullName') ILIKE ?)`;
+      const nameTerm = `%${criteria.basic.name}%`;
+      params.push(nameTerm, nameTerm, nameTerm);
+    }
+
+    // Age range
+    if (criteria.basic.ageMin || criteria.basic.ageMax) {
+      const currentYear = new Date().getFullYear();
+      if (criteria.basic.ageMin) {
+        const maxBirthYear = currentYear - criteria.basic.ageMin;
+        query += ` AND (data::json->'personalInfo'->>'dateOfBirth') <= ?`;
+        params.push(`${maxBirthYear}-12-31`);
+      }
+      if (criteria.basic.ageMax) {
+        const minBirthYear = currentYear - criteria.basic.ageMax - 1;
+        query += ` AND (data::json->'personalInfo'->>'dateOfBirth') >= ?`;
+        params.push(`${minBirthYear}-01-01`);
+      }
+    }
+
+    // Nationality
+    if (criteria.basic.nationality) {
+      query += ` AND (data::json->'personalInfo'->>'nationality') = ?`;
+      params.push(criteria.basic.nationality);
+    }
+
+    // Availability statuses
+    if (criteria.basic.availability?.statuses?.length > 0) {
+      const statusConditions = criteria.basic.availability.statuses.map(() => 
+        `(data::json->'availability'->>'status') = ?`
+      ).join(' OR ');
+      query += ` AND (${statusConditions})`;
+      criteria.basic.availability.statuses.forEach(status => params.push(status));
+    }
+
+    // Willing to relocate
+    if (criteria.basic.availability?.willingToRelocate) {
+      query += ` AND (data::json->'availability'->>'willingToRelocate') = 'true'`;
+    }
+  }
+
+  // Physical Profile filters
+  if (criteria.physical) {
+    // Height range (always in cm)
+    if (criteria.physical.heightMin) {
+      query += ` AND CAST((data::json->'physicalAttributes'->>'heightCm') AS INTEGER) >= ?`;
+      params.push(criteria.physical.heightMin);
+    }
+    if (criteria.physical.heightMax) {
+      query += ` AND CAST((data::json->'physicalAttributes'->>'heightCm') AS INTEGER) <= ?`;
+      params.push(criteria.physical.heightMax);
+    }
+
+    // Preferred foot
+    if (criteria.physical.preferredFoot) {
+      query += ` AND (data::json->'personalInfo'->>'preferredFoot') = ?`;
+      params.push(criteria.physical.preferredFoot);
+    }
+
+    // Athletic performance
+    if (criteria.physical.sprint10mMax) {
+      query += ` AND CAST((data::json->'athleticPerformance'->>'sprint10m') AS FLOAT) <= ?`;
+      params.push(criteria.physical.sprint10mMax);
+    }
+    if (criteria.physical.sprint30mMax) {
+      query += ` AND CAST((data::json->'athleticPerformance'->>'sprint30m') AS FLOAT) <= ?`;
+      params.push(criteria.physical.sprint30mMax);
+    }
+  }
+
+  // Playing Profile filters
+  if (criteria.playing) {
+    // Positions
+    if (criteria.playing.positions?.length > 0) {
+      const positionConditions = criteria.playing.positions.map(() => 
+        `data::text LIKE ?`
+      ).join(' OR ');
+      query += ` AND (${positionConditions})`;
+      criteria.playing.positions.forEach(pos => params.push(`%"position":"${pos}"%`));
+    }
+
+    // Years playing minimum
+    if (criteria.playing.yearsPlayingMin) {
+      query += ` AND CAST((data::json->'playingInfo'->>'yearsPlaying') AS INTEGER) >= ?`;
+      params.push(criteria.playing.yearsPlayingMin);
+    }
+
+    // League
+    if (criteria.playing.league) {
+      query += ` AND (data::json->'playingInfo'->'currentTeam'->>'league') ILIKE ?`;
+      params.push(`%${criteria.playing.league}%`);
+    }
+  }
+
+  // Skills filters
+  if (criteria.skills) {
+    // Technical skills
+    if (criteria.skills.technical) {
+      Object.entries(criteria.skills.technical).forEach(([skill, minValue]) => {
+        const skillPath = skill.replace(/_/g, '');
+        query += ` AND CAST((data::json->'technicalAbilities'->>'${skillPath}') AS INTEGER) >= ?`;
+        params.push(minValue);
+      });
+    }
+
+    // Physical attributes
+    if (criteria.skills.physical) {
+      Object.entries(criteria.skills.physical).forEach(([skill, minValue]) => {
+        query += ` AND CAST((data::json->'physicalAbilities'->>'${skill}') AS INTEGER) >= ?`;
+        params.push(minValue);
+      });
+    }
+
+    // Mental attributes
+    if (criteria.skills.mental) {
+      Object.entries(criteria.skills.mental).forEach(([skill, minValue]) => {
+        const skillPath = skill.replace(/_/g, '');
+        query += ` AND CAST((data::json->'mentalAbilities'->>'${skillPath}') AS INTEGER) >= ?`;
+        params.push(minValue);
+      });
+    }
+  }
+
+  // Location-based search
+  if (criteria.basic?.postcode && criteria.basic?.radius) {
+    // This would require geocoding - for now, just note it
+    console.log('Location search requested but not implemented:', criteria.basic.postcode, criteria.basic.radius);
+  }
+
+  // Add limit
+  query += ' LIMIT 100';
+
+  console.log('Advanced search query:', query);
+  console.log('Parameters:', params);
+
+  db.all(query, params, (err, rows) => {
+    if (err) {
+      console.error('Advanced search error:', err);
+      return res.status(500).json({ error: 'Search failed', details: err.message });
+    }
+
+    const players = rows.map(row => {
+      const player = JSON.parse(row.data);
+      player.id = row.id;
+      return player;
+    });
+
+    res.json(players);
+  });
+});
+
+// Save search endpoint
+app.post('/api/search/save', authenticateToken, (req, res) => {
+  const { name, criteria } = req.body;
+  
+  if (!name || !criteria) {
+    return res.status(400).json({ error: 'Name and criteria are required' });
+  }
+
+  const query = `
+    INSERT INTO saved_searches (user_id, name, criteria, created_at)
+    VALUES (?, ?, ?, datetime('now'))
+  `;
+
+  db.run(query, [req.user.id, name, JSON.stringify(criteria)], function(err) {
+    if (err) {
+      console.error('Save search error:', err);
+      return res.status(500).json({ error: 'Failed to save search' });
+    }
+
+    res.json({ 
+      message: 'Search saved successfully', 
+      searchId: this.lastID 
+    });
+  });
+});
+
+// Get saved searches endpoint
+app.get('/api/search/saved', authenticateToken, (req, res) => {
+  const query = `
+    SELECT id, name, criteria, created_at
+    FROM saved_searches
+    WHERE user_id = ?
+    ORDER BY created_at DESC
+  `;
+
+  db.all(query, [req.user.id], (err, rows) => {
+    if (err) {
+      console.error('Get saved searches error:', err);
+      return res.status(500).json({ error: 'Failed to retrieve saved searches' });
+    }
+
+    const searches = rows.map(row => ({
+      id: row.id,
+      name: row.name,
+      criteria: JSON.parse(row.criteria),
+      created_at: row.created_at
+    }));
+
+    res.json(searches);
+  });
+});
+
+// Get specific saved search
+app.get('/api/search/saved/:id', authenticateToken, (req, res) => {
+  const query = `
+    SELECT id, name, criteria, created_at
+    FROM saved_searches
+    WHERE id = ? AND user_id = ?
+  `;
+
+  db.get(query, [req.params.id, req.user.id], (err, row) => {
+    if (err) {
+      console.error('Get saved search error:', err);
+      return res.status(500).json({ error: 'Failed to retrieve saved search' });
+    }
+
+    if (!row) {
+      return res.status(404).json({ error: 'Saved search not found' });
+    }
+
+    res.json({
+      id: row.id,
+      name: row.name,
+      criteria: JSON.parse(row.criteria),
+      created_at: row.created_at
+    });
+  });
+});
+
 app.get('/api/players/:id', authenticateToken, (req, res) => {
   db.get(
     'SELECT * FROM players WHERE id = ?',
