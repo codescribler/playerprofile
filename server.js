@@ -309,6 +309,156 @@ app.get('/api/players', authenticateToken, (req, res) => {
   });
 });
 
+// Enhanced search endpoint with location, filters, etc.
+// MUST be defined before /api/players/:id to avoid route conflicts
+app.get('/api/players/search', authenticateToken, (req, res) => {
+  // Check if user has permission to search
+  const allowedRoles = ['scout', 'coach', 'agent', 'admin'];
+  if (!allowedRoles.includes(req.user.role)) {
+    return res.status(403).json({ error: 'Access denied' });
+  }
+
+  const {
+    q, // text search
+    latitude, longitude, radius, // location search
+    ageMin, ageMax, // age range
+    positions, // comma-separated positions
+    preferredFoot,
+    availability, // comma-separated availability statuses
+    willingToRelocate,
+    experienceLevel,
+    limit = 50
+  } = req.query;
+
+  // Start with published players only
+  let query = 'SELECT p.*, pl.latitude, pl.longitude, pl.city FROM players p LEFT JOIN player_locations pl ON p.id = pl.player_id WHERE p.is_published = 1';
+  const params = [];
+  
+  // Text search (first name, last name, or full name)
+  if (q) {
+    query += ' AND (json_extract(p.player_data, "$.personalInfo.firstName") LIKE ? OR json_extract(p.player_data, "$.personalInfo.lastName") LIKE ? OR json_extract(p.player_data, "$.personalInfo.fullName") LIKE ?)';
+    params.push(`%${q}%`, `%${q}%`, `%${q}%`);
+  }
+  
+  // Age range filter
+  if (ageMin || ageMax) {
+    const currentYear = new Date().getFullYear();
+    if (ageMin) {
+      const maxBirthYear = currentYear - ageMin;
+      query += ' AND json_extract(p.player_data, "$.personalInfo.dateOfBirth") <= ?';
+      params.push(`${maxBirthYear}-12-31`);
+    }
+    if (ageMax) {
+      const minBirthYear = currentYear - ageMax;
+      query += ' AND json_extract(p.player_data, "$.personalInfo.dateOfBirth") >= ?';
+      params.push(`${minBirthYear}-01-01`);
+    }
+  }
+  
+  // Positions filter
+  if (positions) {
+    const positionList = positions.split(',');
+    const positionConditions = positionList.map(() => 
+      'json_extract(p.player_data, "$.playingInfo.positions") LIKE ?'
+    ).join(' OR ');
+    query += ` AND (${positionConditions})`;
+    positionList.forEach(pos => params.push(`%"${pos}"%`));
+  }
+  
+  // Preferred foot filter
+  if (preferredFoot) {
+    query += ' AND json_extract(p.player_data, "$.personalInfo.preferredFoot") = ?';
+    params.push(preferredFoot);
+  }
+  
+  // Availability filter
+  if (availability) {
+    const availabilityList = availability.split(',');
+    const availabilityConditions = availabilityList.map(() => 
+      'json_extract(p.player_data, "$.availability.status") = ?'
+    ).join(' OR ');
+    query += ` AND (${availabilityConditions})`;
+    availabilityList.forEach(status => params.push(status));
+  }
+  
+  // Willing to relocate filter
+  if (willingToRelocate === 'true') {
+    query += ' AND json_extract(p.player_data, "$.availability.willingToRelocate") = 1';
+  }
+  
+  // Experience level filter
+  if (experienceLevel) {
+    query += ' AND json_extract(p.player_data, "$.experience.level") = ?';
+    params.push(experienceLevel);
+  }
+  
+  // Add limit
+  query += ' LIMIT ?';
+  params.push(parseInt(limit));
+  
+  db.all(query, params, (err, rows) => {
+    if (err) {
+      console.error('Search error:', err);
+      return res.status(500).json({ error: 'Error searching players' });
+    }
+    
+    let players = rows.map(row => {
+      let player = JSON.parse(row.player_data);
+      // Include the player ID in the response
+      player.id = row.id;
+      player.playerId = row.id;
+      
+      // Add location data if available
+      if (row.latitude && row.longitude) {
+        player.location = {
+          ...player.location,
+          coordinates: {
+            latitude: row.latitude,
+            longitude: row.longitude
+          },
+          city: row.city || player.location?.city
+        };
+      }
+      
+      // Repair any corrupted data
+      player = repairPlayerData(player);
+      
+      // Remove large media data from search results to prevent quota errors
+      if (player.media && player.media.profilePhoto) {
+        // Keep a flag that photo exists but remove the actual data
+        player.media = { hasProfilePhoto: true };
+      }
+      
+      return player;
+    });
+    
+    // Calculate distances if location search
+    if (latitude && longitude && radius > 0) {
+      const searchLat = parseFloat(latitude);
+      const searchLng = parseFloat(longitude);
+      const maxDistance = parseFloat(radius);
+      
+      players = players.map(player => {
+        if (player.location?.coordinates?.latitude && player.location?.coordinates?.longitude) {
+          const distance = calculateDistance(
+            searchLat, searchLng,
+            player.location.coordinates.latitude,
+            player.location.coordinates.longitude
+          );
+          player.distance = distance;
+          return player;
+        }
+        return player;
+      }).filter(player => !player.distance || player.distance <= maxDistance);
+      
+      // Sort by distance
+      players.sort((a, b) => (a.distance || 999) - (b.distance || 999));
+    }
+    
+    res.json(players);
+  });
+});
+
 app.get('/api/players/:id', authenticateToken, (req, res) => {
   db.get(
     'SELECT * FROM players WHERE id = ?',
@@ -696,155 +846,6 @@ app.post('/api/players/:id/media/upload', authenticateToken, (req, res) => {
     console.error('Error processing uploaded file:', error);
     res.status(500).json({ error: 'Error processing uploaded file' });
   }
-  });
-});
-
-// Enhanced search endpoint with location, filters, etc.
-app.get('/api/players/search', authenticateToken, (req, res) => {
-  // Check if user has permission to search
-  const allowedRoles = ['scout', 'coach', 'agent', 'admin'];
-  if (!allowedRoles.includes(req.user.role)) {
-    return res.status(403).json({ error: 'Access denied' });
-  }
-
-  const {
-    q, // text search
-    latitude, longitude, radius, // location search
-    ageMin, ageMax, // age range
-    positions, // comma-separated positions
-    preferredFoot,
-    availability, // comma-separated availability statuses
-    willingToRelocate,
-    experienceLevel,
-    limit = 50
-  } = req.query;
-
-  // Start with published players only
-  let query = 'SELECT p.*, pl.latitude, pl.longitude, pl.city FROM players p LEFT JOIN player_locations pl ON p.id = pl.player_id WHERE p.is_published = 1';
-  const params = [];
-  
-  // Text search (first name, last name, or full name)
-  if (q) {
-    query += ' AND (json_extract(p.player_data, "$.personalInfo.firstName") LIKE ? OR json_extract(p.player_data, "$.personalInfo.lastName") LIKE ? OR json_extract(p.player_data, "$.personalInfo.fullName") LIKE ?)';
-    params.push(`%${q}%`, `%${q}%`, `%${q}%`);
-  }
-  
-  // Age range filter
-  if (ageMin || ageMax) {
-    const currentYear = new Date().getFullYear();
-    if (ageMin) {
-      const maxBirthYear = currentYear - ageMin;
-      query += ' AND json_extract(p.player_data, "$.personalInfo.dateOfBirth") <= ?';
-      params.push(`${maxBirthYear}-12-31`);
-    }
-    if (ageMax) {
-      const minBirthYear = currentYear - ageMax;
-      query += ' AND json_extract(p.player_data, "$.personalInfo.dateOfBirth") >= ?';
-      params.push(`${minBirthYear}-01-01`);
-    }
-  }
-  
-  // Positions filter
-  if (positions) {
-    const positionList = positions.split(',');
-    const positionConditions = positionList.map(() => 
-      'json_extract(p.player_data, "$.playingInfo.positions") LIKE ?'
-    ).join(' OR ');
-    query += ` AND (${positionConditions})`;
-    positionList.forEach(pos => params.push(`%"${pos}"%`));
-  }
-  
-  // Preferred foot filter
-  if (preferredFoot) {
-    query += ' AND json_extract(p.player_data, "$.personalInfo.preferredFoot") = ?';
-    params.push(preferredFoot);
-  }
-  
-  // Availability filter
-  if (availability) {
-    const availabilityList = availability.split(',');
-    const availabilityConditions = availabilityList.map(() => 
-      'json_extract(p.player_data, "$.availability.status") = ?'
-    ).join(' OR ');
-    query += ` AND (${availabilityConditions})`;
-    availabilityList.forEach(status => params.push(status));
-  }
-  
-  // Willing to relocate filter
-  if (willingToRelocate === 'true') {
-    query += ' AND json_extract(p.player_data, "$.availability.willingToRelocate") = 1';
-  }
-  
-  // Experience level filter
-  if (experienceLevel) {
-    query += ' AND json_extract(p.player_data, "$.experience.level") = ?';
-    params.push(experienceLevel);
-  }
-  
-  // Add limit
-  query += ' LIMIT ?';
-  params.push(parseInt(limit));
-  
-  db.all(query, params, (err, rows) => {
-    if (err) {
-      console.error('Search error:', err);
-      return res.status(500).json({ error: 'Error searching players' });
-    }
-    
-    let players = rows.map(row => {
-      let player = JSON.parse(row.player_data);
-      // Include the player ID in the response
-      player.id = row.id;
-      player.playerId = row.id;
-      
-      // Add location data if available
-      if (row.latitude && row.longitude) {
-        player.location = {
-          ...player.location,
-          coordinates: {
-            latitude: row.latitude,
-            longitude: row.longitude
-          },
-          city: row.city || player.location?.city
-        };
-      }
-      
-      // Repair any corrupted data
-      player = repairPlayerData(player);
-      
-      // Remove large media data from search results to prevent quota errors
-      if (player.media && player.media.profilePhoto) {
-        // Keep a flag that photo exists but remove the actual data
-        player.media = { hasProfilePhoto: true };
-      }
-      
-      return player;
-    });
-    
-    // Calculate distances if location search
-    if (latitude && longitude && radius > 0) {
-      const searchLat = parseFloat(latitude);
-      const searchLng = parseFloat(longitude);
-      const maxDistance = parseFloat(radius);
-      
-      players = players.map(player => {
-        if (player.location?.coordinates?.latitude && player.location?.coordinates?.longitude) {
-          const distance = calculateDistance(
-            searchLat, searchLng,
-            player.location.coordinates.latitude,
-            player.location.coordinates.longitude
-          );
-          player.distance = distance;
-          return player;
-        }
-        return player;
-      }).filter(player => !player.distance || player.distance <= maxDistance);
-      
-      // Sort by distance
-      players.sort((a, b) => (a.distance || 999) - (b.distance || 999));
-    }
-    
-    res.json(players);
   });
 });
 
