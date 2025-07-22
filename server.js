@@ -959,7 +959,7 @@ app.get('/api/search/saved/:id', authenticateToken, (req, res) => {
   });
 });
 
-// Debug endpoint to check preferred foot values
+// Debug endpoint to check preferred foot values - accessible to all authenticated users
 app.get('/api/debug/preferred-foot-check', authenticateToken, (req, res) => {
   const { testFoot } = req.query;
   

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Search - Player Profile Manager</title>
+    <link rel="stylesheet" href="fm-style.css">
+    <style>
+        .debug-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 2rem;
+        }
+        .debug-section {
+            background: var(--fm-surface);
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border-radius: var(--radius-lg);
+        }
+        .debug-results {
+            background: var(--fm-background);
+            padding: 1rem;
+            border-radius: var(--radius-md);
+            margin-top: 1rem;
+            font-family: monospace;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+        .player-item {
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--fm-border);
+        }
+        .test-button {
+            margin-right: 1rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="fm-nav">
+        <div class="fm-container">
+            <div class="fm-nav-container">
+                <div class="fm-nav-brand">
+                    <img src="images/playerprofilelogofull.png" alt="Player Profile Manager" style="height: 60px;">
+                </div>
+                <div class="fm-nav-actions">
+                    <button onclick="window.location.href='/app'" class="fm-btn fm-btn-secondary fm-btn-sm">
+                        Back to Dashboard
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="debug-container">
+        <h1>Debug Search Tool</h1>
+        
+        <div class="debug-section">
+            <h2>Check All Published Players</h2>
+            <button onclick="checkPublishedPlayers()" class="fm-btn fm-btn-primary test-button">
+                Load All Published Players
+            </button>
+            <div id="published-results" class="debug-results" style="display: none;"></div>
+        </div>
+
+        <div class="debug-section">
+            <h2>Test Preferred Foot Search</h2>
+            <button onclick="testPreferredFoot('Left')" class="fm-btn fm-btn-primary test-button">
+                Test Left Foot
+            </button>
+            <button onclick="testPreferredFoot('Right')" class="fm-btn fm-btn-primary test-button">
+                Test Right Foot
+            </button>
+            <button onclick="testPreferredFoot('Both')" class="fm-btn fm-btn-primary test-button">
+                Test Both Feet
+            </button>
+            <div id="search-results" class="debug-results" style="display: none;"></div>
+        </div>
+
+        <div class="debug-section">
+            <h2>Test Advanced Search</h2>
+            <button onclick="testAdvancedSearch()" class="fm-btn fm-btn-primary test-button">
+                Test Left Foot via Advanced Search
+            </button>
+            <div id="advanced-results" class="debug-results" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            alert('You must be logged in to use the debug tool');
+            window.location.href = '/app';
+        }
+
+        async function checkPublishedPlayers() {
+            try {
+                const response = await fetch('/api/debug/preferred-foot-check', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                const resultsDiv = document.getElementById('published-results');
+                
+                resultsDiv.style.display = 'block';
+                resultsDiv.innerHTML = `<h3>Results:</h3>
+Total Published Players: ${data.total_published}
+
+Players:
+${data.players.map(p => `ID: ${p.id}, Name: ${p.name}, Preferred Foot: ${p.preferredFoot || 'NOT SET'}`).join('\n')}
+
+Raw Response:
+${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function testPreferredFoot(foot) {
+            try {
+                const response = await fetch(`/api/debug/preferred-foot-check?testFoot=${foot}`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                
+                const data = await response.json();
+                const resultsDiv = document.getElementById('search-results');
+                
+                resultsDiv.style.display = 'block';
+                resultsDiv.innerHTML = `<h3>Search for ${foot} footed players:</h3>
+Found: ${data.total_published} players
+
+Query: ${data.query}
+Parameters: ${JSON.stringify(data.params)}
+
+Players:
+${data.players.map(p => `ID: ${p.id}, Name: ${p.name}, Preferred Foot: ${p.preferredFoot}`).join('\n')}
+
+Raw Response:
+${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function testAdvancedSearch() {
+            try {
+                const criteria = {
+                    physical: {
+                        preferredFoot: 'Left'
+                    }
+                };
+
+                const response = await fetch('/api/players/search/advanced', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ criteria })
+                });
+                
+                const data = await response.json();
+                const resultsDiv = document.getElementById('advanced-results');
+                
+                resultsDiv.style.display = 'block';
+                
+                if (data.error) {
+                    resultsDiv.innerHTML = `<h3>Error:</h3>
+${JSON.stringify(data, null, 2)}`;
+                } else {
+                    resultsDiv.innerHTML = `<h3>Advanced Search Results:</h3>
+Criteria sent: ${JSON.stringify(criteria, null, 2)}
+
+Found: ${data.length} players
+
+Players:
+${data.map(p => `ID: ${p.id}, Name: ${p.personalInfo?.firstName} ${p.personalInfo?.lastName}, Preferred Foot: ${p.personalInfo?.preferredFoot}`).join('\n')}`;
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>
