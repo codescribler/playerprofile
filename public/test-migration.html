@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migration Tool</title>
+    <link rel="stylesheet" href="fm-style.css">
+</head>
+<body>
+    <div class="fm-container fm-container-sm" style="margin-top: 50px;">
+        <div class="fm-card">
+            <h2>Database Migration Tool</h2>
+            <p>This tool will migrate your player data from JSON to normalized tables.</p>
+            
+            <div id="status" style="margin: 20px 0; padding: 10px; background: #1a1a1a; border-radius: 4px; display: none;"></div>
+            
+            <div class="fm-form-group">
+                <label>Admin Username:</label>
+                <input type="text" id="username" class="fm-input" placeholder="Enter admin username">
+            </div>
+            
+            <div class="fm-form-group">
+                <label>Admin Password:</label>
+                <input type="password" id="password" class="fm-input" placeholder="Enter admin password">
+            </div>
+            
+            <button id="check-btn" class="fm-btn fm-btn-secondary" onclick="checkSchema()">Check Database Schema</button>
+            <button id="login-btn" class="fm-btn fm-btn-primary" onclick="login()">Login & Run Migration</button>
+            
+            <div id="result" style="margin-top: 20px; display: none;">
+                <h3>Migration Result:</h3>
+                <pre id="result-content" style="background: #1a1a1a; padding: 10px; border-radius: 4px; overflow-x: auto;"></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.style.display = 'block';
+            status.style.color = type === 'error' ? '#ff4444' : (type === 'success' ? '#44ff44' : '#ffffff');
+            status.textContent = message;
+        }
+
+        async function checkSchema() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                showStatus('Please enter username and password', 'error');
+                return;
+            }
+            
+            showStatus('Checking database schema...');
+            
+            try {
+                // First, login
+                const loginResponse = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                if (!loginResponse.ok) {
+                    throw new Error('Login failed');
+                }
+                
+                const loginData = await loginResponse.json();
+                
+                if (loginData.user.role !== 'admin') {
+                    showStatus('Error: User is not an admin', 'error');
+                    return;
+                }
+                
+                // Check schema
+                const schemaResponse = await fetch('/api/admin/check-schema', {
+                    headers: {
+                        'Authorization': `Bearer ${loginData.token}`
+                    }
+                });
+                
+                const schemaData = await schemaResponse.json();
+                
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('result-content').textContent = JSON.stringify(schemaData, null, 2);
+                
+                if (schemaData.hasFirstNameColumn) {
+                    showStatus('Database is already migrated to normalized schema!', 'success');
+                } else if (schemaData.hasDataColumn) {
+                    showStatus('Database has old JSON schema. Migration needed.', 'info');
+                } else {
+                    showStatus('Unknown database state', 'error');
+                }
+                
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+                console.error('Full error:', error);
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                showStatus('Please enter username and password', 'error');
+                return;
+            }
+            
+            showStatus('Logging in...');
+            
+            try {
+                // First, login
+                const loginResponse = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                if (!loginResponse.ok) {
+                    throw new Error('Login failed');
+                }
+                
+                const loginData = await loginResponse.json();
+                
+                if (loginData.user.role !== 'admin') {
+                    showStatus('Error: User is not an admin', 'error');
+                    return;
+                }
+                
+                showStatus('Login successful. Running migration...');
+                
+                // Now run migration
+                const migrationResponse = await fetch('/api/admin/migrate', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${loginData.token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const migrationResult = await migrationResponse.json();
+                
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('result-content').textContent = JSON.stringify(migrationResult, null, 2);
+                
+                if (migrationResult.success) {
+                    showStatus('Migration completed successfully!', 'success');
+                } else {
+                    showStatus('Migration failed. See details below.', 'error');
+                }
+                
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, 'error');
+                console.error('Full error:', error);
+            }
+        }
+        
+        // Allow Enter key to submit
+        document.getElementById('password').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+    </script>
+</body>
+</html>

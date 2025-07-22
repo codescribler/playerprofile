@@ -1115,6 +1115,46 @@ app.post('/api/player-lists/:listId/players', authenticateToken, async (req, res
   }
 });
 
+// Check database schema endpoint
+app.get('/api/admin/check-schema', authenticateToken, async (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Access denied. Admin only.' });
+  }
+  
+  try {
+    // Check if we have the old JSON column
+    const { rows: oldSchema } = await db.query(`
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'players' 
+      ORDER BY ordinal_position
+    `);
+    
+    // Check for new tables
+    const { rows: tables } = await db.query(`
+      SELECT table_name 
+      FROM information_schema.tables 
+      WHERE table_schema = 'public' 
+      AND table_name IN ('player_positions', 'player_teams', 'player_abilities')
+    `);
+    
+    // Get sample player data
+    const { rows: samplePlayers } = await db.query(
+      'SELECT id, first_name, last_name, preferred_foot, is_published FROM players LIMIT 5'
+    );
+    
+    res.json({
+      playersTableColumns: oldSchema,
+      relatedTables: tables.map(t => t.table_name),
+      samplePlayers: samplePlayers,
+      hasDataColumn: oldSchema.some(col => col.column_name === 'data'),
+      hasFirstNameColumn: oldSchema.some(col => col.column_name === 'first_name')
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Temporary migration endpoint - REMOVE AFTER MIGRATION
 app.post('/api/admin/migrate', authenticateToken, async (req, res) => {
   // Only allow admins to run migration
