@@ -1138,10 +1138,25 @@ app.get('/api/admin/check-schema', authenticateToken, async (req, res) => {
       AND table_name IN ('player_positions', 'player_teams', 'player_abilities')
     `);
     
-    // Get sample player data
-    const { rows: samplePlayers } = await db.query(
-      'SELECT id, first_name, last_name, preferred_foot, is_published FROM players LIMIT 5'
-    );
+    // Get sample player data - check which columns exist
+    let samplePlayers = [];
+    try {
+      // Try normalized schema first
+      const { rows } = await db.query(
+        'SELECT id, first_name, last_name, preferred_foot, is_published FROM players LIMIT 5'
+      );
+      samplePlayers = rows;
+    } catch (e) {
+      // Fall back to JSON schema
+      try {
+        const { rows } = await db.query(
+          'SELECT id, user_id, is_published FROM players LIMIT 5'
+        );
+        samplePlayers = rows;
+      } catch (e2) {
+        console.error('Could not fetch sample players:', e2);
+      }
+    }
     
     res.json({
       playersTableColumns: oldSchema,
