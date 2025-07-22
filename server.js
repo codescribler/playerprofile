@@ -955,6 +955,53 @@ app.get('/api/players/:id/messages', authenticateToken, async (req, res) => {
   }
 });
 
+// Get unread message counts for all player's profiles
+app.get('/api/players/unread-counts', authenticateToken, async (req, res) => {
+  try {
+    let query;
+    let params;
+    
+    if (req.user.role === 'player') {
+      // Get unread counts for all profiles owned by this user
+      query = `
+        SELECT p.id as player_id, COUNT(m.id) as unread_count
+        FROM players p
+        LEFT JOIN messages m ON p.id = m.player_id AND m.is_read = false
+        WHERE p.user_id = $1
+        GROUP BY p.id
+      `;
+      params = [req.user.id];
+    } else if (req.user.role === 'admin') {
+      // Admins can see all unread counts
+      query = `
+        SELECT p.id as player_id, COUNT(m.id) as unread_count
+        FROM players p
+        LEFT JOIN messages m ON p.id = m.player_id AND m.is_read = false
+        GROUP BY p.id
+      `;
+      params = [];
+    } else {
+      // Other roles don't get message counts
+      return res.json({});
+    }
+    
+    const { rows } = await pool.query(query, params);
+    
+    // Convert to object with playerId as key
+    const unreadCounts = {};
+    rows.forEach(row => {
+      if (row.unread_count > 0) {
+        unreadCounts[row.player_id] = parseInt(row.unread_count);
+      }
+    });
+    
+    res.json(unreadCounts);
+  } catch (error) {
+    console.error('Error fetching unread counts:', error);
+    res.status(500).json({ error: 'Failed to fetch unread counts.' });
+  }
+});
+
 // Mark message as read
 app.post('/api/messages/:id/read', authenticateToken, async (req, res) => {
   try {
