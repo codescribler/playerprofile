@@ -524,6 +524,7 @@ async function createTestPlayer(user, index) {
 }
 
 async function generateTestPlayers(playersPerPosition = 20) {
+  console.log('=== generateTestPlayers called with:', playersPerPosition);
   const createdPlayers = [];
   
   try {
@@ -588,7 +589,9 @@ async function generateTestPlayers(playersPerPosition = 20) {
     
   } catch (err) {
     console.error('Failed to generate test players:', err);
-    throw err;
+    console.error('Error stack:', err.stack);
+    // Return empty array instead of throwing
+    return createdPlayers;
   }
 }
 

@@ -1291,7 +1291,11 @@ app.post('/api/admin/generate-test-data', authenticateToken, async (req, res) =>
     
   } catch (error) {
     console.error('Error generating test data:', error);
-    res.status(500).json({ error: 'Failed to generate test data: ' + error.message });
+    console.error('Error stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Failed to generate test data: ' + error.message,
+      details: error.stack
+    });
   }
 });
 
