@@ -524,22 +524,31 @@ async function createTestPlayer(user, index) {
 }
 
 async function generateTestPlayers(playersPerPosition = 20) {
+  const createdPlayers = [];
+  
   try {
     console.log(`Starting generation of ${playersPerPosition} test players per position...`);
     
     // First add the test data field if it doesn't exist
     const { addTestDataField } = require('./add-test-data-field');
-    await addTestDataField();
+    const fieldResult = await addTestDataField();
+    console.log('Test data field result:', fieldResult);
     
     // Create a test user account for all test players
+    console.log('Creating test user account...');
     const testUser = await createTestUser('testplayers', 'testplayers@example.com', 'player');
-    console.log(`Using test user account: ${testUser.username}`);
+    console.log(`Using test user account: ${testUser.username} (ID: ${testUser.id})`);
     
-    const createdPlayers = [];
     const positionKeys = Object.keys(positions);
     const totalPlayers = positionKeys.length * playersPerPosition;
     
+    console.log(`Positions available: ${positionKeys.join(', ')}`);
     console.log(`Creating ${playersPerPosition} players for each of ${positionKeys.length} positions (${totalPlayers} total)...`);
+    
+    if (positionKeys.length === 0) {
+      console.error('No positions defined!');
+      return createdPlayers;
+    }
     
     let playerIndex = 1;
     for (const position of positionKeys) {
@@ -549,10 +558,13 @@ async function generateTestPlayers(playersPerPosition = 20) {
         try {
           // Override the position selection in createTestPlayer
           const player = await createTestPlayerForPosition(testUser, playerIndex, position);
-          createdPlayers.push(player);
+          if (player) {
+            createdPlayers.push(player);
+            console.log(`Created ${position} player ${i + 1}: ${player.first_name} ${player.last_name}`);
+          }
           playerIndex++;
         } catch (err) {
-          console.error(`Failed to create ${position} player ${i + 1}:`, err);
+          console.error(`Failed to create ${position} player ${i + 1}:`, err.message);
         }
       }
     }

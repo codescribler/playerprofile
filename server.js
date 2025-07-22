@@ -1270,14 +1270,21 @@ app.post('/api/admin/generate-test-data', authenticateToken, async (req, res) =>
     // Generate test players
     const { generateTestPlayers } = require('./generate-test-players');
     const playersPerPosition = req.body.playersPerPosition || 20;
+    console.log(`Generating ${playersPerPosition} players per position...`);
+    
     const createdPlayers = await generateTestPlayers(playersPerPosition);
+    
+    // Handle case where createdPlayers might be undefined
+    const players = createdPlayers || [];
     
     res.json({ 
       success: true,
-      message: `Successfully generated ${createdPlayers.length} test players`,
-      playersCreated: createdPlayers.length,
-      breakdown: createdPlayers.reduce((acc, p) => {
-        acc[p.position] = (acc[p.position] || 0) + 1;
+      message: `Successfully generated ${players.length} test players`,
+      playersCreated: players.length,
+      breakdown: players.reduce((acc, p) => {
+        if (p && p.position) {
+          acc[p.position] = (acc[p.position] || 0) + 1;
+        }
         return acc;
       }, {})
     });
