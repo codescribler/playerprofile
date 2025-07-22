@@ -286,7 +286,7 @@ app.get('/api/players', authenticateToken, (req, res) => {
     query += ' WHERE user_id = ?';
     params.push(req.user.id);
   } else if (req.query.visibility && req.user.role !== 'admin') {
-    query += ' WHERE json_extract(data, "$.metadata.visibility") = ?';
+    query += ' WHERE data::json->\'metadata\'->>\'visibility\' = ?';
     params.push(req.query.visibility);
   }
   
@@ -1266,7 +1266,7 @@ app.get('/api/players/:id/messages', authenticateToken, (req, res) => {
 // Mark message as read
 app.post('/api/messages/:id/read', authenticateToken, (req, res) => {
   db.run(
-    'UPDATE messages SET is_read = TRUE WHERE id = ?',
+    'UPDATE messages SET is_read = true WHERE id = ?',
     [req.params.id],
     function(err) {
       if (err) {

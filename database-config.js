@@ -64,7 +64,23 @@ const db = {
   
   serialize: (callback) => {
     callback();
-  }
+  },
+  
+  prepare: (sql) => {
+    // PostgreSQL doesn't need prepare statements in the same way
+    // Return an object that mimics SQLite's prepared statement
+    return {
+      run: (params, callback) => {
+        db.run(sql, params, callback);
+      },
+      finalize: () => {
+        // No-op for PostgreSQL
+      }
+    };
+  },
+  
+  // Direct PostgreSQL query access for complex queries
+  query: (sql, params) => pool.query(sql, params)
 };
 
 // Initialize PostgreSQL tables
@@ -199,3 +215,4 @@ const initPgTables = async () => {
 initPgTables();
 
 module.exports = db;
+module.exports.getDb = () => db;

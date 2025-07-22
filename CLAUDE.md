@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## CRITICAL REQUIREMENTS
+
+**NEVER use SQLite in this project. This project uses PostgreSQL exclusively.**
+- Do NOT use SQLite syntax like `?` placeholders, `this.lastID`, `INSERT OR IGNORE`, etc.
+- Always use PostgreSQL syntax: `$1, $2` placeholders, `RETURNING *`, `ON CONFLICT`, etc.
+- All database operations must be PostgreSQL-compatible
+- Never import or reference SQLite libraries
+
 ## Project Overview
 
 This is a Football Player Profile Management System that allows players to create comprehensive profiles and connect with coaches, scouts, and agents. The system supports profile publishing, messaging, and role-based access control.
@@ -23,7 +31,7 @@ npm start
 
 ### Tech Stack
 - **Backend**: Node.js with Express.js, JWT authentication
-- **Database**: PostgreSQL (requires DATABASE_URL environment variable)
+- **Database**: PostgreSQL ONLY (requires DATABASE_URL environment variable)
 - **Frontend**: Vanilla JavaScript with multi-page architecture (no build process)
 - **File Storage**: Images stored as base64 in database
 
