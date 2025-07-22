@@ -764,9 +764,12 @@ app.get('/api/players/search/quick', authenticateToken, async (req, res) => {
   
   // Check if user has permission to search
   const allowedRoles = ['scout', 'coach', 'agent', 'admin'];
-  if (req.user.role === 'player') {
-    return res.status(403).json({ error: 'Players cannot search for other players' });
+  if (!allowedRoles.includes(req.user.role)) {
+    console.log('Quick search access denied for role:', req.user.role);
+    return res.status(403).json({ error: 'Access denied. Your role cannot search for players.' });
   }
+  
+  console.log('Quick search request from user:', req.user.username, 'role:', req.user.role);
   
   const searchTerm = `%${q.toLowerCase()}%`;
   
@@ -776,6 +779,7 @@ app.get('/api/players/search/quick', authenticateToken, async (req, res) => {
     
     if (req.user.role === 'admin') {
       // Admins can see all players
+      console.log('Admin search - showing all players');
       query = `
         SELECT DISTINCT p.*, 
           array_agg(DISTINCT pp.position) FILTER (WHERE pp.position IS NOT NULL) as positions,

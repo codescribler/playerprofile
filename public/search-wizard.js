@@ -76,6 +76,7 @@ class SearchWizard {
         
         // Results section buttons
         document.getElementById('back-to-search').addEventListener('click', () => this.backToSearch());
+        document.getElementById('finish-search').addEventListener('click', () => this.finishAndReset());
         document.getElementById('select-all-btn').addEventListener('click', () => this.selectAllResults());
         document.getElementById('clear-selection-btn').addEventListener('click', () => this.clearSelection());
         document.getElementById('add-to-list-btn').addEventListener('click', () => this.showAddToListModal());
@@ -292,6 +293,12 @@ class SearchWizard {
             return;
         }
         
+        // If we're on the last step (preview), perform the search
+        if (this.currentStep === this.steps.length - 1) {
+            this.performAdvancedSearch();
+            return;
+        }
+        
         if (this.searchType === 'wizard' && this.currentStep < this.steps.length - 1) {
             this.currentStep++;
             this.showStep(this.currentStep);
@@ -319,7 +326,7 @@ class SearchWizard {
         
         // Update navigation buttons
         document.getElementById('prev-btn').disabled = index === 0;
-        document.getElementById('next-btn').textContent = index === this.steps.length - 1 ? 'Finish' : 'Next';
+        document.getElementById('next-btn').textContent = index === this.steps.length - 1 ? 'Search' : 'Next';
     }
     
     collectCriteria() {
@@ -1077,6 +1084,40 @@ class SearchWizard {
         
         // Clear selection
         this.clearSelection();
+    }
+    
+    finishAndReset() {
+        // Reset wizard to the beginning
+        this.currentStep = 0;
+        this.searchType = null;
+        this.selectedPositions.clear();
+        this.criteria = new SearchCriteria();
+        
+        // Clear form inputs
+        this.resetForm();
+        
+        // Clear quick search inputs
+        const quickSearchMain = document.getElementById('quick-search-main');
+        const quickSearchInput = document.getElementById('quick-search-input');
+        if (quickSearchMain) quickSearchMain.value = '';
+        if (quickSearchInput) quickSearchInput.value = '';
+        
+        // Reset search type selection
+        document.querySelectorAll('.search-type-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        
+        // Hide panels
+        document.getElementById('quick-search-panel').style.display = 'none';
+        document.getElementById('templates-panel').style.display = 'none';
+        
+        // Show wizard from the beginning
+        this.backToSearch();
+        this.showStep(0);
+        
+        // Update step indicator
+        document.querySelectorAll('.step').forEach(step => step.classList.remove('active', 'completed'));
+        document.querySelector('.step[data-step="type"]').classList.add('active');
     }
     
     updateSelectionUI() {
