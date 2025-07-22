@@ -37,7 +37,7 @@ async function checkAndRunMigration() {
       last_name VARCHAR(100) NOT NULL,
       date_of_birth DATE,
       nationality VARCHAR(100),
-      height_cm INTEGER,
+      height_cm DECIMAL(5,1),
       height_feet DECIMAL(2,1),
       height_inches DECIMAL(3,1),
       weight_kg DECIMAL(5,2),
