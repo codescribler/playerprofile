@@ -1115,6 +1115,23 @@ app.post('/api/player-lists/:listId/players', authenticateToken, async (req, res
   }
 });
 
+// Temporary migration endpoint - REMOVE AFTER MIGRATION
+app.post('/api/admin/migrate', authenticateToken, async (req, res) => {
+  // Only allow admins to run migration
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Access denied. Admin only.' });
+  }
+  
+  const { checkAndRunMigration } = require('./run-migration');
+  
+  try {
+    const result = await checkAndRunMigration();
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Serve HTML files
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
