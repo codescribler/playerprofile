@@ -567,9 +567,9 @@ app.get('/api/players/search', authenticateToken, (req, res) => {
     positionList.forEach(pos => params.push(`%"position":"${pos}"%`));
   }
   
-  // Preferred foot filter for PostgreSQL - cast to JSON
+  // Preferred foot filter for PostgreSQL - case insensitive comparison
   if (preferredFoot) {
-    query += ` AND (data::json->'personalInfo'->>'preferredFoot') = ?`;
+    query += ` AND LOWER(data::json->'personalInfo'->>'preferredFoot') = LOWER(?)`;
     params.push(preferredFoot);
   }
   
@@ -781,9 +781,9 @@ app.post('/api/players/search/advanced', authenticateToken, (req, res) => {
       params.push(criteria.physical.heightMax);
     }
 
-    // Preferred foot
+    // Preferred foot - case insensitive comparison
     if (criteria.physical.preferredFoot) {
-      query += ` AND (data::json->'personalInfo'->>'preferredFoot') = ?`;
+      query += ` AND LOWER(data::json->'personalInfo'->>'preferredFoot') = LOWER(?)`;
       params.push(criteria.physical.preferredFoot);
     }
 
