@@ -1255,6 +1255,39 @@ app.post('/api/admin/migrate', authenticateToken, async (req, res) => {
   }
 });
 
+// Generate test data
+app.post('/api/admin/generate-test-data', authenticateToken, async (req, res) => {
+  // Only allow admins to generate test data
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Access denied. Admin only.' });
+  }
+  
+  try {
+    // Run the field migration first
+    const { addTestDataField } = require('./add-test-data-field');
+    await addTestDataField();
+    
+    // Generate test players
+    const { generateTestPlayers } = require('./generate-test-players');
+    const playersPerPosition = req.body.playersPerPosition || 20;
+    const createdPlayers = await generateTestPlayers(playersPerPosition);
+    
+    res.json({ 
+      success: true,
+      message: `Successfully generated ${createdPlayers.length} test players`,
+      playersCreated: createdPlayers.length,
+      breakdown: createdPlayers.reduce((acc, p) => {
+        acc[p.position] = (acc[p.position] || 0) + 1;
+        return acc;
+      }, {})
+    });
+    
+  } catch (error) {
+    console.error('Error generating test data:', error);
+    res.status(500).json({ error: 'Failed to generate test data: ' + error.message });
+  }
+});
+
 // Delete all test data
 app.delete('/api/admin/test-data', authenticateToken, async (req, res) => {
   // Only allow admins to delete test data

@@ -1,5 +1,55 @@
 /* Search Wizard Styles */
 
+/* Skill Selection Improvements */
+.skill-filter {
+    background: var(--fm-surface);
+    border: 1px solid var(--fm-border);
+    border-radius: 6px;
+    padding: 12px;
+    transition: all 0.2s ease;
+}
+
+.skill-filter:has(.skill-slider:not([value="0"])) {
+    background: rgba(76, 175, 80, 0.1);
+    border-color: rgba(76, 175, 80, 0.5);
+}
+
+.skill-filter label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 8px;
+    color: var(--fm-text);
+}
+
+.skill-slider {
+    width: 100%;
+    margin: 8px 0;
+}
+
+.skill-value {
+    display: inline-block;
+    min-width: 30px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1.1rem;
+    padding: 4px 8px;
+    background: var(--fm-card-bg);
+    border-radius: 4px;
+    color: var(--fm-text);
+}
+
+.skill-slider:not([value="0"]) + .skill-value {
+    background: var(--fm-primary);
+    color: white;
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
 /* Quick Search Section */
 .quick-search-section {
     background: var(--fm-card-bg);

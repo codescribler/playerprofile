@@ -116,9 +116,19 @@ function generateWeight(height) {
   return Math.round((bmi * (height / 100) * (height / 100)) * 10) / 10;
 }
 
-function generateAbilities(position) {
-  const baseRating = randomBetween(5, 8);
-  const variance = 2;
+function generateAbilities(position, playerType = 'average') {
+  // Define player types with different skill distributions
+  const playerTypes = {
+    'elite': { base: 7, variance: 2, athleticBonus: 0.8 },
+    'promising': { base: 6, variance: 2, athleticBonus: 0.5 },
+    'average': { base: 5, variance: 2, athleticBonus: 0 },
+    'developing': { base: 4, variance: 2, athleticBonus: -0.3 },
+    'raw': { base: 3, variance: 3, athleticBonus: -0.5 }
+  };
+  
+  const typeConfig = playerTypes[playerType] || playerTypes.average;
+  const baseRating = typeConfig.base;
+  const variance = typeConfig.variance;
   
   const abilities = {
     technical: {},
@@ -127,55 +137,138 @@ function generateAbilities(position) {
     athletic: {}
   };
   
-  // Generate ratings based on position
-  const positionStrengths = {
-    'GK': ['positioning', 'communication', 'concentration'],
-    'CB': ['heading', 'tackling', 'strength', 'positioning'],
-    'LB': ['pace', 'crossing', 'stamina', 'tackling'],
-    'RB': ['pace', 'crossing', 'stamina', 'tackling'],
-    'CDM': ['tackling', 'positioning', 'strength', 'passing'],
-    'CM': ['passing', 'stamina', 'decision_making', 'ball_control'],
-    'CAM': ['passing', 'first_touch', 'ball_control', 'decision_making'],
-    'LM': ['pace', 'crossing', 'dribbling', 'stamina'],
-    'RM': ['pace', 'crossing', 'dribbling', 'stamina'],
-    'LW': ['pace', 'dribbling', 'agility', 'shooting'],
-    'RW': ['pace', 'dribbling', 'agility', 'shooting'],
-    'ST': ['shooting', 'heading', 'strength', 'positioning'],
-    'CF': ['shooting', 'first_touch', 'positioning', 'ball_control']
+  // Position-specific strengths and weaknesses
+  const positionProfiles = {
+    'GK': {
+      strengths: ['positioning', 'communication', 'concentration', 'jumping'],
+      weaknesses: ['shooting', 'dribbling', 'pace'],
+      athleticProfile: { sprint: 'slow', endurance: 'average' }
+    },
+    'CB': {
+      strengths: ['heading', 'tackling', 'strength', 'positioning', 'jumping'],
+      weaknesses: ['pace', 'dribbling', 'crossing'],
+      athleticProfile: { sprint: 'slow', endurance: 'average' }
+    },
+    'LB': {
+      strengths: ['pace', 'crossing', 'stamina', 'tackling'],
+      weaknesses: ['heading', 'strength'],
+      athleticProfile: { sprint: 'fast', endurance: 'high' }
+    },
+    'RB': {
+      strengths: ['pace', 'crossing', 'stamina', 'tackling'],
+      weaknesses: ['heading', 'strength'],
+      athleticProfile: { sprint: 'fast', endurance: 'high' }
+    },
+    'CDM': {
+      strengths: ['tackling', 'positioning', 'strength', 'passing', 'concentration'],
+      weaknesses: ['pace', 'shooting', 'dribbling'],
+      athleticProfile: { sprint: 'average', endurance: 'high' }
+    },
+    'CM': {
+      strengths: ['passing', 'stamina', 'decision_making', 'ball_control'],
+      weaknesses: ['heading', 'tackling'],
+      athleticProfile: { sprint: 'average', endurance: 'very_high' }
+    },
+    'CAM': {
+      strengths: ['passing', 'first_touch', 'ball_control', 'decision_making', 'dribbling'],
+      weaknesses: ['tackling', 'strength', 'heading'],
+      athleticProfile: { sprint: 'average', endurance: 'average' }
+    },
+    'LM': {
+      strengths: ['pace', 'crossing', 'dribbling', 'stamina'],
+      weaknesses: ['heading', 'tackling', 'strength'],
+      athleticProfile: { sprint: 'fast', endurance: 'high' }
+    },
+    'RM': {
+      strengths: ['pace', 'crossing', 'dribbling', 'stamina'],
+      weaknesses: ['heading', 'tackling', 'strength'],
+      athleticProfile: { sprint: 'fast', endurance: 'high' }
+    },
+    'LW': {
+      strengths: ['pace', 'dribbling', 'agility', 'shooting', 'first_touch'],
+      weaknesses: ['tackling', 'strength', 'heading'],
+      athleticProfile: { sprint: 'very_fast', endurance: 'average' }
+    },
+    'RW': {
+      strengths: ['pace', 'dribbling', 'agility', 'shooting', 'first_touch'],
+      weaknesses: ['tackling', 'strength', 'heading'],
+      athleticProfile: { sprint: 'very_fast', endurance: 'average' }
+    },
+    'ST': {
+      strengths: ['shooting', 'heading', 'strength', 'positioning', 'first_touch'],
+      weaknesses: ['tackling', 'passing'],
+      athleticProfile: { sprint: 'fast', endurance: 'average' }
+    },
+    'CF': {
+      strengths: ['shooting', 'first_touch', 'positioning', 'ball_control', 'strength'],
+      weaknesses: ['tackling', 'crossing'],
+      athleticProfile: { sprint: 'average', endurance: 'average' }
+    }
   };
   
-  const strengths = positionStrengths[position] || [];
+  const profile = positionProfiles[position] || positionProfiles['CM'];
   
   // Technical abilities
   const technicalSkills = ['ball_control', 'passing', 'shooting', 'dribbling', 'first_touch', 'crossing', 'tackling', 'heading'];
   technicalSkills.forEach(skill => {
-    abilities.technical[skill] = strengths.includes(skill) 
-      ? randomBetween(baseRating, baseRating + variance)
-      : randomBetween(baseRating - variance, baseRating);
+    let rating;
+    if (profile.strengths.includes(skill)) {
+      rating = randomBetween(baseRating + 1, Math.min(10, baseRating + variance + 1));
+    } else if (profile.weaknesses.includes(skill)) {
+      rating = randomBetween(Math.max(1, baseRating - variance), baseRating - 1);
+    } else {
+      rating = randomBetween(Math.max(1, baseRating - 1), Math.min(10, baseRating + 1));
+    }
+    abilities.technical[skill] = rating;
   });
   
   // Physical abilities
   const physicalSkills = ['pace', 'strength', 'stamina', 'agility', 'balance', 'jumping'];
   physicalSkills.forEach(skill => {
-    abilities.physical[skill] = strengths.includes(skill)
-      ? randomBetween(baseRating, baseRating + variance)
-      : randomBetween(baseRating - variance, baseRating);
+    let rating;
+    if (profile.strengths.includes(skill)) {
+      rating = randomBetween(baseRating + 1, Math.min(10, baseRating + variance + 1));
+    } else if (profile.weaknesses.includes(skill)) {
+      rating = randomBetween(Math.max(1, baseRating - variance), baseRating - 1);
+    } else {
+      rating = randomBetween(Math.max(1, baseRating - 1), Math.min(10, baseRating + 1));
+    }
+    abilities.physical[skill] = rating;
   });
   
   // Mental abilities
   const mentalSkills = ['decision_making', 'positioning', 'concentration', 'leadership', 'communication'];
   mentalSkills.forEach(skill => {
-    abilities.mental[skill] = strengths.includes(skill)
-      ? randomBetween(baseRating, baseRating + variance)
-      : randomBetween(baseRating - variance, baseRating);
+    let rating;
+    if (profile.strengths.includes(skill)) {
+      rating = randomBetween(baseRating + 1, Math.min(10, baseRating + variance + 1));
+    } else if (profile.weaknesses.includes(skill)) {
+      rating = randomBetween(Math.max(1, baseRating - variance), baseRating - 1);
+    } else {
+      rating = randomBetween(Math.max(1, baseRating - 1), Math.min(10, baseRating + 1));
+    }
+    abilities.mental[skill] = rating;
   });
   
-  // Athletic measurements
+  // Athletic measurements based on position and player type
+  const athleticProfiles = {
+    very_fast: { sprint10: 1.5, sprint30: 3.8 },
+    fast: { sprint10: 1.6, sprint30: 4.0 },
+    average: { sprint10: 1.7, sprint30: 4.2 },
+    slow: { sprint10: 1.8, sprint30: 4.4 },
+    very_high: { run1km: 160, bleepTest: 13 },
+    high: { run1km: 180, bleepTest: 12 },
+    average: { run1km: 200, bleepTest: 10 }
+  };
+  
+  const sprintProfile = athleticProfiles[profile.athleticProfile.sprint] || athleticProfiles.average;
+  const enduranceProfile = athleticProfiles[profile.athleticProfile.endurance] || athleticProfiles.average;
+  
   abilities.athletic = {
-    sprint_10m: (1.7 + Math.random() * 0.3).toFixed(2),
-    sprint_30m: (4.0 + Math.random() * 0.5).toFixed(2),
-    run_1km: (180 + randomBetween(0, 60)).toFixed(0),
-    bleep_test: (10 + Math.random() * 4).toFixed(1)
+    sprint_10m: (sprintProfile.sprint10 + (Math.random() * 0.2 - 0.1) - typeConfig.athleticBonus * 0.1).toFixed(2),
+    sprint_30m: (sprintProfile.sprint30 + (Math.random() * 0.4 - 0.2) - typeConfig.athleticBonus * 0.2).toFixed(2),
+    run_1km: Math.round(enduranceProfile.run1km + randomBetween(-20, 20) - typeConfig.athleticBonus * 10),
+    bleep_test: (enduranceProfile.bleepTest + (Math.random() * 2 - 1) + typeConfig.athleticBonus).toFixed(1)
   };
   
   return abilities;
@@ -430,9 +523,9 @@ async function createTestPlayer(user, index) {
   }
 }
 
-async function generateTestPlayers(count = 20) {
+async function generateTestPlayers(playersPerPosition = 20) {
   try {
-    console.log(`Starting generation of ${count} test players...`);
+    console.log(`Starting generation of ${playersPerPosition} test players per position...`);
     
     // First add the test data field if it doesn't exist
     const { addTestDataField } = require('./add-test-data-field');
@@ -443,28 +536,279 @@ async function generateTestPlayers(count = 20) {
     console.log(`Using test user account: ${testUser.username}`);
     
     const createdPlayers = [];
+    const positionKeys = Object.keys(positions);
+    const totalPlayers = positionKeys.length * playersPerPosition;
     
-    for (let i = 1; i <= count; i++) {
-      try {
-        const player = await createTestPlayer(testUser, i);
-        createdPlayers.push(player);
-      } catch (err) {
-        console.error(`Failed to create player ${i}:`, err);
+    console.log(`Creating ${playersPerPosition} players for each of ${positionKeys.length} positions (${totalPlayers} total)...`);
+    
+    let playerIndex = 1;
+    for (const position of positionKeys) {
+      console.log(`\nCreating ${playersPerPosition} ${position} players...`);
+      
+      for (let i = 0; i < playersPerPosition; i++) {
+        try {
+          // Override the position selection in createTestPlayer
+          const player = await createTestPlayerForPosition(testUser, playerIndex, position);
+          createdPlayers.push(player);
+          playerIndex++;
+        } catch (err) {
+          console.error(`Failed to create ${position} player ${i + 1}:`, err);
+        }
       }
     }
     
-    console.log(`\nSuccessfully created ${createdPlayers.length} test players!`);
+    console.log(`\n\nSuccessfully created ${createdPlayers.length} test players!`);
     console.log('\nTest Account Credentials:');
     console.log('Username: testplayers');
     console.log('Password: Test123!');
-    console.log('\nCreated players:');
-    createdPlayers.forEach(p => console.log(`- ${p.name} (${p.position})`));
+    
+    // Summary by position
+    console.log('\nPlayers created by position:');
+    const positionCounts = {};
+    createdPlayers.forEach(p => {
+      positionCounts[p.position] = (positionCounts[p.position] || 0) + 1;
+    });
+    Object.entries(positionCounts).forEach(([pos, count]) => {
+      console.log(`- ${pos}: ${count} players`);
+    });
     
     return createdPlayers;
     
   } catch (err) {
     console.error('Failed to generate test players:', err);
     throw err;
+  }
+}
+
+async function createTestPlayerForPosition(user, index, position) {
+  const playerId = uuidv4();
+  const gender = index % 3 === 0 ? 'female' : 'male'; // 1/3 female players
+  const firstName = randomFrom(firstNames[gender]);
+  const lastName = randomFrom(lastNames);
+  
+  // Vary age and player types for realistic distribution
+  let age, playerType;
+  const typeRoll = Math.random();
+  
+  if (typeRoll < 0.1) {
+    // 10% elite young players
+    age = randomBetween(16, 19);
+    playerType = 'elite';
+  } else if (typeRoll < 0.3) {
+    // 20% promising players
+    age = randomBetween(15, 18);
+    playerType = 'promising';
+  } else if (typeRoll < 0.6) {
+    // 30% average players
+    age = randomBetween(14, 21);
+    playerType = 'average';
+  } else if (typeRoll < 0.85) {
+    // 25% developing players
+    age = randomBetween(14, 17);
+    playerType = 'developing';
+  } else {
+    // 15% raw talent
+    age = randomBetween(14, 16);
+    playerType = 'raw';
+  }
+  
+  const location = randomFrom(locations);
+  const height = generateHeight(position);
+  const weight = generateWeight(height);
+  
+  const client = await pool.connect();
+  
+  try {
+    await client.query('BEGIN');
+    
+    // Create player record
+    await client.query(
+      `INSERT INTO players (
+        id, user_id, first_name, last_name, date_of_birth, nationality,
+        height_cm, height_feet, height_inches, weight_kg, weight_lbs,
+        preferred_foot, weak_foot_strength,
+        player_phone, player_email, guardian_name, guardian_phone, guardian_email,
+        years_playing, based_location, current_school, grade_year,
+        postcode, city, county, country, latitude, longitude,
+        availability_status, willing_to_relocate, travel_radius,
+        showcase_description, playing_style_summary, 
+        is_published, is_test_data
+      ) VALUES (
+        $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13,
+        $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24, $25,
+        $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36
+      )`,
+      [
+        playerId,
+        user.id,
+        firstName,
+        lastName,
+        generateBirthDate(age, age),
+        'English',
+        height,
+        Math.floor(height / 30.48), // feet
+        Math.round((height / 2.54) % 12), // inches
+        weight,
+        Math.round(weight * 2.205), // pounds
+        randomFrom(['Left', 'Right', 'Both']),
+        randomBetween(30, 80),
+        `+44 7${randomBetween(100000000, 999999999)}`,
+        `${firstName.toLowerCase()}.${lastName.toLowerCase()}${index}@testmail.com`,
+        `${randomFrom(['John', 'Jane', 'David', 'Sarah'])} ${lastName}`,
+        `+44 7${randomBetween(100000000, 999999999)}`,
+        `parent.${lastName.toLowerCase()}${index}@testmail.com`,
+        randomBetween(3, 10),
+        location.city,
+        randomFrom(schools),
+        `Year ${age - 5}`,
+        location.postcode + randomBetween(1, 9),
+        location.city,
+        location.county,
+        'England',
+        location.lat + (Math.random() - 0.5) * 0.1,
+        location.lng + (Math.random() - 0.5) * 0.1,
+        // Vary availability based on player type
+        playerType === 'elite' ? randomFrom(['open_to_offers', 'not_looking']) :
+        playerType === 'raw' ? 'actively_looking' :
+        randomFrom(['actively_looking', 'open_to_offers', 'not_looking']),
+        // Elite players less willing to relocate
+        playerType === 'elite' ? Math.random() > 0.8 : Math.random() > 0.5,
+        // Travel radius varies by type
+        playerType === 'elite' ? randomBetween(30, 100) :
+        playerType === 'raw' ? randomBetween(5, 25) :
+        randomBetween(10, 50),
+        `${firstName} is ${playerType === 'elite' ? 'an exceptional' : 
+          playerType === 'promising' ? 'a promising' :
+          playerType === 'developing' ? 'a developing' :
+          playerType === 'raw' ? 'a raw but talented' :
+          'a solid'} ${positions[position].name.toLowerCase()} ` +
+        `${playerType === 'elite' ? 'who stands out at the highest youth levels' :
+          playerType === 'promising' ? 'showing great potential for the future' :
+          playerType === 'developing' ? 'working hard to improve their game' :
+          playerType === 'raw' ? 'with natural ability that needs refinement' :
+          'with consistent performances'}. ` +
+        `Currently playing for ${randomFrom(clubs).name}, ${firstName} ${
+          playerType === 'elite' ? 'has been attracting attention from top academies' :
+          playerType === 'promising' ? 'has shown excellent development' :
+          'continues to work on their game'}.`,
+        generatePlayingStyle(position).summary,
+        true, // Published
+        true  // Test data
+      ]
+    );
+    
+    // Add primary position
+    await client.query(
+      'INSERT INTO player_positions (player_id, position, suitability, is_primary, position_order) VALUES ($1, $2, $3, $4, $5)',
+      [playerId, position, randomBetween(80, 95), true, 0]
+    );
+    
+    // Add 1-2 secondary positions from same category
+    const secondaryPositions = Object.keys(positions)
+      .filter(p => p !== position && positions[p].category === positions[position].category)
+      .slice(0, randomBetween(1, 2));
+    
+    for (let i = 0; i < secondaryPositions.length; i++) {
+      await client.query(
+        'INSERT INTO player_positions (player_id, position, suitability, is_primary, position_order) VALUES ($1, $2, $3, $4, $5)',
+        [playerId, secondaryPositions[i], randomBetween(60, 80), false, i + 1]
+      );
+    }
+    
+    // Add teams
+    const numTeams = randomBetween(1, 3);
+    const selectedClubs = [];
+    for (let i = 0; i < numTeams; i++) {
+      let club;
+      do {
+        club = randomFrom(clubs);
+      } while (selectedClubs.includes(club.name));
+      selectedClubs.push(club.name);
+      
+      await client.query(
+        'INSERT INTO player_teams (player_id, club_name, league, is_primary) VALUES ($1, $2, $3, $4)',
+        [playerId, club.name, club.league, i === 0]
+      );
+    }
+    
+    // Add abilities based on player type
+    const abilities = generateAbilities(position, playerType);
+    await client.query(
+      `INSERT INTO player_abilities (
+        player_id,
+        ball_control, passing, shooting, dribbling, first_touch, crossing, tackling, heading,
+        pace, strength, stamina, agility, balance, jumping,
+        decision_making, positioning, concentration, leadership, communication,
+        sprint_10m, sprint_30m, run_1km, bleep_test
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)`,
+      [
+        playerId,
+        abilities.technical.ball_control,
+        abilities.technical.passing,
+        abilities.technical.shooting,
+        abilities.technical.dribbling,
+        abilities.technical.first_touch,
+        abilities.technical.crossing,
+        abilities.technical.tackling,
+        abilities.technical.heading,
+        abilities.physical.pace,
+        abilities.physical.strength,
+        abilities.physical.stamina,
+        abilities.physical.agility,
+        abilities.physical.balance,
+        abilities.physical.jumping,
+        abilities.mental.decision_making,
+        abilities.mental.positioning,
+        abilities.mental.concentration,
+        abilities.mental.leadership,
+        abilities.mental.communication,
+        abilities.athletic.sprint_10m,
+        abilities.athletic.sprint_30m,
+        abilities.athletic.run_1km,
+        abilities.athletic.bleep_test
+      ]
+    );
+    
+    // Add some achievements for some players
+    if (Math.random() > 0.5) {
+      const achievements = [
+        { level: 'district', season: '2023/24' },
+        { level: 'county', season: '2022/23' }
+      ];
+      
+      const achievement = randomFrom(achievements);
+      await client.query(
+        'INSERT INTO player_representative_teams (player_id, level, season) VALUES ($1, $2, $3)',
+        [playerId, achievement.level, achievement.season]
+      );
+    }
+    
+    // Add trophies for some players
+    if (Math.random() > 0.6) {
+      const trophies = [
+        { title: 'League Champions', season: '2023/24' },
+        { title: 'Cup Winners', season: '2022/23' },
+        { title: 'Player of the Tournament', season: '2023/24' },
+        { title: 'Top Scorer', season: '2022/23' }
+      ];
+      
+      const trophy = randomFrom(trophies);
+      await client.query(
+        'INSERT INTO player_trophies (player_id, title, season) VALUES ($1, $2, $3)',
+        [playerId, trophy.title, trophy.season]
+      );
+    }
+    
+    await client.query('COMMIT');
+    
+    console.log(`Created test ${position} player: ${firstName} ${lastName}`);
+    return { id: playerId, name: `${firstName} ${lastName}`, position: position };
+    
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
   }
 }
 

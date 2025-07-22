@@ -109,41 +109,48 @@
                 return;
             }
             
-            showStatus('Running test data generation script...');
+            showStatus('Generating test players (this may take a few minutes)...');
             document.getElementById('generate-btn').disabled = true;
             
             try {
-                // First, run the field migration
-                const migrationResponse = await fetch('/api/admin/run-script', {
+                const response = await fetch('/api/admin/generate-test-data', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${authToken}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        script: 'add-test-data-field.js'
+                        playersPerPosition: 20  // 20 players per position
                     })
                 });
                 
-                if (!migrationResponse.ok) {
-                    // If the endpoint doesn't exist, that's okay - we'll show instructions
-                    showStatus('Please run the generation script manually from the server', 'error');
-                    document.getElementById('result').style.display = 'block';
-                    document.getElementById('result-content').textContent = 
-                        'To generate test data, run this command on the server:\n\n' +
-                        'node add-test-data-field.js\n' +
-                        'node generate-test-players.js\n\n' +
-                        'This will:\n' +
-                        '1. Add the is_test_data field to the database\n' +
-                        '2. Create 20 test player profiles';
-                    return;
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Generation failed');
                 }
                 
-                showStatus('Test data generated successfully!', 'success');
+                const result = await response.json();
+                
+                showStatus(result.message, 'success');
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('result-content').textContent = 
+                    JSON.stringify(result, null, 2) + '\n\n' +
+                    'Test players have been created with:\n' +
+                    '- Varied skill levels (elite, promising, average, developing, raw)\n' +
+                    '- Position-specific attributes\n' +
+                    '- Realistic athletic measurements\n' +
+                    '- Different availability statuses\n' +
+                    '- Ages from 14-21';
                 
             } catch (error) {
-                showStatus('Error generating test data', 'error');
+                showStatus('Error generating test data: ' + error.message, 'error');
                 console.error('Error:', error);
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('result-content').textContent = 
+                    'Failed to generate test data. Error: ' + error.message + '\n\n' +
+                    'You can run manually on the server:\n' +
+                    'node add-test-data-field.js\n' +
+                    'node generate-test-players.js';
             } finally {
                 document.getElementById('generate-btn').disabled = false;
             }
