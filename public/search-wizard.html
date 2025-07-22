@@ -166,14 +166,19 @@
 
                     <!-- Age Range -->
                     <div class="filter-section">
-                        <h3>Age Range</h3>
-                        <div class="range-slider-container">
+                        <h3>
+                            <label class="fm-checkbox" style="font-size: 1.125rem; font-weight: 600; margin: 0;">
+                                <input type="checkbox" id="enable-age-filter">
+                                <span>Age Range</span>
+                            </label>
+                        </h3>
+                        <div class="range-slider-container" id="age-filter-container" style="display: none; opacity: 0.5;">
                             <div class="range-values">
                                 <span id="age-min-display">16</span> - <span id="age-max-display">45</span> years
                             </div>
                             <div class="dual-range-slider">
-                                <input type="range" id="age-min-slider" min="16" max="45" value="16" class="range-slider">
-                                <input type="range" id="age-max-slider" min="16" max="45" value="45" class="range-slider">
+                                <input type="range" id="age-min-slider" min="16" max="45" value="16" class="range-slider" disabled>
+                                <input type="range" id="age-max-slider" min="16" max="45" value="45" class="range-slider" disabled>
                             </div>
                         </div>
                     </div>
@@ -250,39 +255,46 @@
                 <div class="filter-sections">
                     <!-- Height -->
                     <div class="filter-section">
-                        <h3>Height Range</h3>
-                        <div class="unit-toggle">
-                            <label class="fm-radio">
-                                <input type="radio" name="height-unit" value="cm" checked>
-                                <span>Centimeters</span>
+                        <h3>
+                            <label class="fm-checkbox" style="font-size: 1.125rem; font-weight: 600; margin: 0;">
+                                <input type="checkbox" id="enable-height-filter">
+                                <span>Height Range</span>
                             </label>
-                            <label class="fm-radio">
-                                <input type="radio" name="height-unit" value="ft">
-                                <span>Feet/Inches</span>
-                            </label>
-                        </div>
-                        <div class="range-slider-container" id="height-cm-container">
-                            <div class="range-values">
-                                <span id="height-min-cm-display">150</span> - <span id="height-max-cm-display">210</span> cm
+                        </h3>
+                        <div id="height-filter-content" style="display: none; opacity: 0.5;">
+                            <div class="unit-toggle">
+                                <label class="fm-radio">
+                                    <input type="radio" name="height-unit" value="cm" checked disabled>
+                                    <span>Centimeters</span>
+                                </label>
+                                <label class="fm-radio">
+                                    <input type="radio" name="height-unit" value="ft" disabled>
+                                    <span>Feet/Inches</span>
+                                </label>
                             </div>
-                            <div class="dual-range-slider">
-                                <input type="range" id="height-min-cm" min="150" max="210" value="150" class="range-slider">
-                                <input type="range" id="height-max-cm" min="150" max="210" value="210" class="range-slider">
-                            </div>
-                        </div>
-                        <div class="range-inputs" id="height-ft-container" style="display: none;">
-                            <div class="fm-form-group">
-                                <label>Min Height</label>
-                                <div class="height-inputs">
-                                    <input type="number" id="height-min-ft" min="4" max="7" placeholder="Feet" class="fm-input">
-                                    <input type="number" id="height-min-in" min="0" max="11" placeholder="Inches" class="fm-input">
+                            <div class="range-slider-container" id="height-cm-container">
+                                <div class="range-values">
+                                    <span id="height-min-cm-display">150</span> - <span id="height-max-cm-display">210</span> cm
+                                </div>
+                                <div class="dual-range-slider">
+                                    <input type="range" id="height-min-cm" min="150" max="210" value="150" class="range-slider" disabled>
+                                    <input type="range" id="height-max-cm" min="150" max="210" value="210" class="range-slider" disabled>
                                 </div>
                             </div>
-                            <div class="fm-form-group">
-                                <label>Max Height</label>
-                                <div class="height-inputs">
-                                    <input type="number" id="height-max-ft" min="4" max="7" placeholder="Feet" class="fm-input">
-                                    <input type="number" id="height-max-in" min="0" max="11" placeholder="Inches" class="fm-input">
+                            <div class="range-inputs" id="height-ft-container" style="display: none;">
+                                <div class="fm-form-group">
+                                    <label>Min Height</label>
+                                    <div class="height-inputs">
+                                        <input type="number" id="height-min-ft" min="4" max="7" placeholder="Feet" class="fm-input" disabled>
+                                        <input type="number" id="height-min-in" min="0" max="11" placeholder="Inches" class="fm-input" disabled>
+                                    </div>
+                                </div>
+                                <div class="fm-form-group">
+                                    <label>Max Height</label>
+                                    <div class="height-inputs">
+                                        <input type="number" id="height-max-ft" min="4" max="7" placeholder="Feet" class="fm-input" disabled>
+                                        <input type="number" id="height-max-in" min="0" max="11" placeholder="Inches" class="fm-input" disabled>
+                                    </div>
                                 </div>
                             </div>
                         </div>

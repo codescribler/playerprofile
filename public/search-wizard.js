@@ -85,6 +85,36 @@ class SearchWizard {
                 this.performQuickSearch();
             }
         });
+        
+        // Enable/disable age filter
+        document.getElementById('enable-age-filter').addEventListener('change', (e) => {
+            const container = document.getElementById('age-filter-container');
+            const sliders = container.querySelectorAll('input[type="range"]');
+            if (e.target.checked) {
+                container.style.display = 'block';
+                container.style.opacity = '1';
+                sliders.forEach(slider => slider.disabled = false);
+            } else {
+                container.style.display = 'none';
+                container.style.opacity = '0.5';
+                sliders.forEach(slider => slider.disabled = true);
+            }
+        });
+        
+        // Enable/disable height filter
+        document.getElementById('enable-height-filter').addEventListener('change', (e) => {
+            const container = document.getElementById('height-filter-content');
+            const inputs = container.querySelectorAll('input');
+            if (e.target.checked) {
+                container.style.display = 'block';
+                container.style.opacity = '1';
+                inputs.forEach(input => input.disabled = false);
+            } else {
+                container.style.display = 'none';
+                container.style.opacity = '0.5';
+                inputs.forEach(input => input.disabled = true);
+            }
+        });
     }
     
     setupSkillSliders() {
@@ -271,11 +301,13 @@ class SearchWizard {
         const name = document.getElementById('search-name').value;
         if (name) this.criteria.basic.name = name;
         
-        // Only add age if changed from defaults (16-45)
-        const ageMin = parseInt(document.getElementById('age-min-slider').value);
-        const ageMax = parseInt(document.getElementById('age-max-slider').value);
-        if (ageMin > 16) this.criteria.basic.ageMin = ageMin;
-        if (ageMax < 45) this.criteria.basic.ageMax = ageMax;
+        // Only add age if checkbox is checked
+        if (document.getElementById('enable-age-filter').checked) {
+            const ageMin = parseInt(document.getElementById('age-min-slider').value);
+            const ageMax = parseInt(document.getElementById('age-max-slider').value);
+            if (ageMin > 16) this.criteria.basic.ageMin = ageMin;
+            if (ageMax < 45) this.criteria.basic.ageMax = ageMax;
+        }
         
         const nationality = document.getElementById('search-nationality').value;
         if (nationality) this.criteria.basic.nationality = nationality;
@@ -302,25 +334,28 @@ class SearchWizard {
         // Physical Profile
         this.criteria.physical = {};
         
-        const heightUnit = document.querySelector('input[name="height-unit"]:checked').value;
-        if (heightUnit === 'cm') {
-            const heightMinCm = parseInt(document.getElementById('height-min-cm').value);
-            const heightMaxCm = parseInt(document.getElementById('height-max-cm').value);
-            // Only add if changed from defaults (150-210cm)
-            if (heightMinCm > 150) this.criteria.physical.heightMin = heightMinCm;
-            if (heightMaxCm < 210) this.criteria.physical.heightMax = heightMaxCm;
-        } else {
-            const minFt = parseInt(document.getElementById('height-min-ft').value) || 0;
-            const minIn = parseInt(document.getElementById('height-min-in').value) || 0;
-            const maxFt = parseInt(document.getElementById('height-max-ft').value) || 0;
-            const maxIn = parseInt(document.getElementById('height-max-in').value) || 0;
-            
-            // Only add if values are provided
-            if (minFt > 0 || minIn > 0) {
-                this.criteria.physical.heightMin = minFt * 30.48 + minIn * 2.54; // Convert to cm
-            }
-            if (maxFt > 0 || maxIn > 0) {
-                this.criteria.physical.heightMax = maxFt * 30.48 + maxIn * 2.54;
+        // Only add height if checkbox is checked
+        if (document.getElementById('enable-height-filter').checked) {
+            const heightUnit = document.querySelector('input[name="height-unit"]:checked').value;
+            if (heightUnit === 'cm') {
+                const heightMinCm = parseInt(document.getElementById('height-min-cm').value);
+                const heightMaxCm = parseInt(document.getElementById('height-max-cm').value);
+                // Only add if changed from defaults (150-210cm)
+                if (heightMinCm > 150) this.criteria.physical.heightMin = heightMinCm;
+                if (heightMaxCm < 210) this.criteria.physical.heightMax = heightMaxCm;
+            } else {
+                const minFt = parseInt(document.getElementById('height-min-ft').value) || 0;
+                const minIn = parseInt(document.getElementById('height-min-in').value) || 0;
+                const maxFt = parseInt(document.getElementById('height-max-ft').value) || 0;
+                const maxIn = parseInt(document.getElementById('height-max-in').value) || 0;
+                
+                // Only add if values are provided
+                if (minFt > 0 || minIn > 0) {
+                    this.criteria.physical.heightMin = minFt * 30.48 + minIn * 2.54; // Convert to cm
+                }
+                if (maxFt > 0 || maxIn > 0) {
+                    this.criteria.physical.heightMax = maxFt * 30.48 + maxIn * 2.54;
+                }
             }
         }
         
@@ -421,7 +456,7 @@ class SearchWizard {
         const basicItems = [];
         if (criteria.basic) {
             if (criteria.basic.name) basicItems.push(`Name contains "${criteria.basic.name}"`);
-            if (criteria.basic.ageMin || criteria.basic.ageMax) {
+            if ((criteria.basic.ageMin || criteria.basic.ageMax) && document.getElementById('enable-age-filter').checked) {
                 basicItems.push(`Age ${criteria.basic.ageMin || 16}-${criteria.basic.ageMax || 45}`);
             }
             if (criteria.basic.nationality) basicItems.push(criteria.basic.nationality);
