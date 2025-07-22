@@ -77,8 +77,32 @@
             <!-- Step 1: Search Type -->
             <div class="wizard-step active" id="step-type">
                 <h2 class="step-title">Choose Your Search Type</h2>
+                
+                <!-- Quick Search Box - Always Visible -->
+                <div class="quick-search-section">
+                    <div class="fm-form-group">
+                        <label for="quick-search-main" class="fm-label">Quick Search</label>
+                        <div class="quick-search-wrapper">
+                            <input type="text" id="quick-search-main" class="fm-input fm-input-lg" 
+                                   placeholder="Search by name, position, location, or club...">
+                            <button id="quick-search-main-btn" class="fm-btn fm-btn-primary">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <path d="m21 21-4.35-4.35"></path>
+                                </svg>
+                                Search
+                            </button>
+                        </div>
+                        <p class="fm-help-text">Searches across player names, positions, locations, clubs, and playing styles</p>
+                    </div>
+                </div>
+                
+                <div class="divider-with-text">
+                    <span>Or choose advanced search option</span>
+                </div>
+                
                 <div class="search-type-grid">
-                    <div class="search-type-card" data-type="quick">
+                    <div class="search-type-card" data-type="quick" style="display: none;">
                         <div class="type-icon">
                             <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="11" cy="11" r="8"></circle>
@@ -143,6 +167,18 @@
                         <div class="template-card" data-template="creative-midfielders">
                             <h4>Creative Midfielders</h4>
                             <p>Playmakers with high passing and vision</p>
+                        </div>
+                        <div class="template-card" data-template="pacey-wingers">
+                            <h4>Pacey Wingers</h4>
+                            <p>Fast wingers with good dribbling skills</p>
+                        </div>
+                        <div class="template-card" data-template="box-to-box">
+                            <h4>Box-to-Box Midfielders</h4>
+                            <p>All-round midfielders with stamina</p>
+                        </div>
+                        <div class="template-card" data-template="young-goalkeepers">
+                            <h4>Young Goalkeepers</h4>
+                            <p>Promising keepers under 23</p>
                         </div>
                         <div class="template-card" data-template="athletic-wingers">
                             <h4>Athletic Wingers</h4>

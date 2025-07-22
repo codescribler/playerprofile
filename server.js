@@ -754,6 +754,56 @@ app.post('/api/players/:id/media/upload', authenticateToken, async (req, res) =>
   }
 });
 
+// Quick search endpoint
+app.get('/api/players/search/quick', authenticateToken, async (req, res) => {
+  const { q } = req.query;
+  
+  if (!q || q.trim().length < 2) {
+    return res.status(400).json({ error: 'Search query must be at least 2 characters' });
+  }
+  
+  const searchTerm = `%${q.toLowerCase()}%`;
+  
+  try {
+    let query = `
+      SELECT DISTINCT p.*, 
+        array_agg(DISTINCT pp.position) FILTER (WHERE pp.position IS NOT NULL) as positions,
+        array_agg(DISTINCT pt.club_name) FILTER (WHERE pt.club_name IS NOT NULL) as clubs
+      FROM players p
+      LEFT JOIN player_positions pp ON p.id = pp.player_id
+      LEFT JOIN player_teams pt ON p.id = pt.player_id
+      WHERE p.is_published = true
+        AND (
+          LOWER(p.first_name) LIKE $1
+          OR LOWER(p.last_name) LIKE $1
+          OR LOWER(CONCAT(p.first_name, ' ', p.last_name)) LIKE $1
+          OR LOWER(p.city) LIKE $1
+          OR LOWER(p.based_location) LIKE $1
+          OR LOWER(pp.position) LIKE $1
+          OR LOWER(pt.club_name) LIKE $1
+          OR LOWER(p.playing_style_summary) LIKE $1
+        )
+      GROUP BY p.id
+      ORDER BY p.last_name, p.first_name
+      LIMIT 50
+    `;
+    
+    const { rows } = await pool.query(query, [searchTerm]);
+    
+    // Get full player data for each result
+    const players = [];
+    for (const row of rows) {
+      const player = await getFullPlayer(row.id, false);
+      players.push(player);
+    }
+    
+    res.json(players);
+  } catch (error) {
+    console.error('Quick search error:', error);
+    res.status(500).json({ error: 'Search failed' });
+  }
+});
+
 // Advanced search endpoint
 app.post('/api/players/search/advanced', authenticateToken, async (req, res) => {
   const criteria = req.body;

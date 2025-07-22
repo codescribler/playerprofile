@@ -1,5 +1,57 @@
 /* Search Wizard Styles */
 
+/* Quick Search Section */
+.quick-search-section {
+    background: var(--fm-card-bg);
+    border: 1px solid var(--fm-border);
+    border-radius: 8px;
+    padding: 24px;
+    margin: 20px 0 30px 0;
+}
+
+.quick-search-wrapper {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.quick-search-wrapper .fm-input {
+    flex: 1;
+}
+
+.quick-search-wrapper .fm-btn {
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.divider-with-text {
+    position: relative;
+    text-align: center;
+    margin: 30px 0;
+}
+
+.divider-with-text::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: var(--fm-border);
+}
+
+.divider-with-text span {
+    background: var(--fm-bg);
+    padding: 0 20px;
+    position: relative;
+    color: var(--fm-text-muted);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
 /* Header */
 .search-wizard-header {
     background: var(--fm-surface);

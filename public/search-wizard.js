@@ -97,6 +97,22 @@ class SearchWizard {
             }
         });
         
+        // Main quick search box
+        const quickSearchMain = document.getElementById('quick-search-main');
+        const quickSearchMainBtn = document.getElementById('quick-search-main-btn');
+        
+        if (quickSearchMain) {
+            quickSearchMain.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.performQuickSearchMain();
+                }
+            });
+        }
+        
+        if (quickSearchMainBtn) {
+            quickSearchMainBtn.addEventListener('click', () => this.performQuickSearchMain());
+        }
+        
         // Enable/disable age filter
         document.getElementById('enable-age-filter').addEventListener('change', (e) => {
             const container = document.getElementById('age-filter-container');
@@ -204,14 +220,16 @@ class SearchWizard {
         
         switch (this.searchType) {
             case 'quick':
+                // For quick search, show the panel but don't auto-advance
                 document.getElementById('quick-search-panel').style.display = 'block';
+                document.getElementById('quick-search-input').focus();
                 break;
             case 'template':
                 document.getElementById('templates-panel').style.display = 'block';
                 break;
             case 'wizard':
-                // Continue to next step
-                document.getElementById('next-btn').disabled = false;
+                // For wizard search, automatically move to next step
+                setTimeout(() => this.nextStep(), 300);
                 break;
         }
     }
@@ -601,6 +619,33 @@ class SearchWizard {
         }
     }
     
+    async performQuickSearchMain() {
+        const query = document.getElementById('quick-search-main').value.trim();
+        
+        if (!query) {
+            alert('Please enter a search query');
+            return;
+        }
+        
+        try {
+            const response = await fetch(`/api/players/search/quick?q=${encodeURIComponent(query)}`, {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+            
+            if (response.ok) {
+                const players = await response.json();
+                this.showResults(players);
+            } else {
+                throw new Error('Search failed');
+            }
+        } catch (error) {
+            console.error('Quick search error:', error);
+            alert('Failed to perform search. Please try again.');
+        }
+    }
+    
     async performAdvancedSearch() {
         const criteria = this.collectCriteria();
         
@@ -763,10 +808,39 @@ class SearchWizard {
             },
             'creative-midfielders': {
                 playing: {
-                    positions: ['AM', 'CM']
+                    positions: ['CAM', 'CM']
                 },
                 skills: {
-                    technical: { passing: 8, ball_control: 7 },
+                    technical: { passing: 8, first_touch: 7 },
+                    mental: { decision_making: 7, positioning: 7 }
+                }
+            },
+            'pacey-wingers': {
+                playing: {
+                    positions: ['LW', 'RW', 'LM', 'RM']
+                },
+                skills: {
+                    technical: { dribbling: 7, crossing: 7 },
+                    physical: { pace: 8, agility: 7 }
+                }
+            },
+            'box-to-box': {
+                playing: {
+                    positions: ['CM', 'CDM']
+                },
+                skills: {
+                    physical: { stamina: 8, strength: 6 },
+                    mental: { positioning: 7 }
+                }
+            },
+            'young-goalkeepers': {
+                basic: {
+                    ageMax: 23
+                },
+                playing: {
+                    positions: ['GK']
+                },
+                skills: {
                     mental: { decision_making: 7 }
                 }
             },
