@@ -1728,6 +1728,190 @@ app.post('/api/dev/users/:id/make-admin', (req, res) => {
   );
 });
 
+// Player Lists API endpoints
+app.get('/api/player-lists', authenticateToken, (req, res) => {
+  db.all(
+    'SELECT * FROM player_lists WHERE user_id = ? ORDER BY created_at DESC',
+    [req.user.id],
+    (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error fetching lists' });
+      }
+      res.json(rows);
+    }
+  );
+});
+
+app.post('/api/player-lists', authenticateToken, (req, res) => {
+  const { name, description } = req.body;
+  
+  if (!name) {
+    return res.status(400).json({ error: 'List name is required' });
+  }
+  
+  db.run(
+    'INSERT INTO player_lists (user_id, name, description) VALUES (?, ?, ?)',
+    [req.user.id, name, description || null],
+    function(err) {
+      if (err) {
+        return res.status(500).json({ error: 'Error creating list' });
+      }
+      res.json({ 
+        id: this.lastID, 
+        name, 
+        description,
+        created_at: new Date().toISOString()
+      });
+    }
+  );
+});
+
+app.post('/api/player-lists/:listId/players', authenticateToken, (req, res) => {
+  const { playerIds, notes } = req.body;
+  const listId = req.params.listId;
+  
+  if (!playerIds || !Array.isArray(playerIds) || playerIds.length === 0) {
+    return res.status(400).json({ error: 'Player IDs are required' });
+  }
+  
+  // First verify the list belongs to the user
+  db.get(
+    'SELECT * FROM player_lists WHERE id = ? AND user_id = ?',
+    [listId, req.user.id],
+    (err, list) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error verifying list' });
+      }
+      if (!list) {
+        return res.status(404).json({ error: 'List not found' });
+      }
+      
+      // Insert players into the list
+      const stmt = db.prepare('INSERT OR IGNORE INTO player_list_members (list_id, player_id, notes) VALUES (?, ?, ?)');
+      let successCount = 0;
+      let errorCount = 0;
+      
+      playerIds.forEach((playerId, index) => {
+        stmt.run([listId, playerId, notes || null], function(err) {
+          if (err) {
+            errorCount++;
+          } else {
+            successCount++;
+          }
+          
+          // Check if we're done
+          if (index === playerIds.length - 1) {
+            stmt.finalize();
+            res.json({
+              message: `Added ${successCount} players to list`,
+              added: successCount,
+              errors: errorCount
+            });
+          }
+        });
+      });
+    }
+  );
+});
+
+app.get('/api/player-lists/:listId', authenticateToken, (req, res) => {
+  const listId = req.params.listId;
+  
+  // Get list details and members
+  db.get(
+    'SELECT * FROM player_lists WHERE id = ? AND user_id = ?',
+    [listId, req.user.id],
+    (err, list) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error fetching list' });
+      }
+      if (!list) {
+        return res.status(404).json({ error: 'List not found' });
+      }
+      
+      // Get list members
+      db.all(
+        `SELECT plm.*, p.data, p.is_published 
+         FROM player_list_members plm
+         JOIN players p ON p.id = plm.player_id
+         WHERE plm.list_id = ?
+         ORDER BY plm.added_at DESC`,
+        [listId],
+        (err, members) => {
+          if (err) {
+            return res.status(500).json({ error: 'Error fetching list members' });
+          }
+          
+          // Parse player data
+          const players = members.map(member => {
+            const player = JSON.parse(member.data);
+            player.id = member.player_id;
+            player.playerId = member.player_id;
+            player.is_published = member.is_published;
+            player.list_notes = member.notes;
+            player.added_at = member.added_at;
+            return player;
+          });
+          
+          res.json({
+            ...list,
+            players
+          });
+        }
+      );
+    }
+  );
+});
+
+app.delete('/api/player-lists/:listId', authenticateToken, (req, res) => {
+  db.run(
+    'DELETE FROM player_lists WHERE id = ? AND user_id = ?',
+    [req.params.listId, req.user.id],
+    function(err) {
+      if (err) {
+        return res.status(500).json({ error: 'Error deleting list' });
+      }
+      if (this.changes === 0) {
+        return res.status(404).json({ error: 'List not found' });
+      }
+      res.json({ message: 'List deleted successfully' });
+    }
+  );
+});
+
+app.delete('/api/player-lists/:listId/players/:playerId', authenticateToken, (req, res) => {
+  const { listId, playerId } = req.params;
+  
+  // First verify the list belongs to the user
+  db.get(
+    'SELECT * FROM player_lists WHERE id = ? AND user_id = ?',
+    [listId, req.user.id],
+    (err, list) => {
+      if (err) {
+        return res.status(500).json({ error: 'Error verifying list' });
+      }
+      if (!list) {
+        return res.status(404).json({ error: 'List not found' });
+      }
+      
+      // Remove player from list
+      db.run(
+        'DELETE FROM player_list_members WHERE list_id = ? AND player_id = ?',
+        [listId, playerId],
+        function(err) {
+          if (err) {
+            return res.status(500).json({ error: 'Error removing player' });
+          }
+          if (this.changes === 0) {
+            return res.status(404).json({ error: 'Player not found in list' });
+          }
+          res.json({ message: 'Player removed from list' });
+        }
+      );
+    }
+  );
+});
+
 app.use((err, req, res, next) => {
   if (err instanceof multer.MulterError) {
     if (err.code === 'LIMIT_FILE_SIZE') {

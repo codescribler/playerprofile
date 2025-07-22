@@ -71,8 +71,19 @@ class SearchWizard {
         document.getElementById('load-search-btn').addEventListener('click', () => this.showSavedSearches());
         
         // Modal close buttons
-        document.getElementById('close-results').addEventListener('click', () => this.closeModal('search-results-modal'));
         document.getElementById('close-saved').addEventListener('click', () => this.closeModal('saved-searches-modal'));
+        document.getElementById('close-add-to-list').addEventListener('click', () => this.closeModal('add-to-list-modal'));
+        
+        // Results section buttons
+        document.getElementById('back-to-search').addEventListener('click', () => this.backToSearch());
+        document.getElementById('select-all-btn').addEventListener('click', () => this.selectAllResults());
+        document.getElementById('clear-selection-btn').addEventListener('click', () => this.clearSelection());
+        document.getElementById('add-to-list-btn').addEventListener('click', () => this.showAddToListModal());
+        
+        // Add to list modal
+        document.getElementById('list-selector').addEventListener('change', (e) => this.handleListSelection(e));
+        document.getElementById('cancel-add-to-list').addEventListener('click', () => this.closeModal('add-to-list-modal'));
+        document.getElementById('confirm-add-to-list').addEventListener('click', () => this.addSelectedToList());
         
         // Height unit toggle
         document.querySelectorAll('input[name="height-unit"]').forEach(radio => {
@@ -649,20 +660,38 @@ class SearchWizard {
     }
     
     showResults(players) {
+        this.searchResults = players;
+        this.selectedPlayers = new Set();
         const container = document.getElementById('results-container');
+        const resultsSection = document.getElementById('search-results-section');
+        
+        // Hide wizard content and show results
+        document.querySelector('.wizard-content').style.display = 'none';
+        document.querySelector('.wizard-navigation').style.display = 'none';
+        resultsSection.style.display = 'block';
         
         if (players.length === 0) {
-            container.innerHTML = '<p>No players found matching your criteria.</p>';
+            container.innerHTML = '<p class="no-results">No players found matching your criteria.</p>';
         } else {
             container.innerHTML = `
-                <p>Found ${players.length} players</p>
+                <p class="results-count">Found ${players.length} players</p>
                 <div class="results-grid">
                     ${players.map(player => this.renderPlayerCard(player)).join('')}
                 </div>
             `;
+            
+            // Add click handlers for selection
+            container.querySelectorAll('.player-result-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    if (e.ctrlKey || e.metaKey || e.target.closest('.player-actions')) {
+                        return;
+                    }
+                    this.togglePlayerSelection(card.dataset.playerId);
+                });
+            });
         }
         
-        document.getElementById('search-results-modal').style.display = 'flex';
+        this.updateSelectionUI();
     }
     
     renderPlayerCard(player) {
@@ -671,10 +700,22 @@ class SearchWizard {
         const position = player.playingInfo?.positions?.[0]?.position || 'Unknown';
         
         return `
-            <div class="player-result-card" onclick="window.open('/profile-view.html?id=${player.id}', '_blank')">
-                <h3>${name}</h3>
-                <p>${position} • Age ${age}</p>
-                <p>${player.location?.city || 'Unknown location'}</p>
+            <div class="player-result-card" data-player-id="${player.id}">
+                <div class="player-selection-indicator">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M5 12l5 5L20 7"></path>
+                    </svg>
+                </div>
+                <div class="player-info">
+                    <h3>${name}</h3>
+                    <p>${position} • Age ${age}</p>
+                    <p>${player.location?.city || 'Unknown location'}</p>
+                </div>
+                <div class="player-actions">
+                    <button class="fm-btn fm-btn-sm fm-btn-outline" onclick="window.open('/profile-view.html?id=${player.id}', '_blank')">
+                        View Profile
+                    </button>
+                </div>
             </div>
         `;
     }
@@ -920,6 +961,164 @@ class SearchWizard {
         } catch (error) {
             console.error('Save search error:', error);
             alert('Failed to save search');
+        }
+    }
+    
+    togglePlayerSelection(playerId) {
+        const card = document.querySelector(`[data-player-id="${playerId}"]`);
+        
+        if (this.selectedPlayers.has(playerId)) {
+            this.selectedPlayers.delete(playerId);
+            card.classList.remove('selected');
+        } else {
+            this.selectedPlayers.add(playerId);
+            card.classList.add('selected');
+        }
+        
+        this.updateSelectionUI();
+    }
+    
+    selectAllResults() {
+        document.querySelectorAll('.player-result-card').forEach(card => {
+            const playerId = card.dataset.playerId;
+            this.selectedPlayers.add(playerId);
+            card.classList.add('selected');
+        });
+        this.updateSelectionUI();
+    }
+    
+    clearSelection() {
+        this.selectedPlayers.clear();
+        document.querySelectorAll('.player-result-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        this.updateSelectionUI();
+    }
+    
+    backToSearch() {
+        // Hide results and show wizard
+        document.getElementById('search-results-section').style.display = 'none';
+        document.querySelector('.wizard-content').style.display = 'block';
+        document.querySelector('.wizard-navigation').style.display = 'flex';
+        
+        // Clear selection
+        this.clearSelection();
+    }
+    
+    updateSelectionUI() {
+        const addToListBtn = document.getElementById('add-to-list-btn');
+        const selectedCount = this.selectedPlayers.size;
+        
+        if (selectedCount > 0) {
+            addToListBtn.disabled = false;
+            addToListBtn.textContent = `Add ${selectedCount} Player${selectedCount > 1 ? 's' : ''} to List`;
+        } else {
+            addToListBtn.disabled = true;
+            addToListBtn.textContent = 'Add Selected to List';
+        }
+    }
+    
+    async showAddToListModal() {
+        // Load existing lists
+        try {
+            const response = await fetch('/api/player-lists', {
+                headers: {
+                    'Authorization': `Bearer ${this.token}`
+                }
+            });
+            
+            if (response.ok) {
+                const lists = await response.json();
+                const selector = document.getElementById('list-selector');
+                
+                // Clear existing options except first two
+                while (selector.options.length > 2) {
+                    selector.remove(2);
+                }
+                
+                // Add existing lists
+                lists.forEach(list => {
+                    const option = document.createElement('option');
+                    option.value = list.id;
+                    option.textContent = list.name;
+                    selector.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error loading lists:', error);
+        }
+        
+        document.getElementById('add-to-list-modal').style.display = 'flex';
+    }
+    
+    handleListSelection(e) {
+        const newListForm = document.getElementById('new-list-form');
+        if (e.target.value === 'new') {
+            newListForm.style.display = 'block';
+        } else {
+            newListForm.style.display = 'none';
+        }
+    }
+    
+    async addSelectedToList() {
+        const selector = document.getElementById('list-selector');
+        const notes = document.getElementById('add-to-list-notes').value;
+        let listId = selector.value;
+        
+        if (!listId) {
+            alert('Please select a list');
+            return;
+        }
+        
+        try {
+            // Create new list if needed
+            if (listId === 'new') {
+                const name = document.getElementById('new-list-name').value;
+                const description = document.getElementById('new-list-description').value;
+                
+                if (!name) {
+                    alert('Please enter a list name');
+                    return;
+                }
+                
+                const response = await fetch('/api/player-lists', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${this.token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ name, description })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to create list');
+                }
+                
+                const newList = await response.json();
+                listId = newList.id;
+            }
+            
+            // Add players to list
+            const playerIds = Array.from(this.selectedPlayers);
+            const response = await fetch(`/api/player-lists/${listId}/players`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ playerIds, notes })
+            });
+            
+            if (response.ok) {
+                alert(`Successfully added ${playerIds.length} player(s) to list`);
+                this.closeModal('add-to-list-modal');
+                this.clearSelection();
+            } else {
+                throw new Error('Failed to add players to list');
+            }
+        } catch (error) {
+            console.error('Error adding to list:', error);
+            alert('Failed to add players to list');
         }
     }
 }

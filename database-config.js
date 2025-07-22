@@ -128,12 +128,38 @@ const initPgTables = async () => {
       FOREIGN KEY (user_id) REFERENCES users(id)
     )`);
 
+    // Create player lists table
+    await pool.query(`CREATE TABLE IF NOT EXISTS player_lists (
+      id SERIAL PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )`);
+
+    // Create player list members table
+    await pool.query(`CREATE TABLE IF NOT EXISTS player_list_members (
+      id SERIAL PRIMARY KEY,
+      list_id INTEGER NOT NULL,
+      player_id TEXT NOT NULL,
+      notes TEXT,
+      added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (list_id) REFERENCES player_lists(id) ON DELETE CASCADE,
+      FOREIGN KEY (player_id) REFERENCES players(id) ON DELETE CASCADE,
+      UNIQUE(list_id, player_id)
+    )`);
+
     // Create indexes only after columns exist
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_players_user_id ON players(user_id)`).catch(() => {});
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_players_is_published ON players(is_published)`).catch(() => {});
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_messages_player_id ON messages(player_id)`).catch(() => {});
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_player_locations_coords ON player_locations(latitude, longitude)`).catch(() => {});
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_saved_searches_user_id ON saved_searches(user_id)`).catch(() => {});
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_player_lists_user_id ON player_lists(user_id)`).catch(() => {});
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_player_list_members_list_id ON player_list_members(list_id)`).catch(() => {});
+    await pool.query(`CREATE INDEX IF NOT EXISTS idx_player_list_members_player_id ON player_list_members(player_id)`).catch(() => {});
     
     // Migrate metadata.published to is_published column
     console.log('Checking for is_published migration...');
