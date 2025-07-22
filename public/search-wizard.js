@@ -1091,11 +1091,17 @@ class SearchWizard {
                 });
                 
                 if (!response.ok) {
-                    throw new Error('Failed to create list');
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to create list');
                 }
                 
                 const newList = await response.json();
+                console.log('New list created:', newList);
                 listId = newList.id;
+                
+                if (!listId) {
+                    throw new Error('Failed to get list ID from server response');
+                }
             }
             
             // Add players to list
@@ -1110,11 +1116,20 @@ class SearchWizard {
             });
             
             if (response.ok) {
-                alert(`Successfully added ${playerIds.length} player(s) to list`);
+                const result = await response.json();
+                alert(result.message || `Successfully added ${playerIds.length} player(s) to list`);
                 this.closeModal('add-to-list-modal');
                 this.clearSelection();
+                
+                // Reset form
+                document.getElementById('list-selector').value = '';
+                document.getElementById('new-list-form').style.display = 'none';
+                document.getElementById('new-list-name').value = '';
+                document.getElementById('new-list-description').value = '';
+                document.getElementById('add-to-list-notes').value = '';
             } else {
-                throw new Error('Failed to add players to list');
+                const error = await response.json();
+                throw new Error(error.error || 'Failed to add players to list');
             }
         } catch (error) {
             console.error('Error adding to list:', error);

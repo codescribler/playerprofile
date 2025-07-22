@@ -1729,44 +1729,44 @@ app.post('/api/dev/users/:id/make-admin', (req, res) => {
 });
 
 // Player Lists API endpoints
-app.get('/api/player-lists', authenticateToken, (req, res) => {
-  db.all(
-    'SELECT * FROM player_lists WHERE user_id = ? ORDER BY created_at DESC',
-    [req.user.id],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).json({ error: 'Error fetching lists' });
-      }
-      res.json(rows);
-    }
-  );
+app.get('/api/player-lists', authenticateToken, async (req, res) => {
+  try {
+    const result = await db.query(
+      'SELECT * FROM player_lists WHERE user_id = $1 ORDER BY created_at DESC',
+      [req.user.id]
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Error fetching lists:', err);
+    res.status(500).json({ error: 'Error fetching lists' });
+  }
 });
 
-app.post('/api/player-lists', authenticateToken, (req, res) => {
+app.post('/api/player-lists', authenticateToken, async (req, res) => {
   const { name, description } = req.body;
   
   if (!name) {
     return res.status(400).json({ error: 'List name is required' });
   }
   
-  db.run(
-    'INSERT INTO player_lists (user_id, name, description) VALUES (?, ?, ?)',
-    [req.user.id, name, description || null],
-    function(err) {
-      if (err) {
-        return res.status(500).json({ error: 'Error creating list' });
-      }
-      res.json({ 
-        id: this.lastID, 
-        name, 
-        description,
-        created_at: new Date().toISOString()
-      });
+  try {
+    const result = await db.query(
+      'INSERT INTO player_lists (user_id, name, description) VALUES ($1, $2, $3) RETURNING *',
+      [req.user.id, name, description || null]
+    );
+    
+    if (result.rows.length > 0) {
+      res.json(result.rows[0]);
+    } else {
+      throw new Error('No rows returned');
     }
-  );
+  } catch (err) {
+    console.error('Error creating list:', err);
+    res.status(500).json({ error: 'Error creating list' });
+  }
 });
 
-app.post('/api/player-lists/:listId/players', authenticateToken, (req, res) => {
+app.post('/api/player-lists/:listId/players', authenticateToken, async (req, res) => {
   const { playerIds, notes } = req.body;
   const listId = req.params.listId;
   
@@ -1774,142 +1774,139 @@ app.post('/api/player-lists/:listId/players', authenticateToken, (req, res) => {
     return res.status(400).json({ error: 'Player IDs are required' });
   }
   
-  // First verify the list belongs to the user
-  db.get(
-    'SELECT * FROM player_lists WHERE id = ? AND user_id = ?',
-    [listId, req.user.id],
-    (err, list) => {
-      if (err) {
-        return res.status(500).json({ error: 'Error verifying list' });
-      }
-      if (!list) {
-        return res.status(404).json({ error: 'List not found' });
-      }
-      
-      // Insert players into the list
-      const stmt = db.prepare('INSERT OR IGNORE INTO player_list_members (list_id, player_id, notes) VALUES (?, ?, ?)');
-      let successCount = 0;
-      let errorCount = 0;
-      
-      playerIds.forEach((playerId, index) => {
-        stmt.run([listId, playerId, notes || null], function(err) {
-          if (err) {
-            errorCount++;
-          } else {
-            successCount++;
-          }
-          
-          // Check if we're done
-          if (index === playerIds.length - 1) {
-            stmt.finalize();
-            res.json({
-              message: `Added ${successCount} players to list`,
-              added: successCount,
-              errors: errorCount
-            });
-          }
-        });
-      });
+  try {
+    // First verify the list belongs to the user
+    const listResult = await db.query(
+      'SELECT * FROM player_lists WHERE id = $1 AND user_id = $2',
+      [listId, req.user.id]
+    );
+    
+    if (listResult.rows.length === 0) {
+      return res.status(404).json({ error: 'List not found' });
     }
-  );
+    
+    // Insert players into the list
+    let successCount = 0;
+    let errorCount = 0;
+    
+    for (const playerId of playerIds) {
+      try {
+        await db.query(
+          'INSERT INTO player_list_members (list_id, player_id, notes) VALUES ($1, $2, $3) ON CONFLICT (list_id, player_id) DO NOTHING',
+          [listId, playerId, notes || null]
+        );
+        successCount++;
+      } catch (err) {
+        console.error(`Error adding player ${playerId}:`, err);
+        errorCount++;
+      }
+    }
+    
+    res.json({
+      message: `Added ${successCount} players to list`,
+      added: successCount,
+      errors: errorCount
+    });
+  } catch (err) {
+    console.error('Error adding players to list:', err);
+    res.status(500).json({ error: 'Error adding players to list' });
+  }
 });
 
-app.get('/api/player-lists/:listId', authenticateToken, (req, res) => {
+app.get('/api/player-lists/:listId', authenticateToken, async (req, res) => {
   const listId = req.params.listId;
   
-  // Get list details and members
-  db.get(
-    'SELECT * FROM player_lists WHERE id = ? AND user_id = ?',
-    [listId, req.user.id],
-    (err, list) => {
-      if (err) {
-        return res.status(500).json({ error: 'Error fetching list' });
-      }
-      if (!list) {
-        return res.status(404).json({ error: 'List not found' });
-      }
-      
-      // Get list members
-      db.all(
-        `SELECT plm.*, p.data, p.is_published 
-         FROM player_list_members plm
-         JOIN players p ON p.id = plm.player_id
-         WHERE plm.list_id = ?
-         ORDER BY plm.added_at DESC`,
-        [listId],
-        (err, members) => {
-          if (err) {
-            return res.status(500).json({ error: 'Error fetching list members' });
-          }
-          
-          // Parse player data
-          const players = members.map(member => {
-            const player = JSON.parse(member.data);
-            player.id = member.player_id;
-            player.playerId = member.player_id;
-            player.is_published = member.is_published;
-            player.list_notes = member.notes;
-            player.added_at = member.added_at;
-            return player;
-          });
-          
-          res.json({
-            ...list,
-            players
-          });
-        }
-      );
+  try {
+    // Get list details
+    const listResult = await db.query(
+      'SELECT * FROM player_lists WHERE id = $1 AND user_id = $2',
+      [listId, req.user.id]
+    );
+    
+    if (listResult.rows.length === 0) {
+      return res.status(404).json({ error: 'List not found' });
     }
-  );
+    
+    const list = listResult.rows[0];
+    
+    // Get list members
+    const membersResult = await db.query(
+      `SELECT plm.*, p.data, p.is_published 
+       FROM player_list_members plm
+       JOIN players p ON p.id = plm.player_id
+       WHERE plm.list_id = $1
+       ORDER BY plm.added_at DESC`,
+      [listId]
+    );
+    
+    // Parse player data
+    const players = membersResult.rows.map(member => {
+      const player = JSON.parse(member.data);
+      player.id = member.player_id;
+      player.playerId = member.player_id;
+      player.is_published = member.is_published;
+      player.list_notes = member.notes;
+      player.added_at = member.added_at;
+      return player;
+    });
+    
+    res.json({
+      ...list,
+      players
+    });
+  } catch (err) {
+    console.error('Error fetching list:', err);
+    res.status(500).json({ error: 'Error fetching list' });
+  }
 });
 
-app.delete('/api/player-lists/:listId', authenticateToken, (req, res) => {
-  db.run(
-    'DELETE FROM player_lists WHERE id = ? AND user_id = ?',
-    [req.params.listId, req.user.id],
-    function(err) {
-      if (err) {
-        return res.status(500).json({ error: 'Error deleting list' });
-      }
-      if (this.changes === 0) {
-        return res.status(404).json({ error: 'List not found' });
-      }
-      res.json({ message: 'List deleted successfully' });
+app.delete('/api/player-lists/:listId', authenticateToken, async (req, res) => {
+  try {
+    const result = await db.query(
+      'DELETE FROM player_lists WHERE id = $1 AND user_id = $2',
+      [req.params.listId, req.user.id]
+    );
+    
+    if (result.rowCount === 0) {
+      return res.status(404).json({ error: 'List not found' });
     }
-  );
+    
+    res.json({ message: 'List deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting list:', err);
+    res.status(500).json({ error: 'Error deleting list' });
+  }
 });
 
-app.delete('/api/player-lists/:listId/players/:playerId', authenticateToken, (req, res) => {
+app.delete('/api/player-lists/:listId/players/:playerId', authenticateToken, async (req, res) => {
   const { listId, playerId } = req.params;
   
-  // First verify the list belongs to the user
-  db.get(
-    'SELECT * FROM player_lists WHERE id = ? AND user_id = ?',
-    [listId, req.user.id],
-    (err, list) => {
-      if (err) {
-        return res.status(500).json({ error: 'Error verifying list' });
-      }
-      if (!list) {
-        return res.status(404).json({ error: 'List not found' });
-      }
-      
-      // Remove player from list
-      db.run(
-        'DELETE FROM player_list_members WHERE list_id = ? AND player_id = ?',
-        [listId, playerId],
-        function(err) {
-          if (err) {
-            return res.status(500).json({ error: 'Error removing player' });
-          }
-          if (this.changes === 0) {
-            return res.status(404).json({ error: 'Player not found in list' });
-          }
-          res.json({ message: 'Player removed from list' });
-        }
-      );
+  try {
+    // First verify the list belongs to the user
+    const listResult = await db.query(
+      'SELECT * FROM player_lists WHERE id = $1 AND user_id = $2',
+      [listId, req.user.id]
+    );
+    
+    if (listResult.rows.length === 0) {
+      return res.status(404).json({ error: 'List not found' });
     }
-  );
+    
+    // Remove player from list
+    const deleteResult = await db.query(
+      'DELETE FROM player_list_members WHERE list_id = $1 AND player_id = $2',
+      [listId, playerId]
+    );
+    
+    if (deleteResult.rowCount === 0) {
+      return res.status(404).json({ error: 'Player not found in list' });
+    }
+    
+    res.json({ message: 'Player removed from list' });
+  } catch (err) {
+    console.error('Error removing player from list:', err);
+    res.status(500).json({ error: 'Error removing player' });
+  }
 });
 
 app.use((err, req, res, next) => {
