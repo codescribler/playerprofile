@@ -4,7 +4,6 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const db = require('./database-config');
-const axios = require('axios');
 require('dotenv').config();
 
 const app = express();
