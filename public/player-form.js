@@ -226,10 +226,14 @@ class PlayerForm {
 
             if (response.ok) {
                 const player = await response.json();
+                console.log('API response for player', playerId, ':', player);
                 // Store the full player object to preserve metadata
                 this.currentPlayer = player;
                 this.populateForm(player);
             } else {
+                console.error('Failed to load player data. Status:', response.status);
+                const errorText = await response.text();
+                console.error('Error response:', errorText);
                 this.showMessage('Failed to load player data', 'error');
             }
         } catch (error) {
@@ -239,7 +243,17 @@ class PlayerForm {
     }
 
     populateForm(player) {
+        console.log('Populating form with player data:', player);
+        
         // Personal Information
+        const firstName = document.getElementById('firstName');
+        const lastName = document.getElementById('lastName');
+        
+        if (!firstName || !lastName) {
+            console.error('Form fields not found. firstName element:', firstName, 'lastName element:', lastName);
+            console.log('Available form elements:', document.querySelectorAll('input[type="text"]'));
+        }
+        
         document.getElementById('firstName').value = player.personalInfo?.firstName || '';
         document.getElementById('lastName').value = player.personalInfo?.lastName || '';
         document.getElementById('dateOfBirth').value = player.personalInfo?.dateOfBirth || '';
