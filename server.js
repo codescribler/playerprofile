@@ -4,6 +4,13 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const db = require('./database-config');
+const { Pool } = require('pg');
+
+// PostgreSQL pool configuration
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
 
 // Load dotenv in development only
 if (process.env.NODE_ENV !== 'production') {
@@ -26,86 +33,67 @@ app.use(express.static('public'));
 
 // Helper function to get player with all related data
 async function getFullPlayer(playerId, includePrivate = true) {
-  return new Promise((resolve, reject) => {
-    db.get(
-      'SELECT * FROM players WHERE id = ?',
-      [playerId],
-      async (err, player) => {
-        if (err) return reject(err);
-        if (!player) return resolve(null);
+  try {
+    // Get main player data
+    const { rows: playerRows } = await pool.query(
+      'SELECT * FROM players WHERE id = $1',
+      [playerId]
+    );
+    
+    if (playerRows.length === 0) return null;
+    const player = playerRows[0];
 
-        try {
-          // Get positions
-          const positions = await new Promise((res, rej) => {
-            db.all(
-              'SELECT * FROM player_positions WHERE player_id = ? ORDER BY position_order',
-              [playerId],
-              (err, rows) => err ? rej(err) : res(rows)
-            );
-          });
+    // Get positions
+    const { rows: positions } = await pool.query(
+      'SELECT * FROM player_positions WHERE player_id = $1 ORDER BY position_order',
+      [playerId]
+    );
 
-          // Get teams
-          const teams = await new Promise((res, rej) => {
-            db.all(
-              'SELECT * FROM player_teams WHERE player_id = ?',
-              [playerId],
-              (err, rows) => err ? rej(err) : res(rows)
-            );
-          });
+    // Get teams
+    const { rows: teams } = await pool.query(
+      'SELECT * FROM player_teams WHERE player_id = $1',
+      [playerId]
+    );
 
-          // Get abilities
-          const abilities = await new Promise((res, rej) => {
-            db.get(
-              'SELECT * FROM player_abilities WHERE player_id = ?',
-              [playerId],
-              (err, row) => err ? rej(err) : res(row)
-            );
-          });
+    // Get abilities
+    const { rows: abilitiesRows } = await pool.query(
+      'SELECT * FROM player_abilities WHERE player_id = $1',
+      [playerId]
+    );
+    const abilities = abilitiesRows[0];
 
-          // Get representative teams
-          const repTeams = await new Promise((res, rej) => {
-            db.all(
-              'SELECT * FROM player_representative_teams WHERE player_id = ?',
-              [playerId],
-              (err, rows) => err ? rej(err) : res(rows)
-            );
-          });
+    // Get representative teams
+    const { rows: repTeams } = await pool.query(
+      'SELECT * FROM player_representative_teams WHERE player_id = $1',
+      [playerId]
+    );
 
-          // Get trophies
-          const trophies = await new Promise((res, rej) => {
-            db.all(
-              'SELECT * FROM player_trophies WHERE player_id = ?',
-              [playerId],
-              (err, rows) => err ? rej(err) : res(rows)
-            );
-          });
+    // Get trophies
+    const { rows: trophies } = await pool.query(
+      'SELECT * FROM player_trophies WHERE player_id = $1',
+      [playerId]
+    );
 
-          // Get strengths
-          const strengths = await new Promise((res, rej) => {
-            db.all(
-              'SELECT strength FROM player_strengths WHERE player_id = ?',
-              [playerId],
-              (err, rows) => err ? rej(err) : res(rows.map(r => r.strength))
-            );
-          });
+    // Get strengths
+    const { rows: strengthRows } = await pool.query(
+      'SELECT strength FROM player_strengths WHERE player_id = $1',
+      [playerId]
+    );
+    const strengths = strengthRows.map(r => r.strength);
 
-          // Get weaknesses
-          const weaknesses = await new Promise((res, rej) => {
-            db.all(
-              'SELECT weakness FROM player_weaknesses WHERE player_id = ?',
-              [playerId],
-              (err, rows) => err ? rej(err) : res(rows.map(r => r.weakness))
-            );
-          });
+    // Get weaknesses
+    const { rows: weaknessRows } = await pool.query(
+      'SELECT weakness FROM player_weaknesses WHERE player_id = $1',
+      [playerId]
+    );
+    const weaknesses = weaknessRows.map(r => r.weakness);
 
-          // Get preferred locations
-          const preferredLocations = await new Promise((res, rej) => {
-            db.all(
-              'SELECT location FROM player_preferred_locations WHERE player_id = ?',
-              [playerId],
-              (err, rows) => err ? rej(err) : res(rows.map(r => r.location))
-            );
-          });
+    // Get preferred locations
+    const { rows: locationRows } = await pool.query(
+      'SELECT location FROM player_preferred_locations WHERE player_id = $1',
+      [playerId]
+    );
+    const preferredLocations = locationRows.map(r => r.location);
 
           // Format the response
           const fullPlayer = {
@@ -240,285 +228,234 @@ async function getFullPlayer(playerId, includePrivate = true) {
             }
           };
 
-          resolve(fullPlayer);
-        } catch (error) {
-          reject(error);
-        }
-      }
-    );
-  });
+    return fullPlayer;
+  } catch (error) {
+    throw error;
+  }
 }
 
 // Helper function to save player data
 async function savePlayer(playerId, userId, data) {
-  return new Promise((resolve, reject) => {
-    db.serialize(() => {
-      db.run('BEGIN TRANSACTION');
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
 
-      // Update main player record
-      db.run(
-        `UPDATE players SET 
-          first_name = ?, last_name = ?, date_of_birth = ?, nationality = ?,
-          height_cm = ?, height_feet = ?, height_inches = ?, 
-          weight_kg = ?, weight_lbs = ?,
-          preferred_foot = ?, weak_foot_strength = ?,
-          player_phone = ?, player_email = ?,
-          guardian_name = ?, guardian_phone = ?, guardian_email = ?,
-          years_playing = ?, based_location = ?,
-          current_school = ?, grade_year = ?,
-          postcode = ?, city = ?, county = ?, country = ?,
-          latitude = ?, longitude = ?,
-          availability_status = ?, willing_to_relocate = ?, travel_radius = ?,
-          showcase_description = ?, playing_style_summary = ?,
-          profile_photo = ?, updated_at = CURRENT_TIMESTAMP
-        WHERE id = ? AND user_id = ?`,
+    // Update main player record
+    await client.query(
+      `UPDATE players SET 
+        first_name = $1, last_name = $2, date_of_birth = $3, nationality = $4,
+        height_cm = $5, height_feet = $6, height_inches = $7, 
+        weight_kg = $8, weight_lbs = $9,
+        preferred_foot = $10, weak_foot_strength = $11,
+        player_phone = $12, player_email = $13,
+        guardian_name = $14, guardian_phone = $15, guardian_email = $16,
+        years_playing = $17, based_location = $18,
+        current_school = $19, grade_year = $20,
+        postcode = $21, city = $22, county = $23, country = $24,
+        latitude = $25, longitude = $26,
+        availability_status = $27, willing_to_relocate = $28, travel_radius = $29,
+        showcase_description = $30, playing_style_summary = $31,
+        profile_photo = $32, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $33 AND user_id = $34`,
+      [
+        data.personalInfo?.firstName,
+        data.personalInfo?.lastName,
+        data.personalInfo?.dateOfBirth,
+        data.personalInfo?.nationality,
+        data.personalInfo?.height?.centimeters,
+        data.personalInfo?.height?.feet,
+        data.personalInfo?.height?.inches,
+        data.personalInfo?.weight?.kilograms,
+        data.personalInfo?.weight?.pounds,
+        data.personalInfo?.preferredFoot,
+        data.personalInfo?.weakFootStrength,
+        data.contactInfo?.player?.phone,
+        data.contactInfo?.player?.email,
+        data.contactInfo?.guardian?.name,
+        data.contactInfo?.guardian?.phone,
+        data.contactInfo?.guardian?.email,
+        data.playingInfo?.yearsPlaying,
+        data.playingInfo?.basedLocation,
+        data.academicInfo?.currentSchool,
+        data.academicInfo?.gradeYear,
+        data.location?.postcode,
+        data.location?.city,
+        data.location?.county,
+        data.location?.country,
+        data.location?.coordinates?.latitude,
+        data.location?.coordinates?.longitude,
+        data.availability?.status,
+        data.availability?.willingToRelocate,
+        data.availability?.travelRadius,
+        data.showcase?.description,
+        data.playingStyle?.summary,
+        data.media?.profilePhoto,
+        playerId,
+        userId
+      ]
+    );
+
+    // Delete and re-insert related data
+    await client.query('DELETE FROM player_positions WHERE player_id = $1', [playerId]);
+
+    // Insert positions
+    if (data.playingInfo?.positions?.length > 0) {
+      for (let i = 0; i < data.playingInfo.positions.length; i++) {
+        const pos = data.playingInfo.positions[i];
+        await client.query(
+          'INSERT INTO player_positions (player_id, position, suitability, notes, position_order, is_primary) VALUES ($1, $2, $3, $4, $5, $6)',
+          [playerId, pos.position, pos.suitability, pos.notes, i, i === 0]
+        );
+      }
+    }
+
+    // Delete and re-insert teams
+    await client.query('DELETE FROM player_teams WHERE player_id = $1', [playerId]);
+
+    if (data.playingInfo?.teams?.length > 0) {
+      for (const team of data.playingInfo.teams) {
+        await client.query(
+          'INSERT INTO player_teams (player_id, club_name, league, is_primary) VALUES ($1, $2, $3, $4)',
+          [playerId, team.clubName, team.league, team.isPrimary]
+        );
+      }
+    }
+
+    // Update abilities
+    if (data.abilities) {
+      await client.query(
+        `INSERT INTO player_abilities (
+          player_id, ball_control, passing, shooting, dribbling, first_touch, crossing, tackling, heading,
+          pace, strength, stamina, agility, balance, jumping,
+          decision_making, positioning, concentration, leadership, communication,
+          sprint_10m, sprint_30m, run_1km, bleep_test
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
+        ON CONFLICT (player_id) DO UPDATE SET
+          ball_control = EXCLUDED.ball_control,
+          passing = EXCLUDED.passing,
+          shooting = EXCLUDED.shooting,
+          dribbling = EXCLUDED.dribbling,
+          first_touch = EXCLUDED.first_touch,
+          crossing = EXCLUDED.crossing,
+          tackling = EXCLUDED.tackling,
+          heading = EXCLUDED.heading,
+          pace = EXCLUDED.pace,
+          strength = EXCLUDED.strength,
+          stamina = EXCLUDED.stamina,
+          agility = EXCLUDED.agility,
+          balance = EXCLUDED.balance,
+          jumping = EXCLUDED.jumping,
+          decision_making = EXCLUDED.decision_making,
+          positioning = EXCLUDED.positioning,
+          concentration = EXCLUDED.concentration,
+          leadership = EXCLUDED.leadership,
+          communication = EXCLUDED.communication,
+          sprint_10m = EXCLUDED.sprint_10m,
+          sprint_30m = EXCLUDED.sprint_30m,
+          run_1km = EXCLUDED.run_1km,
+          bleep_test = EXCLUDED.bleep_test`,
         [
-          data.personalInfo?.firstName,
-          data.personalInfo?.lastName,
-          data.personalInfo?.dateOfBirth,
-          data.personalInfo?.nationality,
-          data.personalInfo?.height?.centimeters,
-          data.personalInfo?.height?.feet,
-          data.personalInfo?.height?.inches,
-          data.personalInfo?.weight?.kilograms,
-          data.personalInfo?.weight?.pounds,
-          data.personalInfo?.preferredFoot,
-          data.personalInfo?.weakFootStrength,
-          data.contactInfo?.player?.phone,
-          data.contactInfo?.player?.email,
-          data.contactInfo?.guardian?.name,
-          data.contactInfo?.guardian?.phone,
-          data.contactInfo?.guardian?.email,
-          data.playingInfo?.yearsPlaying,
-          data.playingInfo?.basedLocation,
-          data.academicInfo?.currentSchool,
-          data.academicInfo?.gradeYear,
-          data.location?.postcode,
-          data.location?.city,
-          data.location?.county,
-          data.location?.country,
-          data.location?.coordinates?.latitude,
-          data.location?.coordinates?.longitude,
-          data.availability?.status,
-          data.availability?.willingToRelocate,
-          data.availability?.travelRadius,
-          data.showcase?.description,
-          data.playingStyle?.summary,
-          data.media?.profilePhoto,
           playerId,
-          userId
-        ],
-        async function(err) {
-          if (err) {
-            db.run('ROLLBACK');
-            return reject(err);
-          }
-
-          try {
-            // Delete and re-insert related data
-            await new Promise((res, rej) => {
-              db.run('DELETE FROM player_positions WHERE player_id = ?', [playerId], (err) => err ? rej(err) : res());
-            });
-
-            // Insert positions
-            if (data.playingInfo?.positions?.length > 0) {
-              for (let i = 0; i < data.playingInfo.positions.length; i++) {
-                const pos = data.playingInfo.positions[i];
-                await new Promise((res, rej) => {
-                  db.run(
-                    'INSERT INTO player_positions (player_id, position, suitability, notes, position_order, is_primary) VALUES (?, ?, ?, ?, ?, ?)',
-                    [playerId, pos.position, pos.suitability, pos.notes, i, i === 0],
-                    (err) => err ? rej(err) : res()
-                  );
-                });
-              }
-            }
-
-            // Delete and re-insert teams
-            await new Promise((res, rej) => {
-              db.run('DELETE FROM player_teams WHERE player_id = ?', [playerId], (err) => err ? rej(err) : res());
-            });
-
-            if (data.playingInfo?.teams?.length > 0) {
-              for (const team of data.playingInfo.teams) {
-                await new Promise((res, rej) => {
-                  db.run(
-                    'INSERT INTO player_teams (player_id, club_name, league, is_primary) VALUES (?, ?, ?, ?)',
-                    [playerId, team.clubName, team.league, team.isPrimary],
-                    (err) => err ? rej(err) : res()
-                  );
-                });
-              }
-            }
-
-            // Update abilities
-            if (data.abilities) {
-              await new Promise((res, rej) => {
-                db.run(
-                  `INSERT INTO player_abilities (
-                    player_id, ball_control, passing, shooting, dribbling, first_touch, crossing, tackling, heading,
-                    pace, strength, stamina, agility, balance, jumping,
-                    decision_making, positioning, concentration, leadership, communication,
-                    sprint_10m, sprint_30m, run_1km, bleep_test
-                  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                  ON CONFLICT (player_id) DO UPDATE SET
-                    ball_control = EXCLUDED.ball_control,
-                    passing = EXCLUDED.passing,
-                    shooting = EXCLUDED.shooting,
-                    dribbling = EXCLUDED.dribbling,
-                    first_touch = EXCLUDED.first_touch,
-                    crossing = EXCLUDED.crossing,
-                    tackling = EXCLUDED.tackling,
-                    heading = EXCLUDED.heading,
-                    pace = EXCLUDED.pace,
-                    strength = EXCLUDED.strength,
-                    stamina = EXCLUDED.stamina,
-                    agility = EXCLUDED.agility,
-                    balance = EXCLUDED.balance,
-                    jumping = EXCLUDED.jumping,
-                    decision_making = EXCLUDED.decision_making,
-                    positioning = EXCLUDED.positioning,
-                    concentration = EXCLUDED.concentration,
-                    leadership = EXCLUDED.leadership,
-                    communication = EXCLUDED.communication,
-                    sprint_10m = EXCLUDED.sprint_10m,
-                    sprint_30m = EXCLUDED.sprint_30m,
-                    run_1km = EXCLUDED.run_1km,
-                    bleep_test = EXCLUDED.bleep_test`,
-                  [
-                    playerId,
-                    data.abilities.technical?.ballControl?.rating,
-                    data.abilities.technical?.passing?.rating,
-                    data.abilities.technical?.shooting?.rating,
-                    data.abilities.technical?.dribbling?.rating,
-                    data.abilities.technical?.firstTouch?.rating,
-                    data.abilities.technical?.crossing?.rating,
-                    data.abilities.technical?.tackling?.rating,
-                    data.abilities.technical?.heading?.rating,
-                    data.abilities.physical?.pace?.rating,
-                    data.abilities.physical?.strength?.rating,
-                    data.abilities.physical?.stamina?.rating,
-                    data.abilities.physical?.agility?.rating,
-                    data.abilities.physical?.balance?.rating,
-                    data.abilities.physical?.jumping?.rating,
-                    data.abilities.mental?.decisionMaking?.rating,
-                    data.abilities.mental?.positioning?.rating,
-                    data.abilities.mental?.concentration?.rating,
-                    data.abilities.mental?.leadership?.rating,
-                    data.abilities.mental?.communication?.rating,
-                    data.abilities.athletic?.sprint10m,
-                    data.abilities.athletic?.sprint30m,
-                    data.abilities.athletic?.run1km,
-                    data.abilities.athletic?.bleepTest
-                  ],
-                  (err) => err ? rej(err) : res()
-                );
-              });
-            }
-
-            // Delete and re-insert representative teams
-            await new Promise((res, rej) => {
-              db.run('DELETE FROM player_representative_teams WHERE player_id = ?', [playerId], (err) => err ? rej(err) : res());
-            });
-
-            if (data.playingInfo?.representativeTeams?.district?.selected === 'Yes') {
-              await new Promise((res, rej) => {
-                db.run(
-                  'INSERT INTO player_representative_teams (player_id, level, season) VALUES (?, ?, ?)',
-                  [playerId, 'district', data.playingInfo.representativeTeams.district.season],
-                  (err) => err ? rej(err) : res()
-                );
-              });
-            }
-
-            if (data.playingInfo?.representativeTeams?.county?.selected === 'Yes') {
-              await new Promise((res, rej) => {
-                db.run(
-                  'INSERT INTO player_representative_teams (player_id, level, season) VALUES (?, ?, ?)',
-                  [playerId, 'county', data.playingInfo.representativeTeams.county.season],
-                  (err) => err ? rej(err) : res()
-                );
-              });
-            }
-
-            // Delete and re-insert trophies
-            await new Promise((res, rej) => {
-              db.run('DELETE FROM player_trophies WHERE player_id = ?', [playerId], (err) => err ? rej(err) : res());
-            });
-
-            if (data.playingInfo?.trophiesAwards?.length > 0) {
-              for (const trophy of data.playingInfo.trophiesAwards) {
-                await new Promise((res, rej) => {
-                  db.run(
-                    'INSERT INTO player_trophies (player_id, title, season) VALUES (?, ?, ?)',
-                    [playerId, trophy.title, trophy.season],
-                    (err) => err ? rej(err) : res()
-                  );
-                });
-              }
-            }
-
-            // Delete and re-insert strengths
-            await new Promise((res, rej) => {
-              db.run('DELETE FROM player_strengths WHERE player_id = ?', [playerId], (err) => err ? rej(err) : res());
-            });
-
-            if (data.playingStyle?.strengths?.length > 0) {
-              for (const strength of data.playingStyle.strengths) {
-                await new Promise((res, rej) => {
-                  db.run(
-                    'INSERT INTO player_strengths (player_id, strength) VALUES (?, ?)',
-                    [playerId, strength],
-                    (err) => err ? rej(err) : res()
-                  );
-                });
-              }
-            }
-
-            // Delete and re-insert weaknesses
-            await new Promise((res, rej) => {
-              db.run('DELETE FROM player_weaknesses WHERE player_id = ?', [playerId], (err) => err ? rej(err) : res());
-            });
-
-            if (data.playingStyle?.weaknesses?.length > 0) {
-              for (const weakness of data.playingStyle.weaknesses) {
-                await new Promise((res, rej) => {
-                  db.run(
-                    'INSERT INTO player_weaknesses (player_id, weakness) VALUES (?, ?)',
-                    [playerId, weakness],
-                    (err) => err ? rej(err) : res()
-                  );
-                });
-              }
-            }
-
-            // Delete and re-insert preferred locations
-            await new Promise((res, rej) => {
-              db.run('DELETE FROM player_preferred_locations WHERE player_id = ?', [playerId], (err) => err ? rej(err) : res());
-            });
-
-            if (data.availability?.preferredLocations?.length > 0) {
-              for (const location of data.availability.preferredLocations) {
-                await new Promise((res, rej) => {
-                  db.run(
-                    'INSERT INTO player_preferred_locations (player_id, location) VALUES (?, ?)',
-                    [playerId, location],
-                    (err) => err ? rej(err) : res()
-                  );
-                });
-              }
-            }
-            
-            db.run('COMMIT');
-            resolve({ id: playerId });
-          } catch (error) {
-            db.run('ROLLBACK');
-            reject(error);
-          }
-        }
+          data.abilities.technical?.ballControl?.rating,
+          data.abilities.technical?.passing?.rating,
+          data.abilities.technical?.shooting?.rating,
+          data.abilities.technical?.dribbling?.rating,
+          data.abilities.technical?.firstTouch?.rating,
+          data.abilities.technical?.crossing?.rating,
+          data.abilities.technical?.tackling?.rating,
+          data.abilities.technical?.heading?.rating,
+          data.abilities.physical?.pace?.rating,
+          data.abilities.physical?.strength?.rating,
+          data.abilities.physical?.stamina?.rating,
+          data.abilities.physical?.agility?.rating,
+          data.abilities.physical?.balance?.rating,
+          data.abilities.physical?.jumping?.rating,
+          data.abilities.mental?.decisionMaking?.rating,
+          data.abilities.mental?.positioning?.rating,
+          data.abilities.mental?.concentration?.rating,
+          data.abilities.mental?.leadership?.rating,
+          data.abilities.mental?.communication?.rating,
+          data.abilities.athletic?.sprint10m,
+          data.abilities.athletic?.sprint30m,
+          data.abilities.athletic?.run1km,
+          data.abilities.athletic?.bleepTest
+        ]
       );
-    });
-  });
+    }
+
+    // Delete and re-insert representative teams
+    await client.query('DELETE FROM player_representative_teams WHERE player_id = $1', [playerId]);
+
+    if (data.playingInfo?.representativeTeams?.district?.selected === 'Yes') {
+      await client.query(
+        'INSERT INTO player_representative_teams (player_id, level, season) VALUES ($1, $2, $3)',
+        [playerId, 'district', data.playingInfo.representativeTeams.district.season]
+      );
+    }
+
+    if (data.playingInfo?.representativeTeams?.county?.selected === 'Yes') {
+      await client.query(
+        'INSERT INTO player_representative_teams (player_id, level, season) VALUES ($1, $2, $3)',
+        [playerId, 'county', data.playingInfo.representativeTeams.county.season]
+      );
+    }
+
+    // Delete and re-insert trophies
+    await client.query('DELETE FROM player_trophies WHERE player_id = $1', [playerId]);
+
+    if (data.playingInfo?.trophiesAwards?.length > 0) {
+      for (const trophy of data.playingInfo.trophiesAwards) {
+        await client.query(
+          'INSERT INTO player_trophies (player_id, title, season) VALUES ($1, $2, $3)',
+          [playerId, trophy.title, trophy.season]
+        );
+      }
+    }
+
+    // Delete and re-insert strengths
+    await client.query('DELETE FROM player_strengths WHERE player_id = $1', [playerId]);
+
+    if (data.playingStyle?.strengths?.length > 0) {
+      for (const strength of data.playingStyle.strengths) {
+        await client.query(
+          'INSERT INTO player_strengths (player_id, strength) VALUES ($1, $2)',
+          [playerId, strength]
+        );
+      }
+    }
+
+    // Delete and re-insert weaknesses
+    await client.query('DELETE FROM player_weaknesses WHERE player_id = $1', [playerId]);
+
+    if (data.playingStyle?.weaknesses?.length > 0) {
+      for (const weakness of data.playingStyle.weaknesses) {
+        await client.query(
+          'INSERT INTO player_weaknesses (player_id, weakness) VALUES ($1, $2)',
+          [playerId, weakness]
+        );
+      }
+    }
+
+    // Delete and re-insert preferred locations
+    await client.query('DELETE FROM player_preferred_locations WHERE player_id = $1', [playerId]);
+
+    if (data.availability?.preferredLocations?.length > 0) {
+      for (const location of data.availability.preferredLocations) {
+        await client.query(
+          'INSERT INTO player_preferred_locations (player_id, location) VALUES ($1, $2)',
+          [playerId, location]
+        );
+      }
+    }
+    
+    await client.query('COMMIT');
+    return { id: playerId };
+  } catch (error) {
+    await client.query('ROLLBACK');
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 // Middleware to verify JWT token
@@ -553,22 +490,18 @@ app.post('/api/register', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const userId = uuidv4();
 
-    db.run(
-      'INSERT INTO users (id, username, password, email, role) VALUES (?, ?, ?, ?, ?)',
-      [userId, username, hashedPassword, email, role],
-      function(err) {
-        if (err) {
-          if (err.message.includes('UNIQUE constraint failed')) {
-            return res.status(409).json({ error: 'Username or email already exists.' });
-          }
-          return res.status(500).json({ error: 'Failed to register user.' });
-        }
-
-        const token = jwt.sign({ id: userId, username, role }, JWT_SECRET, { expiresIn: '7d' });
-        res.json({ token, user: { id: userId, username, role } });
-      }
+    const { rows } = await pool.query(
+      'INSERT INTO users (id, username, password, email, role) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [userId, username, hashedPassword, email, role]
     );
+
+    const token = jwt.sign({ id: userId, username, role }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ token, user: { id: userId, username, role } });
   } catch (error) {
+    console.error('Registration error:', error);
+    if (error.code === '23505') { // PostgreSQL unique violation code
+      return res.status(409).json({ error: 'Username or email already exists.' });
+    }
     res.status(500).json({ error: 'Server error during registration.' });
   }
 });
@@ -581,35 +514,41 @@ app.post('/api/login', async (req, res) => {
     return res.status(400).json({ error: 'Username and password are required.' });
   }
 
-  db.get(
-    'SELECT * FROM users WHERE username = ? OR email = ?',
-    [username, username],
-    async (err, user) => {
-      if (err || !user) {
-        return res.status(401).json({ error: 'Invalid credentials.' });
-      }
-
-      const validPassword = await bcrypt.compare(password, user.password);
-      if (!validPassword) {
-        return res.status(401).json({ error: 'Invalid credentials.' });
-      }
-
-      const token = jwt.sign(
-        { id: user.id, username: user.username, role: user.role },
-        JWT_SECRET,
-        { expiresIn: '7d' }
-      );
-
-      res.json({ 
-        token, 
-        user: { 
-          id: user.id, 
-          username: user.username, 
-          role: user.role 
-        } 
-      });
+  try {
+    const { rows } = await pool.query(
+      'SELECT * FROM users WHERE username = $1 OR email = $2',
+      [username, username]
+    );
+    
+    if (rows.length === 0) {
+      return res.status(401).json({ error: 'Invalid credentials.' });
     }
-  );
+    
+    const user = rows[0];
+
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(401).json({ error: 'Invalid credentials.' });
+    }
+
+    const token = jwt.sign(
+      { id: user.id, username: user.username, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    res.json({ 
+      token, 
+      user: { 
+        id: user.id, 
+        username: user.username, 
+        role: user.role 
+      } 
+    });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Server error during login.' });
+  }
 });
 
 // Create new player profile
@@ -617,227 +556,202 @@ app.post('/api/players', authenticateToken, async (req, res) => {
   const playerId = uuidv4();
   const playerData = req.body;
 
-  db.run(
-    `INSERT INTO players (
-      id, user_id, first_name, last_name, date_of_birth, 
-      nationality, is_published
-    ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [
-      playerId,
-      req.user.id,
-      playerData.personalInfo?.firstName || '',
-      playerData.personalInfo?.lastName || '',
-      playerData.personalInfo?.dateOfBirth || null,
-      playerData.personalInfo?.nationality || null,
-      false
-    ],
-    async function(err) {
-      if (err) {
-        return res.status(500).json({ error: 'Failed to create player profile.' });
-      }
+  try {
+    const { rows } = await pool.query(
+      `INSERT INTO players (
+        id, user_id, first_name, last_name, date_of_birth, 
+        nationality, is_published
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+      [
+        playerId,
+        req.user.id,
+        playerData.personalInfo?.firstName || '',
+        playerData.personalInfo?.lastName || '',
+        playerData.personalInfo?.dateOfBirth || null,
+        playerData.personalInfo?.nationality || null,
+        false
+      ]
+    );
 
-      try {
-        await savePlayer(playerId, req.user.id, playerData);
-        const fullPlayer = await getFullPlayer(playerId);
-        res.json(fullPlayer);
-      } catch (error) {
-        res.status(500).json({ error: 'Failed to save player data.' });
-      }
-    }
-  );
+    await savePlayer(playerId, req.user.id, playerData);
+    const fullPlayer = await getFullPlayer(playerId);
+    res.json(fullPlayer);
+  } catch (error) {
+    console.error('Error creating player:', error);
+    res.status(500).json({ error: 'Failed to create player profile.' });
+  }
 });
 
 // Get all players (filtered by user role)
-app.get('/api/players', authenticateToken, (req, res) => {
-  if (req.user.role === 'player') {
-    // Players can only see their own profiles
-    db.all(
-      'SELECT id, first_name, last_name, is_published FROM players WHERE user_id = ?',
-      [req.user.id],
-      async (err, rows) => {
-        if (err) {
-          return res.status(500).json({ error: 'Failed to fetch players.' });
-        }
-        
-        const players = [];
-        for (const row of rows) {
-          const player = await getFullPlayer(row.id);
-          players.push(player);
-        }
-        res.json(players);
-      }
-    );
-  } else if (req.user.role === 'admin') {
-    // Admins can see all profiles
-    db.all(
-      'SELECT id FROM players',
-      [],
-      async (err, rows) => {
-        if (err) {
-          return res.status(500).json({ error: 'Failed to fetch players.' });
-        }
-        
-        const players = [];
-        for (const row of rows) {
-          const player = await getFullPlayer(row.id);
-          players.push(player);
-        }
-        res.json(players);
-      }
-    );
-  } else {
-    // Coaches, scouts, agents can see published profiles
-    db.all(
-      'SELECT id FROM players WHERE is_published = true',
-      [],
-      async (err, rows) => {
-        if (err) {
-          return res.status(500).json({ error: 'Failed to fetch players.' });
-        }
-        
-        const players = [];
-        for (const row of rows) {
-          const player = await getFullPlayer(row.id);
-          players.push(player);
-        }
-        res.json(players);
-      }
-    );
+app.get('/api/players', authenticateToken, async (req, res) => {
+  try {
+    let query;
+    let params = [];
+    
+    if (req.user.role === 'player') {
+      // Players can only see their own profiles
+      query = 'SELECT id, first_name, last_name, is_published FROM players WHERE user_id = $1';
+      params = [req.user.id];
+    } else if (req.user.role === 'admin') {
+      // Admins can see all profiles
+      query = 'SELECT id FROM players';
+    } else {
+      // Coaches, scouts, agents can see published profiles
+      query = 'SELECT id FROM players WHERE is_published = true';
+    }
+    
+    const { rows } = await pool.query(query, params);
+    
+    const players = [];
+    for (const row of rows) {
+      const player = await getFullPlayer(row.id);
+      players.push(player);
+    }
+    res.json(players);
+  } catch (error) {
+    console.error('Error fetching players:', error);
+    res.status(500).json({ error: 'Failed to fetch players.' });
   }
 });
 
 // Get specific player
 app.get('/api/players/:id', authenticateToken, async (req, res) => {
-  db.get(
-    'SELECT * FROM players WHERE id = ?',
-    [req.params.id],
-    async (err, player) => {
-      if (err || !player) {
-        return res.status(404).json({ error: 'Player not found.' });
-      }
+  try {
+    const { rows } = await pool.query(
+      'SELECT * FROM players WHERE id = $1',
+      [req.params.id]
+    );
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Player not found.' });
+    }
+    
+    const player = rows[0];
 
-      // Check access permissions
-      if (req.user.role === 'player' && player.user_id !== req.user.id) {
-        if (!player.is_published) {
-          return res.status(403).json({ error: 'Access denied.' });
-        }
-      } else if (req.user.role !== 'admin' && req.user.role !== 'player' && !player.is_published) {
+    // Check access permissions
+    if (req.user.role === 'player' && player.user_id !== req.user.id) {
+      if (!player.is_published) {
         return res.status(403).json({ error: 'Access denied.' });
       }
-
-      try {
-        const fullPlayer = await getFullPlayer(req.params.id);
-        res.json(fullPlayer);
-      } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch player data.' });
-      }
+    } else if (req.user.role !== 'admin' && req.user.role !== 'player' && !player.is_published) {
+      return res.status(403).json({ error: 'Access denied.' });
     }
-  );
+
+    const fullPlayer = await getFullPlayer(req.params.id);
+    res.json(fullPlayer);
+  } catch (error) {
+    console.error('Error fetching player:', error);
+    res.status(500).json({ error: 'Failed to fetch player data.' });
+  }
 });
 
 // Update player profile
 app.put('/api/players/:id', authenticateToken, async (req, res) => {
   const playerData = req.body;
 
-  // Check ownership
-  db.get(
-    'SELECT user_id FROM players WHERE id = ?',
-    [req.params.id],
-    async (err, player) => {
-      if (err || !player) {
-        return res.status(404).json({ error: 'Player not found.' });
-      }
-
-      if (player.user_id !== req.user.id && req.user.role !== 'admin') {
-        return res.status(403).json({ error: 'Access denied.' });
-      }
-
-      try {
-        await savePlayer(req.params.id, player.user_id, playerData);
-        const fullPlayer = await getFullPlayer(req.params.id);
-        res.json(fullPlayer);
-      } catch (error) {
-        res.status(500).json({ error: 'Failed to update player.' });
-      }
+  try {
+    // Check ownership
+    const { rows } = await pool.query(
+      'SELECT user_id FROM players WHERE id = $1',
+      [req.params.id]
+    );
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Player not found.' });
     }
-  );
+    
+    const player = rows[0];
+
+    if (player.user_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    await savePlayer(req.params.id, player.user_id, playerData);
+    const fullPlayer = await getFullPlayer(req.params.id);
+    res.json(fullPlayer);
+  } catch (error) {
+    console.error('Error updating player:', error);
+    res.status(500).json({ error: 'Failed to update player.' });
+  }
 });
 
 // Delete player profile
-app.delete('/api/players/:id', authenticateToken, (req, res) => {
-  db.get(
-    'SELECT user_id FROM players WHERE id = ?',
-    [req.params.id],
-    (err, player) => {
-      if (err || !player) {
-        return res.status(404).json({ error: 'Player not found.' });
-      }
-
-      if (player.user_id !== req.user.id && req.user.role !== 'admin') {
-        return res.status(403).json({ error: 'Access denied.' });
-      }
-
-      db.run(
-        'DELETE FROM players WHERE id = ?',
-        [req.params.id],
-        function(err) {
-          if (err) {
-            return res.status(500).json({ error: 'Failed to delete player.' });
-          }
-          res.json({ message: 'Player deleted successfully.' });
-        }
-      );
+app.delete('/api/players/:id', authenticateToken, async (req, res) => {
+  try {
+    const { rows } = await pool.query(
+      'SELECT user_id FROM players WHERE id = $1',
+      [req.params.id]
+    );
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Player not found.' });
     }
-  );
+    
+    const player = rows[0];
+
+    if (player.user_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    await pool.query(
+      'DELETE FROM players WHERE id = $1',
+      [req.params.id]
+    );
+    
+    res.json({ message: 'Player deleted successfully.' });
+  } catch (error) {
+    console.error('Error deleting player:', error);
+    res.status(500).json({ error: 'Failed to delete player.' });
+  }
 });
 
 // Publish/withdraw player profile
-app.post('/api/players/:id/publish', authenticateToken, (req, res) => {
+app.post('/api/players/:id/publish', authenticateToken, async (req, res) => {
   const { published } = req.body;
 
-  db.run(
-    'UPDATE players SET is_published = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND (user_id = ? OR ? = ?)',
-    [published, req.params.id, req.user.id, req.user.role, 'admin'],
-    function(err) {
-      if (err) {
-        return res.status(500).json({ error: 'Failed to update publish status.' });
-      }
+  try {
+    const result = await pool.query(
+      'UPDATE players SET is_published = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND (user_id = $3 OR $4 = $5) RETURNING *',
+      [published, req.params.id, req.user.id, req.user.role, 'admin']
+    );
 
-      if (this.changes === 0) {
-        return res.status(403).json({ error: 'Access denied or player not found.' });
-      }
-
-      res.json({ 
-        message: published ? 'Profile published successfully.' : 'Profile withdrawn successfully.',
-        published: published
-      });
+    if (result.rowCount === 0) {
+      return res.status(403).json({ error: 'Access denied or player not found.' });
     }
-  );
+
+    res.json({ 
+      message: published ? 'Profile published successfully.' : 'Profile withdrawn successfully.',
+      published: published
+    });
+  } catch (error) {
+    console.error('Error updating publish status:', error);
+    res.status(500).json({ error: 'Failed to update publish status.' });
+  }
 });
 
 // Upload profile photo
-app.post('/api/players/:id/media/upload', authenticateToken, (req, res) => {
+app.post('/api/players/:id/media/upload', authenticateToken, async (req, res) => {
   const { imageData } = req.body;
 
   if (!imageData) {
     return res.status(400).json({ error: 'No image data provided.' });
   }
 
-  db.run(
-    'UPDATE players SET profile_photo = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND (user_id = ? OR ? = ?)',
-    [imageData, req.params.id, req.user.id, req.user.role, 'admin'],
-    function(err) {
-      if (err) {
-        return res.status(500).json({ error: 'Failed to upload image.' });
-      }
+  try {
+    const result = await pool.query(
+      'UPDATE players SET profile_photo = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 AND (user_id = $3 OR $4 = $5) RETURNING *',
+      [imageData, req.params.id, req.user.id, req.user.role, 'admin']
+    );
 
-      if (this.changes === 0) {
-        return res.status(403).json({ error: 'Access denied or player not found.' });
-      }
-
-      res.json({ message: 'Image uploaded successfully.' });
+    if (result.rowCount === 0) {
+      return res.status(403).json({ error: 'Access denied or player not found.' });
     }
-  );
+
+    res.json({ message: 'Image uploaded successfully.' });
+  } catch (error) {
+    console.error('Error uploading image:', error);
+    res.status(500).json({ error: 'Failed to upload image.' });
+  }
 });
 
 // Advanced search endpoint
@@ -847,11 +761,15 @@ app.post('/api/players/search/advanced', authenticateToken, async (req, res) => 
   let joins = [];
   let conditions = ['p.is_published = true'];
   let params = [];
+  let paramCount = 0;
 
   // Join positions table if searching by position
   if (criteria.playing?.positions?.length > 0) {
     joins.push('LEFT JOIN player_positions pp ON p.id = pp.player_id');
-    const positionConditions = criteria.playing.positions.map(() => 'pp.position = ?').join(' OR ');
+    const positionConditions = criteria.playing.positions.map(() => {
+      paramCount++;
+      return `pp.position = $${paramCount}`;
+    }).join(' OR ');
     conditions.push(`(${positionConditions})`);
     params.push(...criteria.playing.positions);
   }
@@ -863,40 +781,47 @@ app.post('/api/players/search/advanced', authenticateToken, async (req, res) => 
 
   // Basic filters
   if (criteria.basic?.name) {
-    conditions.push(`(LOWER(p.first_name) LIKE LOWER(?) OR LOWER(p.last_name) LIKE LOWER(?))`);
+    paramCount += 2;
+    conditions.push(`(LOWER(p.first_name) LIKE LOWER($${paramCount - 1}) OR LOWER(p.last_name) LIKE LOWER($${paramCount}))`);
     params.push(`%${criteria.basic.name}%`, `%${criteria.basic.name}%`);
   }
 
   if (criteria.basic?.ageMin || criteria.basic?.ageMax) {
     const currentYear = new Date().getFullYear();
     if (criteria.basic.ageMin) {
-      conditions.push(`EXTRACT(YEAR FROM AGE(p.date_of_birth)) >= ?`);
+      paramCount++;
+      conditions.push(`EXTRACT(YEAR FROM AGE(p.date_of_birth)) >= $${paramCount}`);
       params.push(criteria.basic.ageMin);
     }
     if (criteria.basic.ageMax) {
-      conditions.push(`EXTRACT(YEAR FROM AGE(p.date_of_birth)) <= ?`);
+      paramCount++;
+      conditions.push(`EXTRACT(YEAR FROM AGE(p.date_of_birth)) <= $${paramCount}`);
       params.push(criteria.basic.ageMax);
     }
   }
 
   if (criteria.basic?.nationality) {
-    conditions.push('p.nationality = ?');
+    paramCount++;
+    conditions.push(`p.nationality = $${paramCount}`);
     params.push(criteria.basic.nationality);
   }
 
   // Physical filters
   if (criteria.physical?.heightMin) {
-    conditions.push('p.height_cm >= ?');
+    paramCount++;
+    conditions.push(`p.height_cm >= $${paramCount}`);
     params.push(criteria.physical.heightMin);
   }
 
   if (criteria.physical?.heightMax) {
-    conditions.push('p.height_cm <= ?');
+    paramCount++;
+    conditions.push(`p.height_cm <= $${paramCount}`);
     params.push(criteria.physical.heightMax);
   }
 
   if (criteria.physical?.preferredFoot) {
-    conditions.push('LOWER(p.preferred_foot) = LOWER(?)');
+    paramCount++;
+    conditions.push(`LOWER(p.preferred_foot) = LOWER($${paramCount})`);
     params.push(criteria.physical.preferredFoot);
   }
 
@@ -904,7 +829,8 @@ app.post('/api/players/search/advanced', authenticateToken, async (req, res) => 
   if (criteria.skills?.technical) {
     Object.entries(criteria.skills.technical).forEach(([skill, min]) => {
       if (min > 0) {
-        conditions.push(`pa.${skill.replace(/([A-Z])/g, '_$1').toLowerCase()} >= ?`);
+        paramCount++;
+        conditions.push(`pa.${skill.replace(/([A-Z])/g, '_$1').toLowerCase()} >= $${paramCount}`);
         params.push(min);
       }
     });
@@ -913,7 +839,8 @@ app.post('/api/players/search/advanced', authenticateToken, async (req, res) => 
   if (criteria.skills?.physical) {
     Object.entries(criteria.skills.physical).forEach(([skill, min]) => {
       if (min > 0) {
-        conditions.push(`pa.${skill} >= ?`);
+        paramCount++;
+        conditions.push(`pa.${skill} >= $${paramCount}`);
         params.push(min);
       }
     });
@@ -930,11 +857,8 @@ app.post('/api/players/search/advanced', authenticateToken, async (req, res) => 
 
   query += ' ORDER BY p.updated_at DESC LIMIT 100';
 
-  db.all(query, params, async (err, rows) => {
-    if (err) {
-      console.error('Search error:', err);
-      return res.status(500).json({ error: 'Search failed.' });
-    }
+  try {
+    const { rows } = await pool.query(query, params);
 
     const players = [];
     for (const row of rows) {
@@ -943,29 +867,32 @@ app.post('/api/players/search/advanced', authenticateToken, async (req, res) => 
     }
 
     res.json(players);
-  });
+  } catch (error) {
+    console.error('Search error:', error);
+    res.status(500).json({ error: 'Search failed.' });
+  }
 });
 
 // Public endpoints (no auth required)
 
 // Get published player profile
 app.get('/api/public/players/:id', async (req, res) => {
-  db.get(
-    'SELECT * FROM players WHERE id = ? AND is_published = true',
-    [req.params.id],
-    async (err, player) => {
-      if (err || !player) {
-        return res.status(404).json({ error: 'Player not found.' });
-      }
-
-      try {
-        const fullPlayer = await getFullPlayer(req.params.id, false);
-        res.json(fullPlayer);
-      } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch player data.' });
-      }
+  try {
+    const { rows } = await pool.query(
+      'SELECT * FROM players WHERE id = $1 AND is_published = true',
+      [req.params.id]
+    );
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Player not found.' });
     }
-  );
+
+    const fullPlayer = await getFullPlayer(req.params.id, false);
+    res.json(fullPlayer);
+  } catch (error) {
+    console.error('Error fetching public player:', error);
+    res.status(500).json({ error: 'Failed to fetch player data.' });
+  }
 });
 
 // Send message to player
@@ -976,80 +903,83 @@ app.post('/api/public/players/:id/message', async (req, res) => {
     return res.status(400).json({ error: 'Name, email, and message are required.' });
   }
 
-  db.get(
-    'SELECT id FROM players WHERE id = ? AND is_published = true',
-    [req.params.id],
-    (err, player) => {
-      if (err || !player) {
-        return res.status(404).json({ error: 'Player not found.' });
-      }
-
-      db.run(
-        'INSERT INTO messages (player_id, sender_name, sender_email, sender_phone, message) VALUES (?, ?, ?, ?, ?)',
-        [req.params.id, senderName, senderEmail, senderPhone, message],
-        function(err) {
-          if (err) {
-            return res.status(500).json({ error: 'Failed to send message.' });
-          }
-          res.json({ message: 'Message sent successfully.' });
-        }
-      );
+  try {
+    const { rows } = await pool.query(
+      'SELECT id FROM players WHERE id = $1 AND is_published = true',
+      [req.params.id]
+    );
+    
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Player not found.' });
     }
-  );
+
+    await pool.query(
+      'INSERT INTO messages (player_id, sender_name, sender_email, sender_phone, message) VALUES ($1, $2, $3, $4, $5)',
+      [req.params.id, senderName, senderEmail, senderPhone, message]
+    );
+    
+    res.json({ message: 'Message sent successfully.' });
+  } catch (error) {
+    console.error('Error sending message:', error);
+    res.status(500).json({ error: 'Failed to send message.' });
+  }
 });
 
 // Get messages for a player
-app.get('/api/players/:id/messages', authenticateToken, (req, res) => {
-  db.get(
-    'SELECT user_id FROM players WHERE id = ?',
-    [req.params.id],
-    (err, player) => {
-      if (err || !player) {
-        return res.status(404).json({ error: 'Player not found.' });
-      }
-
-      if (player.user_id !== req.user.id && req.user.role !== 'admin') {
-        return res.status(403).json({ error: 'Access denied.' });
-      }
-
-      db.all(
-        'SELECT * FROM messages WHERE player_id = ? ORDER BY created_at DESC',
-        [req.params.id],
-        (err, messages) => {
-          if (err) {
-            return res.status(500).json({ error: 'Failed to fetch messages.' });
-          }
-          res.json(messages);
-        }
-      );
+app.get('/api/players/:id/messages', authenticateToken, async (req, res) => {
+  try {
+    const { rows: playerRows } = await pool.query(
+      'SELECT user_id FROM players WHERE id = $1',
+      [req.params.id]
+    );
+    
+    if (playerRows.length === 0) {
+      return res.status(404).json({ error: 'Player not found.' });
     }
-  );
+    
+    const player = playerRows[0];
+
+    if (player.user_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Access denied.' });
+    }
+
+    const { rows: messages } = await pool.query(
+      'SELECT * FROM messages WHERE player_id = $1 ORDER BY created_at DESC',
+      [req.params.id]
+    );
+    
+    res.json(messages);
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    res.status(500).json({ error: 'Failed to fetch messages.' });
+  }
 });
 
 // Mark message as read
-app.post('/api/messages/:id/read', authenticateToken, (req, res) => {
-  db.run(
-    `UPDATE messages SET is_read = true 
-     WHERE id = ? AND player_id IN (SELECT id FROM players WHERE user_id = ?)`,
-    [req.params.id, req.user.id],
-    function(err) {
-      if (err) {
-        return res.status(500).json({ error: 'Failed to update message.' });
-      }
+app.post('/api/messages/:id/read', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `UPDATE messages SET is_read = true 
+       WHERE id = $1 AND player_id IN (SELECT id FROM players WHERE user_id = $2)
+       RETURNING *`,
+      [req.params.id, req.user.id]
+    );
 
-      if (this.changes === 0) {
-        return res.status(403).json({ error: 'Access denied or message not found.' });
-      }
-
-      res.json({ message: 'Message marked as read.' });
+    if (result.rowCount === 0) {
+      return res.status(403).json({ error: 'Access denied or message not found.' });
     }
-  );
+
+    res.json({ message: 'Message marked as read.' });
+  } catch (error) {
+    console.error('Error marking message as read:', error);
+    res.status(500).json({ error: 'Failed to update message.' });
+  }
 });
 
 // Player lists endpoints
 app.get('/api/player-lists', authenticateToken, async (req, res) => {
   try {
-    const { rows } = await db.query(
+    const { rows } = await pool.query(
       'SELECT * FROM player_lists WHERE user_id = $1 ORDER BY created_at DESC',
       [req.user.id]
     );
@@ -1068,7 +998,7 @@ app.post('/api/player-lists', authenticateToken, async (req, res) => {
   }
   
   try {
-    const { rows } = await db.query(
+    const { rows } = await pool.query(
       'INSERT INTO player_lists (user_id, name, description) VALUES ($1, $2, $3) RETURNING *',
       [req.user.id, name, description]
     );
@@ -1089,7 +1019,7 @@ app.post('/api/player-lists/:listId/players', authenticateToken, async (req, res
   
   try {
     // Verify list ownership
-    const { rows: lists } = await db.query(
+    const { rows: lists } = await pool.query(
       'SELECT * FROM player_lists WHERE id = $1 AND user_id = $2',
       [listId, req.user.id]
     );
@@ -1100,7 +1030,7 @@ app.post('/api/player-lists/:listId/players', authenticateToken, async (req, res
     
     // Add players to list
     const insertPromises = playerIds.map(playerId => 
-      db.query(
+      pool.query(
         'INSERT INTO player_list_members (list_id, player_id, notes) VALUES ($1, $2, $3) ON CONFLICT (list_id, player_id) DO UPDATE SET notes = $3',
         [listId, playerId, notes]
       )
@@ -1123,7 +1053,7 @@ app.get('/api/admin/check-schema', authenticateToken, async (req, res) => {
   
   try {
     // Check if we have the old JSON column
-    const { rows: oldSchema } = await db.query(`
+    const { rows: oldSchema } = await pool.query(`
       SELECT column_name, data_type 
       FROM information_schema.columns 
       WHERE table_name = 'players' 
@@ -1131,7 +1061,7 @@ app.get('/api/admin/check-schema', authenticateToken, async (req, res) => {
     `);
     
     // Check for new tables
-    const { rows: tables } = await db.query(`
+    const { rows: tables } = await pool.query(`
       SELECT table_name 
       FROM information_schema.tables 
       WHERE table_schema = 'public' 
@@ -1142,14 +1072,14 @@ app.get('/api/admin/check-schema', authenticateToken, async (req, res) => {
     let samplePlayers = [];
     try {
       // Try normalized schema first
-      const { rows } = await db.query(
+      const { rows } = await pool.query(
         'SELECT id, first_name, last_name, preferred_foot, is_published FROM players LIMIT 5'
       );
       samplePlayers = rows;
     } catch (e) {
       // Fall back to JSON schema
       try {
-        const { rows } = await db.query(
+        const { rows } = await pool.query(
           'SELECT id, user_id, is_published FROM players LIMIT 5'
         );
         samplePlayers = rows;
