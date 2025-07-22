@@ -229,7 +229,11 @@ class PlayerForm {
                 console.log('API response for player', playerId, ':', player);
                 // Store the full player object to preserve metadata
                 this.currentPlayer = player;
-                this.populateForm(player);
+                
+                // Small delay to ensure DOM is fully ready
+                setTimeout(() => {
+                    this.populateForm(player);
+                }, 100);
             } else {
                 console.error('Failed to load player data. Status:', response.status);
                 const errorText = await response.text();
@@ -245,18 +249,27 @@ class PlayerForm {
     populateForm(player) {
         console.log('Populating form with player data:', player);
         
-        // Personal Information
-        const firstName = document.getElementById('firstName');
-        const lastName = document.getElementById('lastName');
+        try {
+            // Personal Information
+            const firstName = document.getElementById('firstName');
+            const lastName = document.getElementById('lastName');
+            
+            if (!firstName || !lastName) {
+                console.error('Form fields not found. firstName element:', firstName, 'lastName element:', lastName);
+                console.log('Available form elements:', document.querySelectorAll('input[type="text"]'));
+                return;
+            }
+            
+            document.getElementById('firstName').value = player.personalInfo?.firstName || '';
+            document.getElementById('lastName').value = player.personalInfo?.lastName || '';
         
-        if (!firstName || !lastName) {
-            console.error('Form fields not found. firstName element:', firstName, 'lastName element:', lastName);
-            console.log('Available form elements:', document.querySelectorAll('input[type="text"]'));
+        // Format date for HTML date input (YYYY-MM-DD)
+        if (player.personalInfo?.dateOfBirth) {
+            const date = new Date(player.personalInfo.dateOfBirth);
+            const formattedDate = date.toISOString().split('T')[0];
+            document.getElementById('dateOfBirth').value = formattedDate;
         }
         
-        document.getElementById('firstName').value = player.personalInfo?.firstName || '';
-        document.getElementById('lastName').value = player.personalInfo?.lastName || '';
-        document.getElementById('dateOfBirth').value = player.personalInfo?.dateOfBirth || '';
         document.getElementById('heightCm').value = player.personalInfo?.height?.centimeters || '';
         document.getElementById('weightKg').value = player.personalInfo?.weight?.kilograms || '';
         document.getElementById('preferredFoot').value = player.personalInfo?.preferredFoot || '';
@@ -362,6 +375,12 @@ class PlayerForm {
         
         // Update all range displays
         this.updateAllRangeDisplays();
+        
+        } catch (error) {
+            console.error('Error populating form:', error);
+            console.error('Error details:', error.stack);
+            this.showMessage('Error loading form data. Please check console for details.', 'error');
+        }
     }
 
     populatePositionData(positions) {
