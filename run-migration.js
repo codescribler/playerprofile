@@ -29,6 +29,12 @@ async function checkAndRunMigration() {
     const { rows: players } = await client.query('SELECT * FROM players');
     console.log(`Found ${players.length} players to migrate`);
     
+    // Drop existing tables and indexes if they exist from a previous failed migration
+    await client.query('DROP TABLE IF EXISTS player_positions CASCADE');
+    await client.query('DROP TABLE IF EXISTS player_teams CASCADE');
+    await client.query('DROP TABLE IF EXISTS player_abilities CASCADE');
+    await client.query('DROP TABLE IF EXISTS players_new CASCADE');
+    
     // Create a temporary table with new schema
     await client.query(`CREATE TABLE IF NOT EXISTS players_new (
       id TEXT PRIMARY KEY,
@@ -270,21 +276,22 @@ async function checkAndRunMigration() {
     await client.query('ALTER TABLE player_abilities ADD CONSTRAINT fk_abilities_player FOREIGN KEY (player_id) REFERENCES players_new(id) ON DELETE CASCADE');
     
     // Create indexes
-    await client.query('CREATE INDEX idx_players_name ON players_new(first_name, last_name)');
-    await client.query('CREATE INDEX idx_players_user_id ON players_new(user_id)');
-    await client.query('CREATE INDEX idx_players_dob ON players_new(date_of_birth)');
-    await client.query('CREATE INDEX idx_players_location ON players_new(city, postcode)');
-    await client.query('CREATE INDEX idx_players_coords ON players_new(latitude, longitude)');
-    await client.query('CREATE INDEX idx_players_published ON players_new(is_published)');
-    await client.query('CREATE INDEX idx_players_availability ON players_new(availability_status, willing_to_relocate)');
-    await client.query('CREATE INDEX idx_players_physical ON players_new(height_cm, preferred_foot)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_players_name ON players_new(first_name, last_name)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_players_user_id ON players_new(user_id)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_players_dob ON players_new(date_of_birth)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_players_location ON players_new(city, postcode)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_players_coords ON players_new(latitude, longitude)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_players_published ON players_new(is_published)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_players_availability ON players_new(availability_status, willing_to_relocate)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_players_physical ON players_new(height_cm, preferred_foot)');
     
-    await client.query('CREATE INDEX idx_positions_player ON player_positions(player_id)');
-    await client.query('CREATE INDEX idx_positions_lookup ON player_positions(position, player_id)');
-    await client.query('CREATE INDEX idx_teams_player ON player_teams(player_id)');
-    await client.query('CREATE INDEX idx_abilities_player ON player_abilities(player_id)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_positions_player ON player_positions(player_id)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_positions_lookup ON player_positions(position, player_id)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_teams_player ON player_teams(player_id)');
+    await client.query('CREATE INDEX IF NOT EXISTS idx_abilities_player ON player_abilities(player_id)');
     
     // Rename tables
+    await client.query('DROP TABLE IF EXISTS players_old CASCADE');
     await client.query('ALTER TABLE players RENAME TO players_old');
     await client.query('ALTER TABLE players_new RENAME TO players');
     
