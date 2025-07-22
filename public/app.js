@@ -1104,7 +1104,7 @@ class PlayerProfileApp {
             </div>` : '';
         
         // Create published URL section if published
-        const publishedUrlSection = player.metadata?.published ? 
+        const publishedUrlSection = player.is_published ? 
             `<div class="published-url">
                 <label>Published Profile URL:</label>
                 <input type="text" readonly value="${window.location.origin}/profile-view.html?id=${player.playerId}" id="url-${player.playerId}">
@@ -1164,7 +1164,7 @@ class PlayerProfileApp {
                         </svg>
                         Edit
                     </button>
-                    ${player.metadata?.published ? 
+                    ${player.is_published ? 
                         `<button class="fm-btn fm-btn-warning fm-btn-sm" onclick="app.withdrawProfile('${player.playerId}')">Withdraw</button>
                          <button class="fm-btn fm-btn-accent fm-btn-sm" onclick="app.viewPublicProfile('${player.playerId}')">View Public</button>` : 
                         `<button class="fm-btn fm-btn-success fm-btn-sm" onclick="app.publishProfile('${player.playerId}')">Publish</button>`}

@@ -297,9 +297,10 @@ app.get('/api/players', authenticateToken, (req, res) => {
     
     const players = rows.map(row => {
       let player = JSON.parse(row.data);
-      // Include the player ID in the response
+      // Include the player ID and published status in the response
       player.id = row.id;
       player.playerId = row.id;
+      player.is_published = row.is_published;
       // Repair any corrupted data
       player = repairPlayerData(player);
       return player;
@@ -1063,16 +1064,12 @@ app.put('/api/players/:id', authenticateToken, (req, res) => {
       // Merge the incoming data with existing data
       const playerData = deepMerge(existingData, incomingData);
       
-      // Update metadata
+      // Update metadata (no longer storing published state here)
       playerData.metadata = {
         ...existingData.metadata,  // Start with existing metadata
         ...playerData.metadata,    // Apply any new metadata from request
         lastUpdated: new Date().toISOString(),
-        updatedBy: req.user.username,
-        // Explicitly preserve published status if it exists
-        published: playerData.metadata?.published !== undefined ? 
-          playerData.metadata.published : 
-          existingData.metadata?.published
+        updatedBy: req.user.username
       };
       
       // Fix corrupted team data if it's stored as "[object Object]"
@@ -1098,7 +1095,6 @@ app.put('/api/players/:id', authenticateToken, (req, res) => {
       console.log('Updating player:', req.params.id);
       console.log('Player data size:', JSON.stringify(playerData).length);
       console.log('Has profile photo:', !!playerData.media?.profilePhoto);
-      console.log('Preserving published status:', playerData.metadata?.published);
       if (playerData.media?.profilePhoto) {
         console.log('Photo URL length:', playerData.media.profilePhoto.length);
         console.log('Photo URL starts with data:', playerData.media.profilePhoto.startsWith('data:'));
@@ -1144,45 +1140,25 @@ app.post('/api/players/:id/publish', authenticateToken, (req, res) => {
   const { published } = req.body;
   console.log('Publish request:', req.params.id, 'Published:', published, 'User:', req.user.username);
   
-  db.get(
-    'SELECT * FROM players WHERE id = ? AND (user_id = ? OR ? = \'admin\')',
-    [req.params.id, req.user.id, req.user.role],
-    (err, row) => {
+  // Update the is_published column directly
+  db.run(
+    'UPDATE players SET is_published = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ? AND (user_id = ? OR ? = \'admin\')',
+    [published, req.params.id, req.user.id, req.user.role],
+    function(err) {
       if (err) {
         console.error('Database error in publish:', err);
-        return res.status(500).json({ error: 'Error fetching player' });
+        return res.status(500).json({ error: 'Error updating player' });
       }
-      if (!row) {
+      if (this.changes === 0) {
         console.log('Player not found or access denied:', req.params.id);
         return res.status(404).json({ error: 'Player not found or access denied' });
       }
       
-      let playerData = JSON.parse(row.data);
-      // Repair any corrupted data
-      playerData = repairPlayerData(playerData);
-      playerData.metadata = {
-        ...playerData.metadata,
-        published: published,
-        publishedAt: published ? new Date().toISOString() : null,
-        lastUpdated: new Date().toISOString(),
-        updatedBy: req.user.username
-      };
-      
-      db.run(
-        'UPDATE players SET data = ? WHERE id = ?',
-        [JSON.stringify(playerData), req.params.id],
-        function(err) {
-          if (err) {
-            console.error('Database error in update:', err);
-            return res.status(500).json({ error: 'Error updating player' });
-          }
-          console.log('Player publish status updated successfully:', req.params.id, 'Published:', published);
-          res.json({ 
-            message: published ? 'Player profile published' : 'Player profile withdrawn',
-            published: published
-          });
-        }
-      );
+      console.log('Player publish status updated successfully:', req.params.id, 'Published:', published);
+      res.json({ 
+        message: published ? 'Player profile published' : 'Player profile withdrawn',
+        published: published
+      });
     }
   );
 });
@@ -1191,7 +1167,7 @@ app.post('/api/players/:id/publish', authenticateToken, (req, res) => {
 app.get('/api/public/players/:id', (req, res) => {
   console.log('Public profile request for ID:', req.params.id);
   db.get(
-    'SELECT * FROM players WHERE id = ?',
+    'SELECT * FROM players WHERE id = ? AND is_published = true',
     [req.params.id],
     (err, row) => {
       if (err) {
@@ -1199,20 +1175,14 @@ app.get('/api/public/players/:id', (req, res) => {
         return res.status(500).json({ error: 'Error fetching player' });
       }
       if (!row) {
-        console.log('Player not found:', req.params.id);
-        return res.status(404).json({ error: 'Player not found' });
+        console.log('Player not found or not published:', req.params.id);
+        return res.status(404).json({ error: 'Profile not found or not published' });
       }
       
       let player = JSON.parse(row.data);
       // Repair any corrupted data
       player = repairPlayerData(player);
-      console.log('Player found:', player.personalInfo?.fullName, 'Published:', player.metadata?.published);
-      
-      // Check if profile is published
-      if (!player.metadata?.published) {
-        console.log('Profile not published for:', player.personalInfo?.fullName);
-        return res.status(404).json({ error: 'Profile not published' });
-      }
+      console.log('Player found:', player.personalInfo?.fullName, 'Published: true');
       
       // Remove sensitive information
       const publicPlayer = {
@@ -1240,21 +1210,14 @@ app.post('/api/public/players/:id/message', (req, res) => {
   
   // First check if the player profile is published
   db.get(
-    'SELECT * FROM players WHERE id = ?',
+    'SELECT id FROM players WHERE id = ? AND is_published = true',
     [req.params.id],
     (err, row) => {
       if (err) {
         return res.status(500).json({ error: 'Error fetching player' });
       }
       if (!row) {
-        return res.status(404).json({ error: 'Player not found' });
-      }
-      
-      let player = JSON.parse(row.data);
-      // Repair any corrupted data
-      player = repairPlayerData(player);
-      if (!player.metadata?.published) {
-        return res.status(404).json({ error: 'Profile not published' });
+        return res.status(404).json({ error: 'Profile not found or not published' });
       }
       
       // Insert message
