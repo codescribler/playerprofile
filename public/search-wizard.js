@@ -265,70 +265,109 @@ class SearchWizard {
     
     collectCriteria() {
         // Basic Information
-        this.criteria.basic = {
-            name: document.getElementById('search-name').value,
-            ageMin: parseInt(document.getElementById('age-min-slider').value) || null,
-            ageMax: parseInt(document.getElementById('age-max-slider').value) || null,
-            nationality: document.getElementById('search-nationality').value,
-            postcode: document.getElementById('search-postcode').value,
-            radius: parseInt(document.getElementById('search-radius').value),
-            availability: {
-                statuses: Array.from(document.querySelectorAll('#step-basic input[type="checkbox"]:checked'))
-                    .filter(cb => cb.id.startsWith('status-'))
-                    .map(cb => cb.value),
-                willingToRelocate: document.getElementById('willing-relocate').checked
-            }
-        };
+        this.criteria.basic = {};
         
-        // Physical Profile
-        const heightUnit = document.querySelector('input[name="height-unit"]:checked').value;
-        if (heightUnit === 'cm') {
-            this.criteria.physical = {
-                heightMin: parseInt(document.getElementById('height-min-cm').value),
-                heightMax: parseInt(document.getElementById('height-max-cm').value),
-                heightUnit: 'cm'
-            };
-        } else {
-            const minFt = parseInt(document.getElementById('height-min-ft').value) || 0;
-            const minIn = parseInt(document.getElementById('height-min-in').value) || 0;
-            const maxFt = parseInt(document.getElementById('height-max-ft').value) || 7;
-            const maxIn = parseInt(document.getElementById('height-max-in').value) || 11;
-            
-            this.criteria.physical = {
-                heightMin: minFt * 30.48 + minIn * 2.54, // Convert to cm
-                heightMax: maxFt * 30.48 + maxIn * 2.54,
-                heightUnit: 'ft'
+        // Only add fields that have values
+        const name = document.getElementById('search-name').value;
+        if (name) this.criteria.basic.name = name;
+        
+        // Only add age if changed from defaults (16-45)
+        const ageMin = parseInt(document.getElementById('age-min-slider').value);
+        const ageMax = parseInt(document.getElementById('age-max-slider').value);
+        if (ageMin > 16) this.criteria.basic.ageMin = ageMin;
+        if (ageMax < 45) this.criteria.basic.ageMax = ageMax;
+        
+        const nationality = document.getElementById('search-nationality').value;
+        if (nationality) this.criteria.basic.nationality = nationality;
+        
+        const postcode = document.getElementById('search-postcode').value;
+        if (postcode) {
+            this.criteria.basic.postcode = postcode;
+            this.criteria.basic.radius = parseInt(document.getElementById('search-radius').value);
+        }
+        
+        // Availability
+        const statuses = Array.from(document.querySelectorAll('#step-basic input[type="checkbox"]:checked'))
+            .filter(cb => cb.id.startsWith('status-'))
+            .map(cb => cb.value);
+        const willingToRelocate = document.getElementById('willing-relocate').checked;
+        
+        if (statuses.length > 0 || willingToRelocate) {
+            this.criteria.basic.availability = {
+                statuses: statuses,
+                willingToRelocate: willingToRelocate
             };
         }
         
-        this.criteria.physical.preferredFoot = document.getElementById('search-preferred-foot').value;
-        this.criteria.physical.weakFootMin = parseInt(document.getElementById('weak-foot-min').value);
-        this.criteria.physical.sprint10mMax = parseFloat(document.getElementById('sprint-10m-max').value) || null;
-        this.criteria.physical.sprint30mMax = parseFloat(document.getElementById('sprint-30m-max').value) || null;
+        // Physical Profile
+        this.criteria.physical = {};
+        
+        const heightUnit = document.querySelector('input[name="height-unit"]:checked').value;
+        if (heightUnit === 'cm') {
+            const heightMinCm = parseInt(document.getElementById('height-min-cm').value);
+            const heightMaxCm = parseInt(document.getElementById('height-max-cm').value);
+            // Only add if changed from defaults (150-210cm)
+            if (heightMinCm > 150) this.criteria.physical.heightMin = heightMinCm;
+            if (heightMaxCm < 210) this.criteria.physical.heightMax = heightMaxCm;
+        } else {
+            const minFt = parseInt(document.getElementById('height-min-ft').value) || 0;
+            const minIn = parseInt(document.getElementById('height-min-in').value) || 0;
+            const maxFt = parseInt(document.getElementById('height-max-ft').value) || 0;
+            const maxIn = parseInt(document.getElementById('height-max-in').value) || 0;
+            
+            // Only add if values are provided
+            if (minFt > 0 || minIn > 0) {
+                this.criteria.physical.heightMin = minFt * 30.48 + minIn * 2.54; // Convert to cm
+            }
+            if (maxFt > 0 || maxIn > 0) {
+                this.criteria.physical.heightMax = maxFt * 30.48 + maxIn * 2.54;
+            }
+        }
+        
+        const preferredFoot = document.getElementById('search-preferred-foot').value;
+        if (preferredFoot) this.criteria.physical.preferredFoot = preferredFoot;
+        
+        const weakFootMin = parseInt(document.getElementById('weak-foot-min').value);
+        if (weakFootMin > 0) this.criteria.physical.weakFootMin = weakFootMin;
+        
+        const sprint10mMax = parseFloat(document.getElementById('sprint-10m-max').value);
+        if (sprint10mMax) this.criteria.physical.sprint10mMax = sprint10mMax;
+        
+        const sprint30mMax = parseFloat(document.getElementById('sprint-30m-max').value);
+        if (sprint30mMax) this.criteria.physical.sprint30mMax = sprint30mMax;
         
         // Playing Profile
-        this.criteria.playing = {
-            positions: Array.from(this.selectedPositions),
-            yearsPlayingMin: parseInt(document.getElementById('years-playing-min').value) || null,
-            league: document.getElementById('search-league').value,
-            representativeExp: {
-                district: document.getElementById('rep-district').checked,
-                county: document.getElementById('rep-county').checked
-            }
-        };
+        this.criteria.playing = {};
         
-        // Skills
-        this.criteria.skills = {
-            technical: {},
-            physical: {},
-            mental: {}
-        };
+        if (this.selectedPositions.size > 0) {
+            this.criteria.playing.positions = Array.from(this.selectedPositions);
+        }
+        
+        const yearsPlayingMin = parseInt(document.getElementById('years-playing-min').value);
+        if (yearsPlayingMin) this.criteria.playing.yearsPlayingMin = yearsPlayingMin;
+        
+        const league = document.getElementById('search-league').value;
+        if (league) this.criteria.playing.league = league;
+        
+        const repDistrict = document.getElementById('rep-district').checked;
+        const repCounty = document.getElementById('rep-county').checked;
+        if (repDistrict || repCounty) {
+            this.criteria.playing.representativeExp = {
+                district: repDistrict,
+                county: repCounty
+            };
+        }
+        
+        // Skills - only add if any skill is set above 0
+        const technicalSkills = {};
+        const physicalSkills = {};
+        const mentalSkills = {};
         
         // Technical skills
         ['ball-control', 'passing', 'shooting', 'dribbling', 'first-touch', 'heading'].forEach(skill => {
             const value = parseInt(document.getElementById(`skill-${skill}`).value);
             if (value > 0) {
-                this.criteria.skills.technical[skill.replace('-', '_')] = value;
+                technicalSkills[skill.replace('-', '_')] = value;
             }
         });
         
@@ -336,7 +375,7 @@ class SearchWizard {
         ['pace', 'strength', 'stamina', 'agility'].forEach(skill => {
             const value = parseInt(document.getElementById(`skill-${skill}`).value);
             if (value > 0) {
-                this.criteria.skills.physical[skill] = value;
+                physicalSkills[skill] = value;
             }
         });
         
@@ -344,9 +383,20 @@ class SearchWizard {
         ['decision-making', 'leadership', 'concentration', 'communication'].forEach(skill => {
             const value = parseInt(document.getElementById(`skill-${skill}`).value);
             if (value > 0) {
-                this.criteria.skills.mental[skill.replace('-', '_')] = value;
+                mentalSkills[skill.replace('-', '_')] = value;
             }
         });
+        
+        // Only add skills object if any skills are set
+        if (Object.keys(technicalSkills).length > 0 || 
+            Object.keys(physicalSkills).length > 0 || 
+            Object.keys(mentalSkills).length > 0) {
+            this.criteria.skills = {
+                technical: technicalSkills,
+                physical: physicalSkills,
+                mental: mentalSkills
+            };
+        }
         
         return this.criteria;
     }
