@@ -611,7 +611,7 @@ class SearchWizard {
                     'Authorization': `Bearer ${this.token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ criteria })
+                body: JSON.stringify(criteria)
             });
             
             if (response.ok) {
