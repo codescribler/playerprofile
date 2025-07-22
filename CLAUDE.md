@@ -2,13 +2,31 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## CRITICAL REQUIREMENTS
+## 🚨 CRITICAL DATABASE REQUIREMENT 🚨
 
-**NEVER use SQLite in this project. This project uses PostgreSQL exclusively.**
-- Do NOT use SQLite syntax like `?` placeholders, `this.lastID`, `INSERT OR IGNORE`, etc.
-- Always use PostgreSQL syntax: `$1, $2` placeholders, `RETURNING *`, `ON CONFLICT`, etc.
-- All database operations must be PostgreSQL-compatible
-- Never import or reference SQLite libraries
+**THIS PROJECT USES POSTGRESQL EXCLUSIVELY - NO SQLITE!**
+
+### ABSOLUTELY FORBIDDEN SQLite patterns:
+- ❌ NEVER use `?` placeholders - USE `$1, $2, $3` instead
+- ❌ NEVER use `db.get()`, `db.all()`, `db.run()` - USE `pool.query()` instead
+- ❌ NEVER use `this.lastID` - USE `RETURNING *` instead
+- ❌ NEVER use `INSERT OR IGNORE` - USE `ON CONFLICT` instead
+- ❌ NEVER use callback-style queries - USE async/await with pool.query()
+- ❌ NEVER import or reference sqlite3 module
+
+### ALWAYS use PostgreSQL patterns:
+- ✅ Parameter placeholders: `$1, $2, $3...`
+- ✅ Query method: `await pool.query(sql, params)`
+- ✅ Result handling: `const { rows } = await pool.query(...)`
+- ✅ Insert returning: `INSERT INTO ... VALUES (...) RETURNING *`
+- ✅ Upsert: `INSERT ... ON CONFLICT ... DO UPDATE SET ...`
+- ✅ Connection: Use `pg` module with `DATABASE_URL`
+
+### Before ANY database code changes:
+1. CHECK that you're using `$1, $2` style placeholders
+2. CHECK that you're using `pool.query()` not `db.get/all/run()`
+3. CHECK that you're handling results as `{ rows }`
+4. If you see ANY SQLite patterns, STOP and convert to PostgreSQL
 
 ## Project Overview
 
@@ -37,22 +55,41 @@ npm start
 
 ### Key Architectural Patterns
 
-1. **Database Storage**: Player profiles stored as JSON blobs in `player_data` column for flexibility
+1. **Database Storage**: Player profiles stored in NORMALIZED RELATIONAL TABLES (NO JSON!)
 2. **Authentication**: JWT tokens stored in localStorage on frontend
 3. **Multi-page App**: Separate HTML files for different sections (home, player-form, profile-view, messages)
 4. **API Design**: RESTful endpoints with `/api/` prefix
 
-### Database Schema
+### Database Schema (NORMALIZED - NO JSON BLOBS)
 
 ```sql
 -- users table
-id, username, email, password_hash, role, created_at
+id TEXT PRIMARY KEY, username VARCHAR(255), email VARCHAR(255), 
+password_hash TEXT, role VARCHAR(20), created_at TIMESTAMP
 
--- players table  
-id, user_id, player_data (JSON), is_published, created_at, updated_at
+-- players table (NORMALIZED - NO JSON!)
+id TEXT PRIMARY KEY, user_id TEXT, first_name VARCHAR(100), 
+last_name VARCHAR(100), date_of_birth DATE, nationality VARCHAR(100),
+height_cm DECIMAL(5,1), weight_kg DECIMAL(5,2), preferred_foot VARCHAR(10),
+is_published BOOLEAN, created_at TIMESTAMP, updated_at TIMESTAMP
+-- Plus many more normalized columns...
+
+-- player_positions table
+id SERIAL PRIMARY KEY, player_id TEXT, position VARCHAR(50),
+suitability INTEGER, is_primary BOOLEAN
+
+-- player_teams table  
+id SERIAL PRIMARY KEY, player_id TEXT, club_name VARCHAR(255),
+league VARCHAR(255), is_primary BOOLEAN
+
+-- player_abilities table
+player_id TEXT PRIMARY KEY, ball_control INTEGER, passing INTEGER,
+shooting INTEGER, pace INTEGER, strength INTEGER
+-- Plus many more ability columns...
 
 -- messages table
-id, player_id, sender_name, sender_email, message, created_at, is_read
+id SERIAL PRIMARY KEY, player_id TEXT, sender_name VARCHAR(255),
+sender_email VARCHAR(255), message TEXT, created_at TIMESTAMP, is_read BOOLEAN
 ```
 
 ## API Endpoints
