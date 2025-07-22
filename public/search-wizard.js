@@ -398,6 +398,17 @@ class SearchWizard {
             };
         }
         
+        // Clean up empty objects
+        if (this.criteria.basic && Object.keys(this.criteria.basic).length === 0) {
+            delete this.criteria.basic;
+        }
+        if (this.criteria.physical && Object.keys(this.criteria.physical).length === 0) {
+            delete this.criteria.physical;
+        }
+        if (this.criteria.playing && Object.keys(this.criteria.playing).length === 0) {
+            delete this.criteria.playing;
+        }
+        
         return this.criteria;
     }
     
@@ -408,16 +419,20 @@ class SearchWizard {
         
         // Basic Information
         const basicItems = [];
-        if (criteria.basic.name) basicItems.push(`Name contains "${criteria.basic.name}"`);
-        if (criteria.basic.ageMin || criteria.basic.ageMax) {
-            basicItems.push(`Age ${criteria.basic.ageMin || 16}-${criteria.basic.ageMax || 45}`);
+        if (criteria.basic) {
+            if (criteria.basic.name) basicItems.push(`Name contains "${criteria.basic.name}"`);
+            if (criteria.basic.ageMin || criteria.basic.ageMax) {
+                basicItems.push(`Age ${criteria.basic.ageMin || 16}-${criteria.basic.ageMax || 45}`);
+            }
+            if (criteria.basic.nationality) basicItems.push(criteria.basic.nationality);
+            if (criteria.basic.postcode) basicItems.push(`Within ${criteria.basic.radius} miles of ${criteria.basic.postcode}`);
+            if (criteria.basic.availability) {
+                if (criteria.basic.availability.statuses && criteria.basic.availability.statuses.length > 0) {
+                    basicItems.push(criteria.basic.availability.statuses.map(s => s.replace('_', ' ')).join(', '));
+                }
+                if (criteria.basic.availability.willingToRelocate) basicItems.push('Willing to relocate');
+            }
         }
-        if (criteria.basic.nationality) basicItems.push(criteria.basic.nationality);
-        if (criteria.basic.postcode) basicItems.push(`Within ${criteria.basic.radius} miles of ${criteria.basic.postcode}`);
-        if (criteria.basic.availability.statuses.length > 0) {
-            basicItems.push(criteria.basic.availability.statuses.map(s => s.replace('_', ' ')).join(', '));
-        }
-        if (criteria.basic.availability.willingToRelocate) basicItems.push('Willing to relocate');
         
         if (basicItems.length > 0) {
             html += `
@@ -432,17 +447,21 @@ class SearchWizard {
         
         // Physical Profile
         const physicalItems = [];
-        if (criteria.physical.heightMin || criteria.physical.heightMax) {
-            if (criteria.physical.heightUnit === 'cm') {
-                physicalItems.push(`Height ${criteria.physical.heightMin}-${criteria.physical.heightMax}cm`);
-            } else {
-                physicalItems.push(`Height ${Math.floor(criteria.physical.heightMin / 30.48)}'${Math.round((criteria.physical.heightMin % 30.48) / 2.54)}" - ${Math.floor(criteria.physical.heightMax / 30.48)}'${Math.round((criteria.physical.heightMax % 30.48) / 2.54)}"`);
+        if (criteria.physical) {
+            if (criteria.physical.heightMin || criteria.physical.heightMax) {
+                if (criteria.physical.heightUnit === 'cm') {
+                    physicalItems.push(`Height ${criteria.physical.heightMin || 150}-${criteria.physical.heightMax || 210}cm`);
+                } else {
+                    const minHeight = criteria.physical.heightMin || 150;
+                    const maxHeight = criteria.physical.heightMax || 210;
+                    physicalItems.push(`Height ${Math.floor(minHeight / 30.48)}'${Math.round((minHeight % 30.48) / 2.54)}" - ${Math.floor(maxHeight / 30.48)}'${Math.round((maxHeight % 30.48) / 2.54)}"`);
+                }
             }
+            if (criteria.physical.preferredFoot) physicalItems.push(`${criteria.physical.preferredFoot} footed`);
+            if (criteria.physical.weakFootMin && criteria.physical.weakFootMin > 0) physicalItems.push(`Weak foot ≥${criteria.physical.weakFootMin}%`);
+            if (criteria.physical.sprint10mMax) physicalItems.push(`10m sprint ≤${criteria.physical.sprint10mMax}s`);
+            if (criteria.physical.sprint30mMax) physicalItems.push(`30m sprint ≤${criteria.physical.sprint30mMax}s`);
         }
-        if (criteria.physical.preferredFoot) physicalItems.push(`${criteria.physical.preferredFoot} footed`);
-        if (criteria.physical.weakFootMin > 0) physicalItems.push(`Weak foot ≥${criteria.physical.weakFootMin}%`);
-        if (criteria.physical.sprint10mMax) physicalItems.push(`10m sprint ≤${criteria.physical.sprint10mMax}s`);
-        if (criteria.physical.sprint30mMax) physicalItems.push(`30m sprint ≤${criteria.physical.sprint30mMax}s`);
         
         if (physicalItems.length > 0) {
             html += `
@@ -457,13 +476,17 @@ class SearchWizard {
         
         // Playing Profile
         const playingItems = [];
-        if (criteria.playing.positions.length > 0) {
-            playingItems.push(`Positions: ${criteria.playing.positions.join(', ')}`);
+        if (criteria.playing) {
+            if (criteria.playing.positions && criteria.playing.positions.length > 0) {
+                playingItems.push(`Positions: ${criteria.playing.positions.join(', ')}`);
+            }
+            if (criteria.playing.yearsPlayingMin) playingItems.push(`≥${criteria.playing.yearsPlayingMin} years experience`);
+            if (criteria.playing.league) playingItems.push(`League: ${criteria.playing.league}`);
+            if (criteria.playing.representativeExp) {
+                if (criteria.playing.representativeExp.district) playingItems.push('District level');
+                if (criteria.playing.representativeExp.county) playingItems.push('County level');
+            }
         }
-        if (criteria.playing.yearsPlayingMin) playingItems.push(`≥${criteria.playing.yearsPlayingMin} years experience`);
-        if (criteria.playing.league) playingItems.push(`League: ${criteria.playing.league}`);
-        if (criteria.playing.representativeExp.district) playingItems.push('District level');
-        if (criteria.playing.representativeExp.county) playingItems.push('County level');
         
         if (playingItems.length > 0) {
             html += `
@@ -478,16 +501,18 @@ class SearchWizard {
         
         // Skills
         const skillItems = [];
-        const allSkills = {
-            ...criteria.skills.technical,
-            ...criteria.skills.physical,
-            ...criteria.skills.mental
-        };
-        
-        Object.entries(allSkills).forEach(([skill, value]) => {
-            const skillName = skill.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            skillItems.push(`${skillName} ≥${value}`);
-        });
+        if (criteria.skills) {
+            const allSkills = {
+                ...(criteria.skills.technical || {}),
+                ...(criteria.skills.physical || {}),
+                ...(criteria.skills.mental || {})
+            };
+            
+            Object.entries(allSkills).forEach(([skill, value]) => {
+                const skillName = skill.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                skillItems.push(`${skillName} ≥${value}`);
+            });
+        }
         
         if (skillItems.length > 0) {
             html += `
