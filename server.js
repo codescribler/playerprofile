@@ -4,7 +4,15 @@ const jwt = require('jsonwebtoken');
 const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const db = require('./database-config');
-require('dotenv').config();
+
+// Load dotenv in development only
+if (process.env.NODE_ENV !== 'production') {
+  try {
+    require('dotenv').config();
+  } catch (e) {
+    // dotenv not installed, which is fine in production
+  }
+}
 
 const app = express();
 const PORT = process.env.PORT || 3000;
