@@ -38,7 +38,14 @@ class SearchWizard {
     setupEventListeners() {
         // Navigation
         document.getElementById('back-btn').addEventListener('click', () => {
-            window.location.href = '/search-wizard.html';
+            window.location.href = '/app';
+        });
+        
+        // Logout functionality
+        document.getElementById('logout-btn').addEventListener('click', () => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/';
         });
         
         document.getElementById('prev-btn').addEventListener('click', () => this.previousStep());
