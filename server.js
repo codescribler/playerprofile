@@ -862,6 +862,7 @@ app.post('/api/players/search/advanced', authenticateToken, (req, res) => {
 
   console.log('Advanced search query:', query);
   console.log('Parameters:', params);
+  console.log('Criteria received:', JSON.stringify(criteria, null, 2));
 
   db.all(query, params, (err, rows) => {
     if (err) {
@@ -954,6 +955,48 @@ app.get('/api/search/saved/:id', authenticateToken, (req, res) => {
       name: row.name,
       criteria: JSON.parse(row.criteria),
       created_at: row.created_at
+    });
+  });
+});
+
+// Debug endpoint to check preferred foot values
+app.get('/api/debug/preferred-foot-check', authenticateToken, (req, res) => {
+  const { testFoot } = req.query;
+  
+  let query = `
+    SELECT 
+      id, 
+      is_published,
+      data::json->'personalInfo'->>'preferredFoot' as preferred_foot,
+      data::json->'personalInfo'->>'firstName' as first_name,
+      data::json->'personalInfo'->>'lastName' as last_name
+    FROM players
+    WHERE is_published = true
+  `;
+  
+  const params = [];
+  
+  // If testFoot is provided, test the search
+  if (testFoot) {
+    query += ` AND LOWER(data::json->'personalInfo'->>'preferredFoot') = LOWER(?)`;
+    params.push(testFoot);
+  }
+  
+  db.all(query, params, (err, rows) => {
+    if (err) {
+      return res.status(500).json({ error: err.message, query: query, params: params });
+    }
+    
+    res.json({
+      query: query,
+      params: params,
+      total_published: rows.length,
+      players: rows.map(row => ({
+        id: row.id,
+        name: `${row.first_name || ''} ${row.last_name || ''}`.trim(),
+        preferredFoot: row.preferred_foot,
+        is_published: row.is_published
+      }))
     });
   });
 });
