@@ -135,6 +135,34 @@ const initPgTables = async () => {
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_player_locations_coords ON player_locations(latitude, longitude)`).catch(() => {});
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_saved_searches_user_id ON saved_searches(user_id)`).catch(() => {});
     
+    // Migrate metadata.published to is_published column
+    console.log('Checking for is_published migration...');
+    try {
+      const result = await pool.query('SELECT id, data FROM players WHERE is_published IS NULL');
+      if (result.rows.length > 0) {
+        console.log(`Found ${result.rows.length} players to migrate is_published status`);
+        for (const row of result.rows) {
+          try {
+            const playerData = JSON.parse(row.data);
+            const isPublished = playerData.metadata?.published === true;
+            await pool.query(
+              'UPDATE players SET is_published = $1 WHERE id = $2',
+              [isPublished, row.id]
+            );
+            console.log(`Migrated player ${row.id}: is_published = ${isPublished}`);
+          } catch (e) {
+            console.error(`Error migrating player ${row.id}:`, e);
+          }
+        }
+      }
+      
+      // Set any remaining NULL values to false
+      await pool.query('UPDATE players SET is_published = false WHERE is_published IS NULL');
+      console.log('is_published migration complete');
+    } catch (err) {
+      console.error('Error during is_published migration:', err);
+    }
+    
     console.log('PostgreSQL tables initialized');
   } catch (err) {
     console.error('Error initializing PostgreSQL tables:', err);
