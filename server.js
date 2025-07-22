@@ -762,33 +762,68 @@ app.get('/api/players/search/quick', authenticateToken, async (req, res) => {
     return res.status(400).json({ error: 'Search query must be at least 2 characters' });
   }
   
+  // Check if user has permission to search
+  const allowedRoles = ['scout', 'coach', 'agent', 'admin'];
+  if (req.user.role === 'player') {
+    return res.status(403).json({ error: 'Players cannot search for other players' });
+  }
+  
   const searchTerm = `%${q.toLowerCase()}%`;
   
   try {
-    let query = `
-      SELECT DISTINCT p.*, 
-        array_agg(DISTINCT pp.position) FILTER (WHERE pp.position IS NOT NULL) as positions,
-        array_agg(DISTINCT pt.club_name) FILTER (WHERE pt.club_name IS NOT NULL) as clubs
-      FROM players p
-      LEFT JOIN player_positions pp ON p.id = pp.player_id
-      LEFT JOIN player_teams pt ON p.id = pt.player_id
-      WHERE p.is_published = true
-        AND (
-          LOWER(p.first_name) LIKE $1
-          OR LOWER(p.last_name) LIKE $1
-          OR LOWER(CONCAT(p.first_name, ' ', p.last_name)) LIKE $1
-          OR LOWER(p.city) LIKE $1
-          OR LOWER(p.based_location) LIKE $1
-          OR LOWER(pp.position) LIKE $1
-          OR LOWER(pt.club_name) LIKE $1
-          OR LOWER(p.playing_style_summary) LIKE $1
-        )
-      GROUP BY p.id
-      ORDER BY p.last_name, p.first_name
-      LIMIT 50
-    `;
+    let query;
+    let params = [searchTerm];
     
-    const { rows } = await pool.query(query, [searchTerm]);
+    if (req.user.role === 'admin') {
+      // Admins can see all players
+      query = `
+        SELECT DISTINCT p.*, 
+          array_agg(DISTINCT pp.position) FILTER (WHERE pp.position IS NOT NULL) as positions,
+          array_agg(DISTINCT pt.club_name) FILTER (WHERE pt.club_name IS NOT NULL) as clubs
+        FROM players p
+        LEFT JOIN player_positions pp ON p.id = pp.player_id
+        LEFT JOIN player_teams pt ON p.id = pt.player_id
+        WHERE (
+            LOWER(p.first_name) LIKE $1
+            OR LOWER(p.last_name) LIKE $1
+            OR LOWER(CONCAT(p.first_name, ' ', p.last_name)) LIKE $1
+            OR LOWER(p.city) LIKE $1
+            OR LOWER(p.based_location) LIKE $1
+            OR LOWER(pp.position) LIKE $1
+            OR LOWER(pt.club_name) LIKE $1
+            OR LOWER(p.playing_style_summary) LIKE $1
+          )
+        GROUP BY p.id
+        ORDER BY p.last_name, p.first_name
+        LIMIT 50
+      `;
+    } else {
+      // Other roles can only see published players
+      query = `
+        SELECT DISTINCT p.*, 
+          array_agg(DISTINCT pp.position) FILTER (WHERE pp.position IS NOT NULL) as positions,
+          array_agg(DISTINCT pt.club_name) FILTER (WHERE pt.club_name IS NOT NULL) as clubs
+        FROM players p
+        LEFT JOIN player_positions pp ON p.id = pp.player_id
+        LEFT JOIN player_teams pt ON p.id = pt.player_id
+        WHERE p.is_published = true
+          AND (
+            LOWER(p.first_name) LIKE $1
+            OR LOWER(p.last_name) LIKE $1
+            OR LOWER(CONCAT(p.first_name, ' ', p.last_name)) LIKE $1
+            OR LOWER(p.city) LIKE $1
+            OR LOWER(p.based_location) LIKE $1
+            OR LOWER(pp.position) LIKE $1
+            OR LOWER(pt.club_name) LIKE $1
+            OR LOWER(p.playing_style_summary) LIKE $1
+          )
+        GROUP BY p.id
+        ORDER BY p.last_name, p.first_name
+        LIMIT 50
+      `;
+    }
+    
+    const { rows } = await pool.query(query, params);
     
     // Get full player data for each result
     const players = [];
