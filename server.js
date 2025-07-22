@@ -255,8 +255,8 @@ async function savePlayer(playerId, userId, data) {
         latitude = $25, longitude = $26,
         availability_status = $27, willing_to_relocate = $28, travel_radius = $29,
         showcase_description = $30, playing_style_summary = $31,
-        profile_photo = $32, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $33 AND user_id = $34`,
+        profile_photo = $32, is_test_data = $33, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $34 AND user_id = $35`,
       [
         data.personalInfo?.firstName,
         data.personalInfo?.lastName,
@@ -290,6 +290,7 @@ async function savePlayer(playerId, userId, data) {
         data.showcase?.description,
         data.playingStyle?.summary,
         data.media?.profilePhoto,
+        data.isTestData || false,
         playerId,
         userId
       ]
@@ -560,8 +561,8 @@ app.post('/api/players', authenticateToken, async (req, res) => {
     const { rows } = await pool.query(
       `INSERT INTO players (
         id, user_id, first_name, last_name, date_of_birth, 
-        nationality, is_published
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
+        nationality, is_published, is_test_data
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
       [
         playerId,
         req.user.id,
@@ -569,7 +570,8 @@ app.post('/api/players', authenticateToken, async (req, res) => {
         playerData.personalInfo?.lastName || '',
         playerData.personalInfo?.dateOfBirth || null,
         playerData.personalInfo?.nationality || null,
-        false
+        false,
+        playerData.isTestData || false
       ]
     );
 
@@ -1250,6 +1252,60 @@ app.post('/api/admin/migrate', authenticateToken, async (req, res) => {
     res.json(result);
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete all test data
+app.delete('/api/admin/test-data', authenticateToken, async (req, res) => {
+  // Only allow admins to delete test data
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Access denied. Admin only.' });
+  }
+  
+  const client = await pool.connect();
+  
+  try {
+    await client.query('BEGIN');
+    
+    // Get all test player IDs
+    const { rows: testPlayers } = await client.query(
+      'SELECT id FROM players WHERE is_test_data = true'
+    );
+    
+    const playerIds = testPlayers.map(p => p.id);
+    
+    if (playerIds.length === 0) {
+      await client.query('COMMIT');
+      return res.json({ message: 'No test data found to delete.', deletedCount: 0 });
+    }
+    
+    // Delete related data
+    await client.query('DELETE FROM player_abilities WHERE player_id = ANY($1)', [playerIds]);
+    await client.query('DELETE FROM player_positions WHERE player_id = ANY($1)', [playerIds]);
+    await client.query('DELETE FROM player_teams WHERE player_id = ANY($1)', [playerIds]);
+    await client.query('DELETE FROM player_representative_teams WHERE player_id = ANY($1)', [playerIds]);
+    await client.query('DELETE FROM player_trophies WHERE player_id = ANY($1)', [playerIds]);
+    await client.query('DELETE FROM player_strengths WHERE player_id = ANY($1)', [playerIds]);
+    await client.query('DELETE FROM player_weaknesses WHERE player_id = ANY($1)', [playerIds]);
+    await client.query('DELETE FROM player_preferred_locations WHERE player_id = ANY($1)', [playerIds]);
+    await client.query('DELETE FROM messages WHERE player_id = ANY($1)', [playerIds]);
+    
+    // Delete the players
+    const result = await client.query('DELETE FROM players WHERE is_test_data = true');
+    
+    await client.query('COMMIT');
+    
+    res.json({ 
+      message: `Successfully deleted ${result.rowCount} test players and all related data.`,
+      deletedCount: result.rowCount
+    });
+    
+  } catch (error) {
+    await client.query('ROLLBACK');
+    console.error('Error deleting test data:', error);
+    res.status(500).json({ error: 'Failed to delete test data.' });
+  } finally {
+    client.release();
   }
 });
 

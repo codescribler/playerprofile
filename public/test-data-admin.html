@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Data Admin</title>
+    <link rel="stylesheet" href="fm-style.css">
+</head>
+<body>
+    <div class="fm-container fm-container-sm" style="margin-top: 50px;">
+        <div class="fm-card">
+            <h2>Test Data Administration</h2>
+            <p>Use this tool to manage test player profiles.</p>
+            
+            <div id="status" style="margin: 20px 0; padding: 10px; background: #1a1a1a; border-radius: 4px; display: none;"></div>
+            
+            <div class="fm-form-group">
+                <label>Admin Credentials</label>
+                <input type="text" id="username" class="fm-input" placeholder="Admin username">
+                <input type="password" id="password" class="fm-input" placeholder="Admin password" style="margin-top: 10px;">
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button id="generate-btn" class="fm-btn fm-btn-primary" onclick="generateTestData()">
+                    Generate 20 Test Players
+                </button>
+                <button id="delete-btn" class="fm-btn fm-btn-danger" onclick="deleteTestData()">
+                    Delete All Test Data
+                </button>
+            </div>
+            
+            <div id="result" style="margin-top: 20px; display: none;">
+                <h3>Result:</h3>
+                <pre id="result-content" style="background: #1a1a1a; padding: 10px; border-radius: 4px; overflow-x: auto; max-height: 400px; overflow-y: auto;"></pre>
+            </div>
+            
+            <div style="margin-top: 30px; padding: 20px; background: #1a1a1a; border-radius: 4px;">
+                <h4>Test Account Information</h4>
+                <p>All test players are created under a single test account:</p>
+                <ul>
+                    <li><strong>Username:</strong> testplayers</li>
+                    <li><strong>Password:</strong> Test123!</li>
+                </ul>
+                <p style="margin-top: 10px;">Test players have:</p>
+                <ul>
+                    <li>Realistic names and attributes</li>
+                    <li>Various positions and abilities</li>
+                    <li>Different locations across England</li>
+                    <li>Age range 14-21</li>
+                    <li>All profiles are published by default</li>
+                    <li>No profile photos</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = null;
+        
+        function showStatus(message, type = 'info') {
+            const status = document.getElementById('status');
+            status.style.display = 'block';
+            status.style.color = type === 'error' ? '#ff4444' : (type === 'success' ? '#44ff44' : '#ffffff');
+            status.textContent = message;
+        }
+        
+        async function authenticate() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                showStatus('Please enter admin credentials', 'error');
+                return false;
+            }
+            
+            try {
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ username, password })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Login failed');
+                }
+                
+                const data = await response.json();
+                
+                if (data.user.role !== 'admin') {
+                    showStatus('Error: User is not an admin', 'error');
+                    return false;
+                }
+                
+                authToken = data.token;
+                return true;
+                
+            } catch (error) {
+                showStatus('Authentication failed', 'error');
+                return false;
+            }
+        }
+        
+        async function generateTestData() {
+            showStatus('Authenticating...');
+            
+            if (!await authenticate()) {
+                return;
+            }
+            
+            showStatus('Running test data generation script...');
+            document.getElementById('generate-btn').disabled = true;
+            
+            try {
+                // First, run the field migration
+                const migrationResponse = await fetch('/api/admin/run-script', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        script: 'add-test-data-field.js'
+                    })
+                });
+                
+                if (!migrationResponse.ok) {
+                    // If the endpoint doesn't exist, that's okay - we'll show instructions
+                    showStatus('Please run the generation script manually from the server', 'error');
+                    document.getElementById('result').style.display = 'block';
+                    document.getElementById('result-content').textContent = 
+                        'To generate test data, run this command on the server:\n\n' +
+                        'node add-test-data-field.js\n' +
+                        'node generate-test-players.js\n\n' +
+                        'This will:\n' +
+                        '1. Add the is_test_data field to the database\n' +
+                        '2. Create 20 test player profiles';
+                    return;
+                }
+                
+                showStatus('Test data generated successfully!', 'success');
+                
+            } catch (error) {
+                showStatus('Error generating test data', 'error');
+                console.error('Error:', error);
+            } finally {
+                document.getElementById('generate-btn').disabled = false;
+            }
+        }
+        
+        async function deleteTestData() {
+            if (!confirm('Are you sure you want to delete ALL test data? This cannot be undone.')) {
+                return;
+            }
+            
+            showStatus('Authenticating...');
+            
+            if (!await authenticate()) {
+                return;
+            }
+            
+            showStatus('Deleting test data...');
+            document.getElementById('delete-btn').disabled = true;
+            
+            try {
+                const response = await fetch('/api/admin/test-data', {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${authToken}`
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Delete failed');
+                }
+                
+                const result = await response.json();
+                
+                showStatus(result.message, 'success');
+                document.getElementById('result').style.display = 'block';
+                document.getElementById('result-content').textContent = JSON.stringify(result, null, 2);
+                
+            } catch (error) {
+                showStatus('Error deleting test data', 'error');
+                console.error('Error:', error);
+            } finally {
+                document.getElementById('delete-btn').disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
