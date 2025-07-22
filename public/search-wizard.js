@@ -38,7 +38,7 @@ class SearchWizard {
     setupEventListeners() {
         // Navigation
         document.getElementById('back-btn').addEventListener('click', () => {
-            window.location.href = '/search.html';
+            window.location.href = '/search-wizard.html';
         });
         
         document.getElementById('prev-btn').addEventListener('click', () => this.previousStep());

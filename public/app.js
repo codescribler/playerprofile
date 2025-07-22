@@ -332,7 +332,7 @@ class PlayerProfileApp {
         if (allowedSearchRoles.includes(this.user.role)) {
             searchBtn.style.display = 'inline-flex';
             searchBtn.addEventListener('click', () => {
-                window.location.href = '/search.html';
+                window.location.href = '/search-wizard.html';
             });
         }
         
